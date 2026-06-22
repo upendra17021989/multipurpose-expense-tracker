@@ -3,6 +3,7 @@ package com.app.dto;
 import com.app.entity.Unit;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.PositiveOrZero;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -31,7 +32,7 @@ public class ProductCreateRequest {
     private BigDecimal sellingPrice;
 
     @NotNull(message = "Opening stock is required")
-    @Positive(message = "Opening stock must be greater than or equal to 0")
+    @PositiveOrZero(message = "Opening stock must be greater than or equal to 0")
     private BigDecimal openingStock;
 
     private BigDecimal lowStockAlertQty;

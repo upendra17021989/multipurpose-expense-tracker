@@ -6,7 +6,9 @@ import com.app.dto.LoginResponse;
 import com.app.dto.RegisterRequest;
 import com.app.dto.UserDto;
 import com.app.entity.Account;
+import com.app.entity.AccountType;
 import com.app.entity.User;
+import com.app.entity.UserRole;
 import com.app.exception.UnauthorizedException;
 import com.app.exception.ValidationException;
 import com.app.repository.AccountRepository;
@@ -15,6 +17,7 @@ import com.app.util.JwtTokenProvider;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -36,6 +39,7 @@ public class AuthService {
         this.tokenProvider = tokenProvider;
     }
 
+    @Transactional
     public UserDto register(RegisterRequest request) {
         if (userRepository.findByMobile(request.getMobile()).isPresent()) {
             throw new ValidationException("Mobile number already registered");
@@ -54,6 +58,8 @@ public class AuthService {
                 .build();
 
         User savedUser = userRepository.save(user);
+        Account account = buildInitialAccount(request, savedUser);
+        accountRepository.save(account);
         log.info("User registered with ID: {}", savedUser.getId());
 
         return mapToUserDto(savedUser);
@@ -135,5 +141,42 @@ public class AuthService {
                 .active(account.getActive())
                 .createdAt(account.getCreatedAt())
                 .build();
+    }
+
+    private Account buildInitialAccount(RegisterRequest request, User user) {
+        AccountType accountType = request.getAccountType() != null ? request.getAccountType() : AccountType.INDIVIDUAL;
+        String accountName = request.getAccountName();
+        if (accountName == null || accountName.isBlank()) {
+            accountName = switch (accountType) {
+                case INDIVIDUAL -> user.getName() + "'s Account";
+                case SOCIETY -> request.getSocietyName();
+                case KIRANA_STORE -> request.getStoreName();
+            };
+        }
+        if (accountName == null || accountName.isBlank()) {
+            throw new ValidationException("Account name is required");
+        }
+
+        return Account.builder()
+                .user(user)
+                .accountType(accountType)
+                .accountName(accountName)
+                .address(request.getAddress())
+                .societyName(request.getSocietyName())
+                .storeName(request.getStoreName())
+                .role(resolveInitialRole(accountType, request.getRole()))
+                .active(true)
+                .build();
+    }
+
+    private UserRole resolveInitialRole(AccountType accountType, UserRole requestedRole) {
+        if (requestedRole != null) {
+            return requestedRole;
+        }
+        return switch (accountType) {
+            case SOCIETY -> UserRole.ADMIN;
+            case KIRANA_STORE -> UserRole.STORE_OWNER;
+            case INDIVIDUAL -> UserRole.OWNER;
+        };
     }
 }

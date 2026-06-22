@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { authAPI } from '../api/endpoints'
 import { useAuthStore } from '../store/authStore'
 import { ToastContainer, toast } from 'react-toastify'
@@ -28,7 +28,7 @@ export const Login = () => {
       const { token, user, accounts } = response.data
       login(token, user, accounts)
       toast.success('Login successful')
-      navigate('/dashboard')
+      navigate('/home')
     } catch (error) {
       const errorMsg = error.response?.data?.message || 'Login failed'
       toast.error(errorMsg)
@@ -77,7 +77,7 @@ export const Login = () => {
         </form>
 
         <p style={styles.bottomText}>
-          Don't have an account? <a href="/register" style={styles.link}>Register here</a>
+          Don't have an account? <Link to="/register" style={styles.link}>Register here</Link>
         </p>
       </div>
     </div>
