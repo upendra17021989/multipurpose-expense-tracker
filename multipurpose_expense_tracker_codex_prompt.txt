@@ -1,0 +1,971 @@
+# AI/Codex Prompt: Multi-Purpose Expense, Society Festival, and Kirana Store Management App
+
+Build a multi-purpose application that works for:
+
+1. Individuals who want to track personal daily expenses
+2. Housing societies that want to track regular expenses, festival expenses, and flat-wise festival collections
+3. Kirana store owners who want to track sales, purchases, stock, expenses, customer udhaar, and supplier dues
+
+The app should work on web and later be compatible with Android using Capacitor.
+
+Recommended Tech Stack:
+- Frontend: React + Vite
+- Mobile Android Wrapper: Capacitor
+- Backend: Spring Boot REST API
+- Database: PostgreSQL
+- Authentication: JWT
+- Export: Excel and PDF
+- File Upload: Receipt image/PDF upload
+
+Core Account Types:
+- INDIVIDUAL
+- SOCIETY
+- KIRANA_STORE
+
+Each account should have separate data isolation. A user should only access their own account data.
+
+====================================================
+1. AUTHENTICATION AND ACCOUNT PROFILE
+====================================================
+
+Create login and registration system.
+
+User fields:
+- id
+- name
+- mobile
+- email
+- passwordHash
+- active
+- createdAt
+- updatedAt
+
+Account fields:
+- id
+- userId
+- accountType: INDIVIDUAL / SOCIETY / KIRANA_STORE
+- accountName
+- address optional
+- societyName optional
+- storeName optional
+- role: OWNER / ADMIN / TREASURER / MEMBER / STORE_OWNER / STAFF
+- active
+- createdAt
+- updatedAt
+
+Security rules:
+- Use JWT authentication.
+- Users can only access their own account data.
+- Society admin/treasurer can manage society expenses and festival collections.
+- Society members can only view allowed reports.
+- Kirana store owner can manage full store data.
+- Store staff can create sales and expenses only if permission is given.
+
+====================================================
+2. EXPENSE CATEGORIES
+====================================================
+
+Create expense category master.
+
+Default categories for INDIVIDUAL:
+- Food
+- Grocery
+- Rent
+- Travel
+- Fuel
+- Shopping
+- Medical
+- Education
+- Bills
+- Entertainment
+- Miscellaneous
+
+Default categories for SOCIETY:
+- Maintenance
+- Security
+- Cleaning
+- Electricity
+- Plumbing
+- Lift
+- Garden
+- Office/Admin
+- Festival
+- Miscellaneous
+
+Default categories for KIRANA_STORE:
+- Shop Rent
+- Electricity
+- Staff Salary
+- Transport
+- Packaging
+- Maintenance
+- Miscellaneous
+
+Expense category fields:
+- id
+- accountId
+- categoryName
+- accountType
+- categoryType: PERSONAL / SOCIETY_REGULAR / FESTIVAL / STORE
+- active
+- createdAt
+- updatedAt
+
+APIs:
+- Create category
+- Update category
+- Delete category using soft delete
+- Get active categories by account type
+
+====================================================
+3. COMMON EXPENSE ENTRY MODULE
+====================================================
+
+Create a common expense system usable by individuals, societies, and kirana stores.
+
+Expense fields:
+- id
+- accountId
+- expenseDate
+- accountType: INDIVIDUAL / SOCIETY / KIRANA_STORE
+- categoryId
+- expenseType: PERSONAL / SOCIETY_REGULAR / FESTIVAL / STORE_EXPENSE
+- festivalEventId optional
+- vendorName optional
+- description
+- amount
+- paymentMode: CASH / BANK / UPI / CARD / NEFT / CHEQUE
+- transactionId optional
+- utr optional
+- chequeNumber optional
+- paidBy
+- approvedBy optional
+- receiptImageUrl optional
+- remarks
+- status: DRAFT / SUBMITTED / APPROVED / REJECTED / PAID
+- softDeleted
+- createdAt
+- updatedAt
+
+Business rules:
+- For INDIVIDUAL account, expenseType should be PERSONAL.
+- For SOCIETY account, expenseType can be SOCIETY_REGULAR or FESTIVAL.
+- For KIRANA_STORE account, expenseType should be STORE_EXPENSE.
+- Festival expenses must require festivalEventId.
+- UTR is required for UPI/NEFT.
+- Cheque number is required for CHEQUE.
+- Amount must be greater than 0.
+- Individual expenses do not need approval.
+- Society expenses should support approval flow.
+- Approved society expenses should not be editable except by admin.
+- Deleted expenses should be soft deleted.
+
+Frontend pages:
+- ExpenseDashboard.jsx
+- ExpenseList.jsx
+- ExpenseForm.jsx
+- CategoryList.jsx
+- ExpenseReports.jsx
+
+Expense filters:
+- date range
+- category
+- expense type
+- festival
+- payment mode
+- vendor
+- amount range
+- status
+
+Reports:
+- Daily expense report
+- Monthly expense report
+- Category-wise expense report
+- Payment mode report
+- Vendor-wise report
+- Cash vs Bank report
+- Excel export
+- PDF export
+
+====================================================
+4. INDIVIDUAL PERSONAL EXPENSE TRACKER
+====================================================
+
+Purpose:
+Allow individuals to track personal daily expenses and budgets.
+
+Features:
+- Add daily expense
+- Edit expense
+- Delete expense
+- Category-wise tracking
+- Monthly budget
+- Category-wise budget
+- Spending limit alert
+- Monthly savings target
+
+Personal budget fields:
+- id
+- accountId
+- month
+- year
+- monthlyBudget
+- monthlySavingsTarget
+- alertEnabled
+- createdAt
+- updatedAt
+
+Category budget fields:
+- id
+- personalBudgetId
+- categoryId
+- budgetAmount
+- alertLimitPercent
+
+Individual dashboard cards:
+- Today’s expenses
+- This month’s expenses
+- Top spending category
+- Remaining monthly budget
+- Budget used percentage
+- Monthly savings target
+
+Individual reports:
+- Daily expense report
+- Monthly expense report
+- Category-wise report
+- Payment mode report
+- Budget vs actual report
+
+Frontend pages:
+- PersonalDashboard.jsx
+- PersonalExpenseList.jsx
+- PersonalExpenseForm.jsx
+- BudgetSettings.jsx
+- PersonalReports.jsx
+
+====================================================
+5. SOCIETY EXPENSE AND FESTIVAL MANAGEMENT
+====================================================
+
+Purpose:
+Allow housing societies to track regular day-to-day expenses and festival expenses like Navratri, Ganpati, Diwali, etc.
+
+Society expense types:
+- SOCIETY_REGULAR
+- FESTIVAL
+
+Festival event fields:
+- id
+- accountId
+- festivalName
+- year
+- startDate
+- endDate
+- budgetAmount
+- collectedAmount
+- totalExpense
+- balanceAmount
+- status: PLANNED / ACTIVE / CLOSED
+- createdAt
+- updatedAt
+
+Festival examples:
+- Navratri 2026
+- Ganpati 2026
+- Diwali 2026
+
+Society dashboard cards:
+- This month’s society expenses
+- Regular expenses this month
+- Festival expenses this year
+- Navratri expense total
+- Ganpati expense total
+- Cash expenses
+- Bank expenses
+- Total pending approvals
+
+Society reports:
+- Regular expense report
+- Festival-wise expense report
+- Vendor-wise report
+- Cash vs Bank report
+- Budget vs actual festival report
+- Festival profit/loss report
+
+Approval flow for society expenses:
+- DRAFT
+- SUBMITTED
+- APPROVED
+- REJECTED
+- PAID
+
+Approval rules:
+- Only admin/treasurer can approve or reject.
+- Submitted expenses can be approved or rejected.
+- Rejected expenses can be edited and resubmitted.
+- Approved expenses can be marked paid.
+
+Frontend pages:
+- SocietyDashboard.jsx
+- SocietyExpenseList.jsx
+- SocietyExpenseForm.jsx
+- FestivalList.jsx
+- FestivalForm.jsx
+- SocietyReports.jsx
+
+====================================================
+6. SOCIETY FLAT MASTER
+====================================================
+
+Purpose:
+Maintain flat and member data for society accounts.
+
+Flat fields:
+- id
+- accountId
+- blockName
+- flatNumber
+- ownerName
+- mobile
+- email
+- residentType: OWNER / TENANT
+- active
+- createdAt
+- updatedAt
+
+Flat member fields:
+- id
+- flatId
+- memberName
+- mobile
+- email
+- relation
+- active
+
+Features:
+- Add flat
+- Edit flat
+- Delete flat using soft delete
+- Import flats from Excel
+- Export flats to Excel
+- Search by block, flat number, owner name, mobile
+
+Frontend pages:
+- FlatList.jsx
+- FlatForm.jsx
+- FlatImport.jsx
+
+====================================================
+7. FESTIVAL COLLECTION TRACKER FOR SOCIETY FLATS
+====================================================
+
+Purpose:
+Track how much amount is expected, collected, pending, excess, or refunded from each flat/member for festivals like Navratri, Ganpati, Diwali, etc.
+
+Festival collection fields:
+- id
+- accountId
+- festivalEventId
+- flatId
+- expectedAmount
+- collectedAmount
+- pendingAmount
+- excessAmount
+- refundedAmount
+- paymentStatus: PENDING / PARTIAL / PAID / EXCESS / REFUNDED
+- remarks
+- createdAt
+- updatedAt
+
+Festival collection receipt fields:
+- id
+- festivalCollectionId
+- paymentDate
+- amountPaid
+- paymentMode: CASH / UPI / BANK / NEFT / CHEQUE
+- transactionId optional
+- utr optional
+- chequeNumber optional
+- collectedBy
+- receiptNumber
+- receiptPdfUrl optional
+- remarks
+- createdAt
+
+Business rules:
+- Admin can generate expected collection demand for all flats for a festival.
+- System should support same amount for all flats.
+- System should also support custom flat-wise amount.
+- Pending amount = expectedAmount - collectedAmount.
+- If collectedAmount = 0, status should be PENDING.
+- If collectedAmount > 0 and collectedAmount < expectedAmount, status should be PARTIAL.
+- If collectedAmount = expectedAmount, status should be PAID.
+- If collectedAmount > expectedAmount, status should be EXCESS.
+- Allow multiple payments against one flat for the same festival.
+- UTR is required for UPI/NEFT.
+- Cheque number is required for CHEQUE.
+- Generate receipt for each collection.
+- Allow Excel import/export of flat-wise collection data.
+- Allow PDF receipt export.
+
+Festival collection dashboard cards:
+- Total expected collection
+- Total collected
+- Total pending
+- Total excess
+- Paid flats
+- Pending flats
+- Partial flats
+- Festival expense
+- Festival balance
+
+Festival collection reports:
+- Festival collection summary
+- Flat-wise collection report
+- Pending collection report
+- Paid flats report
+- Partial payment report
+- Excess collection report
+- Collection by payment mode
+- Collection by collector
+- Festival profit/loss report: collectedAmount - totalFestivalExpense
+
+Frontend pages:
+- FestivalCollectionDashboard.jsx
+- FestivalCollectionList.jsx
+- FestivalCollectionForm.jsx
+- FestivalCollectionReceipt.jsx
+- FestivalCollectionReports.jsx
+
+APIs:
+- CRUD flats
+- Generate festival collection demand
+- Update flat-wise collection demand
+- Add payment against flat
+- Generate receipt
+- Get collection dashboard summary
+- Get collection reports
+- Excel import/export
+- PDF receipt export
+
+====================================================
+8. KIRANA STORE MODULE
+====================================================
+
+Purpose:
+Allow small kirana store owners to track daily sales, purchases, store expenses, stock, suppliers, customer credit/udhaar, supplier dues, and profit/loss.
+
+Core features:
+- Daily sales entry
+- Purchase entry
+- Store expense entry
+- Stock/inventory tracking
+- Supplier/vendor management
+- Customer credit/udhaar tracking
+- Payment collection from customers
+- Supplier payment tracking
+- Profit/loss report
+
+Product fields:
+- id
+- accountId
+- productName
+- category
+- unit: KG / GRAM / LITRE / ML / PIECE / PACKET
+- purchasePrice
+- sellingPrice
+- openingStock
+- currentStock
+- lowStockAlertQty
+- barcode optional
+- active
+- createdAt
+- updatedAt
+
+Supplier fields:
+- id
+- accountId
+- supplierName
+- mobile
+- email optional
+- address optional
+- openingBalance
+- currentDue
+- active
+
+Customer fields:
+- id
+- accountId
+- customerName
+- mobile
+- email optional
+- address optional
+- openingCredit
+- currentCredit
+- active
+
+Sales fields:
+- id
+- accountId
+- saleDate
+- customerId optional
+- totalAmount
+- discount
+- netAmount
+- paymentMode: CASH / UPI / CARD / CREDIT / MIXED
+- amountPaid
+- balanceAmount
+- remarks
+- createdAt
+
+Sale item fields:
+- id
+- saleId
+- productId
+- quantity
+- sellingPrice
+- lineTotal
+
+Purchase fields:
+- id
+- accountId
+- purchaseDate
+- supplierId
+- invoiceNumber
+- totalAmount
+- discount
+- netAmount
+- paymentMode: CASH / UPI / BANK / NEFT / CHEQUE / CREDIT
+- amountPaid
+- balanceAmount
+- remarks
+- createdAt
+
+Purchase item fields:
+- id
+- purchaseId
+- productId
+- quantity
+- purchasePrice
+- lineTotal
+
+Customer credit ledger fields:
+- id
+- accountId
+- customerId
+- transactionDate
+- transactionType: SALE_CREDIT / PAYMENT_RECEIVED / ADJUSTMENT
+- debitAmount
+- creditAmount
+- balanceAmount
+- paymentMode optional
+- referenceId optional
+- remarks
+
+Supplier payment ledger fields:
+- id
+- accountId
+- supplierId
+- transactionDate
+- transactionType: PURCHASE_CREDIT / PAYMENT_MADE / ADJUSTMENT
+- debitAmount
+- creditAmount
+- balanceAmount
+- paymentMode optional
+- referenceId optional
+- remarks
+
+Business rules:
+- Sale should reduce stock.
+- Purchase should increase stock.
+- Credit sale should update customer credit ledger.
+- Supplier unpaid purchase should update supplier due ledger.
+- Low stock alert should show on dashboard.
+- Sale quantity cannot exceed current stock unless negative stock is allowed by setting.
+- Profit should be calculated based on selling price - purchase price.
+- Store expenses should be included in net profit/loss.
+
+Kirana dashboard cards:
+- Today’s sales
+- This month’s sales
+- Today’s purchases
+- Customer credit pending
+- Supplier dues pending
+- Low stock items
+- Cash collection
+- UPI collection
+- Estimated gross profit
+
+Kirana reports:
+- Daily sales report
+- Monthly sales report
+- Product-wise sales report
+- Purchase report
+- Stock report
+- Low stock report
+- Customer udhaar report
+- Supplier due report
+- Profit/loss report
+- Cash/UPI/Card collection report
+
+Frontend pages:
+- KiranaDashboard.jsx
+- ProductList.jsx
+- ProductForm.jsx
+- SupplierList.jsx
+- SupplierForm.jsx
+- CustomerList.jsx
+- CustomerForm.jsx
+- SalesList.jsx
+- SalesForm.jsx
+- PurchaseList.jsx
+- PurchaseForm.jsx
+- CustomerCreditLedger.jsx
+- SupplierPaymentLedger.jsx
+- KiranaReports.jsx
+
+APIs:
+- CRUD products
+- CRUD suppliers
+- CRUD customers
+- Create sale
+- Update sale
+- Cancel sale
+- Create purchase
+- Update purchase
+- Cancel purchase
+- Customer payment collection
+- Supplier payment entry
+- Stock summary
+- Low stock report
+- Profit/loss report
+- Excel/PDF exports
+
+====================================================
+9. ATTACHMENTS
+====================================================
+
+Allow upload of receipt image or PDF.
+
+Attachment fields:
+- id
+- accountId
+- referenceType: EXPENSE / FESTIVAL_COLLECTION / SALE / PURCHASE
+- referenceId
+- fileName
+- fileUrl
+- fileType
+- uploadedBy
+- createdAt
+
+Features:
+- Upload bill/receipt image or PDF
+- Preview image/PDF
+- Download attachment
+- Delete attachment using soft delete
+
+====================================================
+10. DASHBOARD ROUTING BY ACCOUNT TYPE
+====================================================
+
+After login, redirect based on selected account type:
+
+If accountType = INDIVIDUAL:
+- Show PersonalDashboard
+
+If accountType = SOCIETY:
+- Show SocietyDashboard
+
+If accountType = KIRANA_STORE:
+- Show KiranaDashboard
+
+Allow user to switch account if user has multiple accounts.
+
+====================================================
+11. COMMON UI REQUIREMENTS
+====================================================
+
+- Responsive web app
+- Mobile-friendly UI
+- Compatible with Capacitor Android app later
+- Clean dashboard cards
+- Tables with search, filters, sorting, pagination
+- Add/edit/delete/view actions
+- Form validation
+- Indian ₹ amount format
+- Date range filters
+- Excel export for reports
+- PDF export for receipts and reports
+- Receipt upload preview
+- Toast notifications
+- Loading states
+- Error handling
+- Confirmation popup before delete/cancel
+
+Use a simple clean CSS layout or component library if available.
+
+====================================================
+12. DATABASE TABLES SUMMARY
+====================================================
+
+Create these tables:
+
+Authentication and account:
+- users
+- accounts
+
+Common expenses:
+- expense_categories
+- expenses
+- attachments
+
+Individual:
+- personal_budgets
+- category_budgets
+
+Society:
+- flats
+- flat_members
+- festival_events
+- festival_collections
+- festival_collection_receipts
+
+Kirana store:
+- products
+- suppliers
+- customers
+- sales
+- sale_items
+- purchases
+- purchase_items
+- customer_credit_ledger
+- supplier_payment_ledger
+
+====================================================
+13. BACKEND STRUCTURE
+====================================================
+
+Create Spring Boot backend with this structure:
+
+com.app
+- config
+- security
+- controller
+- service
+- repository
+- entity
+- dto
+- mapper
+- exception
+- util
+
+Generate:
+- Entities
+- DTOs
+- Repositories
+- Services
+- Controllers
+- Validation
+- Global exception handler
+- JWT security
+- Database migration SQL
+- Sample seed data
+
+Controller groups:
+- AuthController
+- AccountController
+- ExpenseCategoryController
+- ExpenseController
+- PersonalBudgetController
+- SocietyFlatController
+- FestivalEventController
+- FestivalCollectionController
+- KiranaProductController
+- KiranaSupplierController
+- KiranaCustomerController
+- KiranaSalesController
+- KiranaPurchaseController
+- ReportController
+- AttachmentController
+
+====================================================
+14. FRONTEND STRUCTURE
+====================================================
+
+Create React + Vite frontend with this structure:
+
+src/
+- api/
+- auth/
+- components/
+- layouts/
+- pages/
+  - auth/
+  - individual/
+  - society/
+  - kirana/
+  - common/
+- routes/
+- utils/
+- styles/
+
+Common pages:
+- Login.jsx
+- Register.jsx
+- AccountSelector.jsx
+- DashboardRouter.jsx
+- ExpenseList.jsx
+- ExpenseForm.jsx
+- CategoryList.jsx
+- Reports.jsx
+
+Individual pages:
+- PersonalDashboard.jsx
+- PersonalExpenseList.jsx
+- PersonalExpenseForm.jsx
+- BudgetSettings.jsx
+- PersonalReports.jsx
+
+Society pages:
+- SocietyDashboard.jsx
+- SocietyExpenseList.jsx
+- SocietyExpenseForm.jsx
+- FlatList.jsx
+- FlatForm.jsx
+- FlatImport.jsx
+- FestivalList.jsx
+- FestivalForm.jsx
+- FestivalCollectionDashboard.jsx
+- FestivalCollectionList.jsx
+- FestivalCollectionForm.jsx
+- FestivalCollectionReceipt.jsx
+- SocietyReports.jsx
+
+Kirana pages:
+- KiranaDashboard.jsx
+- ProductList.jsx
+- ProductForm.jsx
+- SupplierList.jsx
+- SupplierForm.jsx
+- CustomerList.jsx
+- CustomerForm.jsx
+- SalesList.jsx
+- SalesForm.jsx
+- PurchaseList.jsx
+- PurchaseForm.jsx
+- CustomerCreditLedger.jsx
+- SupplierPaymentLedger.jsx
+- KiranaReports.jsx
+
+====================================================
+15. REPORTS AND EXPORTS
+====================================================
+
+Reports should support:
+- Date range
+- Account type
+- Category
+- Payment mode
+- Status
+- Vendor/supplier/customer
+- Festival
+- Flat
+- Product
+
+Export support:
+- Excel export for all major reports
+- PDF export for receipts
+- PDF export for festival summary
+- PDF export for profit/loss report
+
+====================================================
+16. ANDROID COMPATIBILITY USING CAPACITOR
+====================================================
+
+The app should be created as responsive React web app first.
+Then it should be compatible with Capacitor for Android.
+
+Commands expected later:
+
+npm install @capacitor/core @capacitor/cli
+npx cap init
+npm run build
+npx cap add android
+npx cap sync android
+npx cap open android
+
+Make sure:
+- UI works on mobile screen
+- Forms are touch-friendly
+- Tables are horizontally scrollable on mobile
+- File upload works on mobile browser
+- API base URL is configurable using environment variables
+
+====================================================
+17. OUTPUT EXPECTED FROM CODEX
+====================================================
+
+Generate the application step by step:
+
+Step 1:
+- Database schema/migration SQL
+- Entities
+- Repositories
+
+Step 2:
+- DTOs
+- Services
+- Controllers
+- Validation
+
+Step 3:
+- JWT authentication
+- Account type based authorization
+- Data isolation by accountId
+
+Step 4:
+- React frontend setup
+- Routing
+- Login/register
+- Dashboard router
+
+Step 5:
+- Common expense module
+- Individual budget module
+
+Step 6:
+- Society expense module
+- Flat master
+- Festival events
+- Festival collection tracker
+
+Step 7:
+- Kirana store module
+- Products
+- Sales
+- Purchases
+- Stock
+- Customer credit
+- Supplier dues
+
+Step 8:
+- Reports
+- Excel export
+- PDF export
+- Receipt generation
+
+Step 9:
+- Responsive styling
+- Error handling
+- Loading states
+- Sample data
+
+Important:
+- Generate clean, maintainable code.
+- Use proper validation.
+- Use soft delete where needed.
+- Keep business logic in service layer.
+- Keep controllers thin.
+- Use accountId filtering in every query.
+- Do not allow one user/account to access another account’s data.
