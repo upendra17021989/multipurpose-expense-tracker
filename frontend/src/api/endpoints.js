@@ -55,3 +55,12 @@ export const kiranaProductAPI = {
   deleteProduct: (productId) => axiosInstance.delete(`/kirana/products/${productId}`)
 }
 
+
+export const festivalEventAPI = {
+  getFestivals: (year) => axiosInstance.get('/society/festivals', { params: year ? { year } : {} }),
+  getFestival: (festivalEventId) => axiosInstance.get(`/society/festivals/${festivalEventId}`),
+  createFestival: (data) => axiosInstance.post('/society/festivals', data),
+  updateFestival: (festivalEventId, data) => axiosInstance.put(`/society/festivals/${festivalEventId}`, data),
+  updateFestivalStatus: (festivalEventId, status) => axiosInstance.put(`/society/festivals/${festivalEventId}/status`, { status }),
+  deleteFestival: (festivalEventId) => axiosInstance.delete(`/society/festivals/${festivalEventId}`)
+}

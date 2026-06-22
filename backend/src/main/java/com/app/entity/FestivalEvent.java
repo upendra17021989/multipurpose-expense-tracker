@@ -40,22 +40,60 @@ public class FestivalEvent {
     @Column(precision = 10, scale = 2)
     private BigDecimal budgetAmount;
 
+    @Builder.Default
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal collectedAmount = BigDecimal.ZERO;
 
+    @Builder.Default
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal totalExpense = BigDecimal.ZERO;
 
     @Column(precision = 10, scale = 2)
     private BigDecimal balanceAmount;
 
+    @Builder.Default
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private FestivalEventStatus status = FestivalEventStatus.PLANNED;
 
+    @Builder.Default
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
 
+    @Builder.Default
     @Column(nullable = false)
     private LocalDateTime updatedAt = LocalDateTime.now();
+
+    @PrePersist
+    protected void onCreate() {
+        LocalDateTime now = LocalDateTime.now();
+        if (createdAt == null) {
+            createdAt = now;
+        }
+        if (updatedAt == null) {
+            updatedAt = now;
+        }
+        if (collectedAmount == null) {
+            collectedAmount = BigDecimal.ZERO;
+        }
+        if (totalExpense == null) {
+            totalExpense = BigDecimal.ZERO;
+        }
+        if (status == null) {
+            status = FestivalEventStatus.PLANNED;
+        }
+        recalculateBalance();
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        updatedAt = LocalDateTime.now();
+        recalculateBalance();
+    }
+
+    private void recalculateBalance() {
+        BigDecimal collected = collectedAmount != null ? collectedAmount : BigDecimal.ZERO;
+        BigDecimal expense = totalExpense != null ? totalExpense : BigDecimal.ZERO;
+        balanceAmount = collected.subtract(expense);
+    }
 }

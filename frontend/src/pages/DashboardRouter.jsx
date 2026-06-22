@@ -114,7 +114,7 @@ const SocietyDashboard = () => {
           ['Active Flats', flats.length]
         ]}
       />
-      <ActionRow actions={[[ 'Add Expense', '/expenses/new' ], [ 'View Expenses', '/expenses' ], [ 'Categories', '/categories' ], [ 'Flat Master', '/society/flats' ]]} />
+      <ActionRow actions={[[ 'Add Expense', '/expenses/new' ], [ 'View Expenses', '/expenses' ], [ 'Categories', '/categories' ], [ 'Flat Master', '/society/flats' ], [ 'Festivals', '/society/festivals' ]]} />
     </Shell>
   )
 }
@@ -195,6 +195,7 @@ const buildExpenseSummary = (expenses) => {
     paymentModes: paymentModes.size || '-'
   }
 }
+
 
 
 

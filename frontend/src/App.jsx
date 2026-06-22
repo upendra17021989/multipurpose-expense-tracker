@@ -9,6 +9,8 @@ import { CategoryList } from './pages/CategoryList'
 import { BudgetSettings } from './pages/BudgetSettings'
 import { FlatList } from './pages/society/FlatList'
 import { FlatForm } from './pages/society/FlatForm'
+import { FestivalList } from './pages/society/FestivalList'
+import { FestivalForm } from './pages/society/FestivalForm'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import 'react-toastify/dist/ReactToastify.css'
 import './App.css'
@@ -29,6 +31,9 @@ function App() {
         <Route path="/society/flats" element={<ProtectedRoute><FlatList /></ProtectedRoute>} />
         <Route path="/society/flats/new" element={<ProtectedRoute><FlatForm /></ProtectedRoute>} />
         <Route path="/society/flats/:flatId/edit" element={<ProtectedRoute><FlatForm /></ProtectedRoute>} />
+        <Route path="/society/festivals" element={<ProtectedRoute><FestivalList /></ProtectedRoute>} />
+        <Route path="/society/festivals/new" element={<ProtectedRoute><FestivalForm /></ProtectedRoute>} />
+        <Route path="/society/festivals/:festivalEventId/edit" element={<ProtectedRoute><FestivalForm /></ProtectedRoute>} />
         <Route path="/" element={<Navigate to="/home" replace />} />
       </Routes>
       <ToastContainer position="top-right" autoClose={3000} hideProgressBar={false} newestOnTop />

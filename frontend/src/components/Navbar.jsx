@@ -37,6 +37,7 @@ export const Navbar = () => {
           <Link to="/categories">Categories</Link>
           {currentAccount?.accountType === 'INDIVIDUAL' && <Link to="/budget">Budget</Link>}
           {currentAccount?.accountType === 'SOCIETY' && <Link to="/society/flats">Flats</Link>}
+          {currentAccount?.accountType === 'SOCIETY' && <Link to="/society/festivals">Festivals</Link>}
         </div>
         <div className="nav-right">
           {accounts.length > 1 && (
