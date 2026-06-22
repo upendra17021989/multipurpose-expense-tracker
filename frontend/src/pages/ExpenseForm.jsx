@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'react-toastify'
-import { expenseAPI, expenseCategoryAPI } from '../api/endpoints'
+import { expenseAPI, expenseCategoryAPI, festivalEventAPI } from '../api/endpoints'
 import { useAuthStore } from '../store/authStore'
 import { Shell } from './DashboardRouter'
 
@@ -9,6 +9,7 @@ const initialForm = {
   expenseDate: new Date().toISOString().slice(0, 10),
   categoryId: '',
   expenseType: '',
+  festivalEventId: '',
   description: '',
   amount: '',
   paymentMode: 'CASH',
@@ -32,14 +33,23 @@ export const ExpenseForm = () => {
   const { currentAccount } = useAuthStore()
   const [form, setForm] = useState(initialForm)
   const [categories, setCategories] = useState([])
+  const [festivals, setFestivals] = useState([])
   const isEdit = Boolean(expenseId)
   const isApproved = isEdit && form.status === 'APPROVED'
+  const showFestivalEvent = currentAccount?.accountType === 'SOCIETY' && form.expenseType === 'FESTIVAL'
 
   const availableTypes = useMemo(() => expenseTypesByAccount[currentAccount?.accountType] || ['PERSONAL'], [currentAccount])
 
   useEffect(() => {
     expenseCategoryAPI.getCategories().then((response) => setCategories(response.data || []))
   }, [])
+
+  useEffect(() => {
+    if (currentAccount?.accountType !== 'SOCIETY') return
+    festivalEventAPI.getFestivals()
+      .then((response) => setFestivals(response.data || []))
+      .catch(() => toast.error('Unable to load festival events'))
+  }, [currentAccount])
 
   useEffect(() => {
     setForm((current) => ({ ...current, expenseType: current.expenseType || availableTypes[0] }))
@@ -57,6 +67,7 @@ export const ExpenseForm = () => {
           expenseDate: expense.expenseDate || initialForm.expenseDate,
           categoryId: expense.categoryId || '',
           expenseType: expense.expenseType || availableTypes[0],
+          festivalEventId: expense.festivalEventId || '',
           description: expense.description || '',
           amount: expense.amount || '',
           paymentMode: expense.paymentMode || 'CASH',
@@ -71,12 +82,22 @@ export const ExpenseForm = () => {
       .catch(() => toast.error('Unable to load expense'))
   }, [expenseId, isEdit, availableTypes])
 
-  const update = (field, value) => setForm((current) => ({ ...current, [field]: value }))
+  const update = (field, value) => {
+    setForm((current) => ({
+      ...current,
+      [field]: value,
+      ...(field === 'expenseType' && value !== 'FESTIVAL' ? { festivalEventId: '' } : {})
+    }))
+  }
 
   const handleSubmit = async (event) => {
     event.preventDefault()
     if (isApproved) {
       toast.error('Cannot update approved expense')
+      return
+    }
+    if (showFestivalEvent && !form.festivalEventId) {
+      toast.error('Festival event is required')
       return
     }
     if ((form.paymentMode === 'UPI' || form.paymentMode === 'NEFT') && !form.utr.trim()) {
@@ -91,6 +112,7 @@ export const ExpenseForm = () => {
     const payload = {
       ...form,
       categoryId: Number(form.categoryId),
+      festivalEventId: showFestivalEvent ? Number(form.festivalEventId) : null,
       amount: Number(form.amount),
       transactionId: form.transactionId || null,
       utr: form.utr || null,
@@ -136,6 +158,17 @@ export const ExpenseForm = () => {
               {availableTypes.map((type) => <option key={type} value={type}>{type}</option>)}
             </select>
           </label>
+          {showFestivalEvent && (
+            <label>
+              Festival Event
+              <select value={form.festivalEventId} onChange={(event) => update('festivalEventId', event.target.value)} required disabled={isApproved}>
+                <option value="">Select festival</option>
+                {festivals.map((festival) => (
+                  <option key={festival.id} value={festival.id}>{festival.festivalName} ({festival.year})</option>
+                ))}
+              </select>
+            </label>
+          )}
           <label>
             Amount
             <input type="number" min="1" step="0.01" value={form.amount} onChange={(event) => update('amount', event.target.value)} required disabled={isApproved} />

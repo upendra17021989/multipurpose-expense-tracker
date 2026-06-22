@@ -8,12 +8,14 @@ import com.app.entity.Expense;
 import com.app.entity.ExpenseCategory;
 import com.app.entity.ExpenseStatus;
 import com.app.entity.ExpenseType;
+import com.app.entity.FestivalEvent;
 import com.app.entity.PaymentMode;
 import com.app.exception.ResourceNotFoundException;
 import com.app.exception.ValidationException;
 import com.app.repository.AccountRepository;
 import com.app.repository.ExpenseCategoryRepository;
 import com.app.repository.ExpenseRepository;
+import com.app.repository.FestivalEventRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,13 +32,16 @@ public class ExpenseService {
     private final ExpenseRepository expenseRepository;
     private final ExpenseCategoryRepository categoryRepository;
     private final AccountRepository accountRepository;
+    private final FestivalEventRepository festivalEventRepository;
 
     public ExpenseService(ExpenseRepository expenseRepository,
                           ExpenseCategoryRepository categoryRepository,
-                          AccountRepository accountRepository) {
+                          AccountRepository accountRepository,
+                          FestivalEventRepository festivalEventRepository) {
         this.expenseRepository = expenseRepository;
         this.categoryRepository = categoryRepository;
         this.accountRepository = accountRepository;
+        this.festivalEventRepository = festivalEventRepository;
     }
 
     public List<ExpenseDto> getExpensesByAccountId(Long accountId) {
@@ -90,6 +95,7 @@ public class ExpenseService {
 
         ExpenseType expenseType = request.getExpenseType() != null ? request.getExpenseType() : getDefaultExpenseType(category);
         validateExpenseType(account.getAccountType(), expenseType, request);
+        FestivalEvent festivalEvent = resolveFestivalEvent(accountId, expenseType, request.getFestivalEventId());
 
         Expense expense = Expense.builder()
                 .account(account)
@@ -97,6 +103,7 @@ public class ExpenseService {
                 .expenseDate(request.getExpenseDate())
                 .category(category)
                 .expenseType(expenseType)
+                .festivalEvent(festivalEvent)
                 .vendorName(request.getVendorName())
                 .description(request.getDescription())
                 .amount(request.getAmount())
@@ -146,10 +153,12 @@ public class ExpenseService {
 
         ExpenseType expenseType = request.getExpenseType() != null ? request.getExpenseType() : getDefaultExpenseType(category);
         validateExpenseType(expense.getAccountType(), expenseType, request);
+        FestivalEvent festivalEvent = resolveFestivalEvent(accountId, expenseType, request.getFestivalEventId());
 
         expense.setAccountType(expense.getAccount().getAccountType());
         expense.setExpenseDate(request.getExpenseDate());
         expense.setExpenseType(expenseType);
+        expense.setFestivalEvent(festivalEvent);
         expense.setAmount(request.getAmount());
         expense.setPaymentMode(request.getPaymentMode());
         expense.setVendorName(request.getVendorName());
@@ -253,6 +262,14 @@ public class ExpenseService {
                 }
             }
         }
+    }
+
+    private FestivalEvent resolveFestivalEvent(Long accountId, ExpenseType expenseType, Long festivalEventId) {
+        if (expenseType != ExpenseType.FESTIVAL) {
+            return null;
+        }
+        return festivalEventRepository.findByAccountIdAndId(accountId, festivalEventId)
+                .orElseThrow(() -> new ResourceNotFoundException("Festival event not found"));
     }
 
     private ExpenseDto mapToDto(Expense expense) {
