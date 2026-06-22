@@ -7,6 +7,8 @@ import { ExpenseList } from './pages/ExpenseList'
 import { ExpenseForm } from './pages/ExpenseForm'
 import { CategoryList } from './pages/CategoryList'
 import { BudgetSettings } from './pages/BudgetSettings'
+import { FlatList } from './pages/society/FlatList'
+import { FlatForm } from './pages/society/FlatForm'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import 'react-toastify/dist/ReactToastify.css'
 import './App.css'
@@ -24,6 +26,9 @@ function App() {
         <Route path="/expenses/:expenseId/edit" element={<ProtectedRoute><ExpenseForm /></ProtectedRoute>} />
         <Route path="/categories" element={<ProtectedRoute><CategoryList /></ProtectedRoute>} />
         <Route path="/budget" element={<ProtectedRoute><BudgetSettings /></ProtectedRoute>} />
+        <Route path="/society/flats" element={<ProtectedRoute><FlatList /></ProtectedRoute>} />
+        <Route path="/society/flats/new" element={<ProtectedRoute><FlatForm /></ProtectedRoute>} />
+        <Route path="/society/flats/:flatId/edit" element={<ProtectedRoute><FlatForm /></ProtectedRoute>} />
         <Route path="/" element={<Navigate to="/home" replace />} />
       </Routes>
       <ToastContainer position="top-right" autoClose={3000} hideProgressBar={false} newestOnTop />
