@@ -4,6 +4,7 @@ export const authAPI = {
   register: (data) => axiosInstance.post('/auth/register', data),
   login: (data) => axiosInstance.post('/auth/login', data),
   loginWithAccount: (data, accountId) => axiosInstance.post(`/auth/login/${accountId}`, data),
+  switchAccount: (accountId) => axiosInstance.post(`/auth/switch-account/${accountId}`),
   validateToken: () => axiosInstance.get('/auth/validate')
 }
 
@@ -41,7 +42,7 @@ export const societyFlatAPI = {
   getFlats: (blockName) => axiosInstance.get('/society/flats', { params: blockName ? { blockName } : {} }),
   getFlat: (flatId) => axiosInstance.get(`/society/flats/${flatId}`),
   createFlat: (data) => axiosInstance.post('/society/flats', data),
-  updateFlat: (flatId, data) => axiosInstance.put(`/society/flats/${flatId}`, data),
+  updateFlat: (flatId, data) => axiosInstance.put(`/society/flats/${flatId}`),
   deleteFlat: (flatId) => axiosInstance.delete(`/society/flats/${flatId}`)
 }
 
@@ -53,3 +54,4 @@ export const kiranaProductAPI = {
   updateProduct: (productId, data) => axiosInstance.put(`/kirana/products/${productId}`, data),
   deleteProduct: (productId) => axiosInstance.delete(`/kirana/products/${productId}`)
 }
+

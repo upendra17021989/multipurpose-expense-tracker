@@ -1,12 +1,15 @@
 package com.app.service;
 
 import com.app.dto.ExpenseCategoryDto;
-import com.app.entity.ExpenseCategory;
+import com.app.entity.Account;
+import com.app.entity.AccountType;
 import com.app.entity.CategoryType;
+import com.app.entity.ExpenseCategory;
 import com.app.exception.ResourceNotFoundException;
 import com.app.repository.ExpenseCategoryRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -47,7 +50,7 @@ public class ExpenseCategoryService {
     }
 
     public ExpenseCategoryDto createCategory(Long accountId, ExpenseCategoryDto dto) {
-        com.app.entity.Account account = new com.app.entity.Account();
+        Account account = new Account();
         account.setId(accountId);
 
         ExpenseCategory category = ExpenseCategory.builder()
@@ -87,6 +90,48 @@ public class ExpenseCategoryService {
 
         category.setActive(false);
         categoryRepository.save(category);
+    }
+
+    @Transactional
+    public void seedDefaultCategories(Account account) {
+        if (!categoryRepository.findByAccountIdAndActiveTrue(account.getId()).isEmpty()) {
+            return;
+        }
+
+        List<ExpenseCategory> categories = defaultCategoryNames(account.getAccountType()).stream()
+                .map(name -> ExpenseCategory.builder()
+                        .account(account)
+                        .categoryName(name)
+                        .accountType(account.getAccountType())
+                        .categoryType(defaultCategoryType(account.getAccountType(), name))
+                        .active(true)
+                        .build())
+                .collect(Collectors.toList());
+
+        categoryRepository.saveAll(categories);
+        log.info("Seeded {} default categories for account {}", categories.size(), account.getId());
+    }
+
+    private List<String> defaultCategoryNames(AccountType accountType) {
+        return switch (accountType) {
+            case INDIVIDUAL -> List.of(
+                    "Food", "Grocery", "Rent", "Travel", "Fuel", "Shopping",
+                    "Medical", "Education", "Bills", "Entertainment", "Miscellaneous");
+            case SOCIETY -> List.of(
+                    "Maintenance", "Security", "Cleaning", "Electricity", "Plumbing", "Lift",
+                    "Garden", "Office/Admin", "Festival", "Miscellaneous");
+            case KIRANA_STORE -> List.of(
+                    "Shop Rent", "Electricity", "Staff Salary", "Transport", "Packaging",
+                    "Maintenance", "Miscellaneous");
+        };
+    }
+
+    private CategoryType defaultCategoryType(AccountType accountType, String categoryName) {
+        return switch (accountType) {
+            case INDIVIDUAL -> CategoryType.PERSONAL;
+            case SOCIETY -> "Festival".equals(categoryName) ? CategoryType.FESTIVAL : CategoryType.SOCIETY_REGULAR;
+            case KIRANA_STORE -> CategoryType.STORE;
+        };
     }
 
     private ExpenseCategoryDto mapToDto(ExpenseCategory category) {

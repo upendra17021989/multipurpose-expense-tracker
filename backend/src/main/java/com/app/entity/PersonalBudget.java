@@ -36,12 +36,34 @@ public class PersonalBudget {
     @Column(precision = 10, scale = 2)
     private BigDecimal monthlySavingsTarget;
 
+    @Builder.Default
     @Column(nullable = false)
     private Boolean alertEnabled = true;
 
+    @Builder.Default
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
 
+    @Builder.Default
     @Column(nullable = false)
     private LocalDateTime updatedAt = LocalDateTime.now();
+
+    @PrePersist
+    protected void onCreate() {
+        LocalDateTime now = LocalDateTime.now();
+        if (createdAt == null) {
+            createdAt = now;
+        }
+        if (updatedAt == null) {
+            updatedAt = now;
+        }
+        if (alertEnabled == null) {
+            alertEnabled = true;
+        }
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        updatedAt = LocalDateTime.now();
+    }
 }

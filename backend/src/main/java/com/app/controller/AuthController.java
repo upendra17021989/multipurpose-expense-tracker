@@ -4,10 +4,12 @@ import com.app.dto.LoginRequest;
 import com.app.dto.LoginResponse;
 import com.app.dto.RegisterRequest;
 import com.app.dto.UserDto;
+import com.app.security.UserPrincipal;
 import com.app.service.AuthService;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @Slf4j
@@ -40,6 +42,13 @@ public class AuthController {
     public ResponseEntity<LoginResponse> loginWithAccount(@Valid @RequestBody LoginRequest request, @PathVariable Long accountId) {
         log.info("Login request for mobile: {} with accountId: {}", request.getMobile(), accountId);
         LoginResponse response = authService.loginWithAccount(request, accountId);
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/switch-account/{accountId}")
+    public ResponseEntity<LoginResponse> switchAccount(@AuthenticationPrincipal UserPrincipal userPrincipal, @PathVariable Long accountId) {
+        log.info("Switch account request for user: {} to accountId: {}", userPrincipal.getUserId(), accountId);
+        LoginResponse response = authService.switchAccount(userPrincipal.getUserId(), accountId);
         return ResponseEntity.ok(response);
     }
 

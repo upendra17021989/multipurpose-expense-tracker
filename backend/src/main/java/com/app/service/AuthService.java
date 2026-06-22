@@ -30,39 +30,30 @@ public class AuthService {
     private final AccountRepository accountRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider tokenProvider;
+    private final ExpenseCategoryService expenseCategoryService;
 
     public AuthService(UserRepository userRepository, AccountRepository accountRepository,
-                       PasswordEncoder passwordEncoder, JwtTokenProvider tokenProvider) {
+                       PasswordEncoder passwordEncoder, JwtTokenProvider tokenProvider,
+                       ExpenseCategoryService expenseCategoryService) {
         this.userRepository = userRepository;
         this.accountRepository = accountRepository;
         this.passwordEncoder = passwordEncoder;
         this.tokenProvider = tokenProvider;
+        this.expenseCategoryService = expenseCategoryService;
     }
 
     @Transactional
     public UserDto register(RegisterRequest request) {
-        if (userRepository.findByMobile(request.getMobile()).isPresent()) {
-            throw new ValidationException("Mobile number already registered");
-        }
+        User user = userRepository.findByMobile(request.getMobile())
+                .map(existingUser -> validateExistingUserForNewAccount(existingUser, request))
+                .orElseGet(() -> createUser(request));
 
-        if (request.getEmail() != null && userRepository.findByEmail(request.getEmail()).isPresent()) {
-            throw new ValidationException("Email already registered");
-        }
+        Account account = buildInitialAccount(request, user);
+        Account savedAccount = accountRepository.save(account);
+        expenseCategoryService.seedDefaultCategories(savedAccount);
+        log.info("Account {} created for user ID: {}", savedAccount.getId(), user.getId());
 
-        User user = User.builder()
-                .name(request.getName())
-                .mobile(request.getMobile())
-                .email(request.getEmail())
-                .passwordHash(passwordEncoder.encode(request.getPassword()))
-                .active(true)
-                .build();
-
-        User savedUser = userRepository.save(user);
-        Account account = buildInitialAccount(request, savedUser);
-        accountRepository.save(account);
-        log.info("User registered with ID: {}", savedUser.getId());
-
-        return mapToUserDto(savedUser);
+        return mapToUserDto(user);
     }
 
     public LoginResponse login(LoginRequest request) {
@@ -82,12 +73,7 @@ public class AuthService {
         Account firstAccount = accounts.get(0);
         String token = tokenProvider.generateToken(user.getId(), firstAccount.getId());
 
-        return LoginResponse.builder()
-                .token(token)
-                .userId(user.getId())
-                .user(mapToUserDto(user))
-                .accounts(accounts.stream().map(this::mapToAccountDto).collect(Collectors.toList()))
-                .build();
+        return buildLoginResponse(user, accounts, firstAccount, token);
     }
 
     public LoginResponse loginWithAccount(LoginRequest request, Long accountId) {
@@ -98,6 +84,16 @@ public class AuthService {
             throw new UnauthorizedException("Invalid mobile or password");
         }
 
+        return buildAccountLoginResponse(user, accountId);
+    }
+
+    public LoginResponse switchAccount(Long userId, Long accountId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UnauthorizedException("User not found"));
+        return buildAccountLoginResponse(user, accountId);
+    }
+
+    private LoginResponse buildAccountLoginResponse(User user, Long accountId) {
         Account account = accountRepository.findByIdAndUserId(accountId, user.getId())
                 .orElseThrow(() -> new ValidationException("Account not found or not accessible"));
 
@@ -105,16 +101,47 @@ public class AuthService {
             throw new ValidationException("Account is inactive");
         }
 
-        String token = tokenProvider.generateToken(user.getId(), account.getId());
-
         List<Account> accounts = accountRepository.findByUserIdAndActive(user.getId(), true);
+        String token = tokenProvider.generateToken(user.getId(), account.getId());
+        return buildLoginResponse(user, accounts, account, token);
+    }
 
+    private LoginResponse buildLoginResponse(User user, List<Account> accounts, Account currentAccount, String token) {
         return LoginResponse.builder()
                 .token(token)
                 .userId(user.getId())
                 .user(mapToUserDto(user))
                 .accounts(accounts.stream().map(this::mapToAccountDto).collect(Collectors.toList()))
+                .currentAccount(mapToAccountDto(currentAccount))
                 .build();
+    }
+
+    private User validateExistingUserForNewAccount(User user, RegisterRequest request) {
+        if (!user.getActive()) {
+            throw new ValidationException("User is inactive");
+        }
+        if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
+            throw new UnauthorizedException("Mobile already exists. Enter the correct password to add another account type.");
+        }
+        return user;
+    }
+
+    private User createUser(RegisterRequest request) {
+        if (request.getEmail() != null && !request.getEmail().isBlank() && userRepository.findByEmail(request.getEmail()).isPresent()) {
+            throw new ValidationException("Email already registered");
+        }
+
+        User user = User.builder()
+                .name(request.getName())
+                .mobile(request.getMobile())
+                .email(request.getEmail())
+                .passwordHash(passwordEncoder.encode(request.getPassword()))
+                .active(true)
+                .build();
+
+        User savedUser = userRepository.save(user);
+        log.info("User registered with ID: {}", savedUser.getId());
+        return savedUser;
     }
 
     private UserDto mapToUserDto(User user) {

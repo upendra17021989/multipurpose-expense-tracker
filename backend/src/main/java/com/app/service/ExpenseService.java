@@ -2,6 +2,8 @@ package com.app.service;
 
 import com.app.dto.ExpenseCreateRequest;
 import com.app.dto.ExpenseDto;
+import com.app.entity.Account;
+import com.app.entity.AccountType;
 import com.app.entity.Expense;
 import com.app.entity.ExpenseCategory;
 import com.app.entity.ExpenseStatus;
@@ -9,6 +11,7 @@ import com.app.entity.ExpenseType;
 import com.app.entity.PaymentMode;
 import com.app.exception.ResourceNotFoundException;
 import com.app.exception.ValidationException;
+import com.app.repository.AccountRepository;
 import com.app.repository.ExpenseCategoryRepository;
 import com.app.repository.ExpenseRepository;
 import lombok.extern.slf4j.Slf4j;
@@ -26,10 +29,14 @@ public class ExpenseService {
 
     private final ExpenseRepository expenseRepository;
     private final ExpenseCategoryRepository categoryRepository;
+    private final AccountRepository accountRepository;
 
-    public ExpenseService(ExpenseRepository expenseRepository, ExpenseCategoryRepository categoryRepository) {
+    public ExpenseService(ExpenseRepository expenseRepository,
+                          ExpenseCategoryRepository categoryRepository,
+                          AccountRepository accountRepository) {
         this.expenseRepository = expenseRepository;
         this.categoryRepository = categoryRepository;
+        this.accountRepository = accountRepository;
     }
 
     public List<ExpenseDto> getExpensesByAccountId(Long accountId) {
@@ -71,6 +78,9 @@ public class ExpenseService {
     public ExpenseDto createExpense(Long accountId, Long accountUserId, ExpenseCreateRequest request) {
         validateExpenseRequest(request);
 
+        Account account = accountRepository.findById(accountId)
+                .orElseThrow(() -> new ResourceNotFoundException("Account not found"));
+
         ExpenseCategory category = categoryRepository.findById(request.getCategoryId())
                 .orElseThrow(() -> new ResourceNotFoundException("Category not found"));
 
@@ -78,14 +88,15 @@ public class ExpenseService {
             throw new ResourceNotFoundException("Category not accessible");
         }
 
-        com.app.entity.Account account = new com.app.entity.Account();
-        account.setId(accountId);
+        ExpenseType expenseType = request.getExpenseType() != null ? request.getExpenseType() : getDefaultExpenseType(category);
+        validateExpenseType(account.getAccountType(), expenseType, request);
 
         Expense expense = Expense.builder()
                 .account(account)
+                .accountType(account.getAccountType())
                 .expenseDate(request.getExpenseDate())
                 .category(category)
-                .expenseType(request.getExpenseType() != null ? request.getExpenseType() : getDefaultExpenseType(category))
+                .expenseType(expenseType)
                 .vendorName(request.getVendorName())
                 .description(request.getDescription())
                 .amount(request.getAmount())
@@ -123,8 +134,9 @@ public class ExpenseService {
 
         validateExpenseRequest(request);
 
+        ExpenseCategory category = expense.getCategory();
         if (request.getCategoryId() != null && !request.getCategoryId().equals(expense.getCategory().getId())) {
-            ExpenseCategory category = categoryRepository.findById(request.getCategoryId())
+            category = categoryRepository.findById(request.getCategoryId())
                     .orElseThrow(() -> new ResourceNotFoundException("Category not found"));
             if (!category.getAccount().getId().equals(accountId)) {
                 throw new ResourceNotFoundException("Category not accessible");
@@ -132,7 +144,12 @@ public class ExpenseService {
             expense.setCategory(category);
         }
 
+        ExpenseType expenseType = request.getExpenseType() != null ? request.getExpenseType() : getDefaultExpenseType(category);
+        validateExpenseType(expense.getAccountType(), expenseType, request);
+
+        expense.setAccountType(expense.getAccount().getAccountType());
         expense.setExpenseDate(request.getExpenseDate());
+        expense.setExpenseType(expenseType);
         expense.setAmount(request.getAmount());
         expense.setPaymentMode(request.getPaymentMode());
         expense.setVendorName(request.getVendorName());
@@ -211,6 +228,29 @@ public class ExpenseService {
         if (request.getPaymentMode() == PaymentMode.CHEQUE) {
             if (request.getChequeNumber() == null || request.getChequeNumber().isEmpty()) {
                 throw new ValidationException("Cheque number is required for cheque payments");
+            }
+        }
+    }
+
+    private void validateExpenseType(AccountType accountType, ExpenseType expenseType, ExpenseCreateRequest request) {
+        switch (accountType) {
+            case INDIVIDUAL -> {
+                if (expenseType != ExpenseType.PERSONAL) {
+                    throw new ValidationException("Individual account expenses must be PERSONAL");
+                }
+            }
+            case SOCIETY -> {
+                if (expenseType != ExpenseType.SOCIETY_REGULAR && expenseType != ExpenseType.FESTIVAL) {
+                    throw new ValidationException("Society expenses must be SOCIETY_REGULAR or FESTIVAL");
+                }
+                if (expenseType == ExpenseType.FESTIVAL && request.getFestivalEventId() == null) {
+                    throw new ValidationException("Festival expenses require a festival event");
+                }
+            }
+            case KIRANA_STORE -> {
+                if (expenseType != ExpenseType.STORE_EXPENSE) {
+                    throw new ValidationException("Kirana store expenses must be STORE_EXPENSE");
+                }
             }
         }
     }

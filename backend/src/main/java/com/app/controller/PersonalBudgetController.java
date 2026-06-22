@@ -2,6 +2,7 @@ package com.app.controller;
 
 import com.app.dto.PersonalBudgetCreateRequest;
 import com.app.dto.PersonalBudgetDto;
+import com.app.exception.ResourceNotFoundException;
 import com.app.security.UserPrincipal;
 import com.app.service.PersonalBudgetService;
 import jakarta.validation.Valid;
@@ -41,7 +42,11 @@ public class PersonalBudgetController {
     @GetMapping("/current")
     public ResponseEntity<PersonalBudgetDto> getCurrentMonthBudget(@AuthenticationPrincipal UserPrincipal userPrincipal) {
         log.info("Fetching current month budget for account: {}", userPrincipal.getAccountId());
-        return ResponseEntity.ok(personalBudgetService.getCurrentMonthBudget(userPrincipal.getAccountId()));
+        try {
+            return ResponseEntity.ok(personalBudgetService.getCurrentMonthBudget(userPrincipal.getAccountId()));
+        } catch (ResourceNotFoundException ex) {
+            return ResponseEntity.noContent().build();
+        }
     }
 
     @GetMapping("/lookup")

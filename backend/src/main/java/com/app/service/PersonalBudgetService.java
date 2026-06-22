@@ -9,6 +9,7 @@ import com.app.repository.PersonalBudgetRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -44,13 +45,7 @@ public class PersonalBudgetService {
     }
 
     public PersonalBudgetDto createBudget(Long accountId, PersonalBudgetCreateRequest request) {
-        if (request.getMonth() < 1 || request.getMonth() > 12) {
-            throw new ValidationException("Month must be between 1 and 12");
-        }
-
-        if (request.getYear() < 2020 || request.getYear() > 2100) {
-            throw new ValidationException("Year must be valid");
-        }
+        validateBudgetRequest(request);
 
         budgetRepository.findByAccountIdAndMonthAndYear(accountId, request.getMonth(), request.getYear())
                 .ifPresent(budget -> {
@@ -76,6 +71,8 @@ public class PersonalBudgetService {
     }
 
     public PersonalBudgetDto updateBudget(Long accountId, Long budgetId, PersonalBudgetCreateRequest request) {
+        validateBudgetRequest(request);
+
         PersonalBudget budget = budgetRepository.findById(budgetId)
                 .orElseThrow(() -> new ResourceNotFoundException("Budget not found"));
 
@@ -99,6 +96,27 @@ public class PersonalBudgetService {
         }
 
         budgetRepository.delete(budget);
+    }
+
+    private void validateBudgetRequest(PersonalBudgetCreateRequest request) {
+        if (request.getMonth() == null) {
+            throw new ValidationException("Month is required");
+        }
+        if (request.getMonth() < 1 || request.getMonth() > 12) {
+            throw new ValidationException("Month must be between 1 and 12");
+        }
+        if (request.getYear() == null) {
+            throw new ValidationException("Year is required");
+        }
+        if (request.getYear() < 2020 || request.getYear() > 2100) {
+            throw new ValidationException("Year must be valid");
+        }
+        if (request.getMonthlyBudget() == null || request.getMonthlyBudget().compareTo(BigDecimal.ZERO) < 0) {
+            throw new ValidationException("Monthly budget must be zero or greater");
+        }
+        if (request.getMonthlySavingsTarget() != null && request.getMonthlySavingsTarget().compareTo(BigDecimal.ZERO) < 0) {
+            throw new ValidationException("Monthly savings target must be zero or greater");
+        }
     }
 
     private PersonalBudgetDto mapToDto(PersonalBudget budget) {

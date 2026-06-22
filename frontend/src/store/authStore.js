@@ -1,24 +1,34 @@
 import { create } from 'zustand'
 
-export const useAuthStore = create((set, get) => ({
+const saveSession = (token, user, accounts, currentAccount) => {
+  localStorage.setItem('token', token)
+  localStorage.setItem('user', JSON.stringify(user))
+  localStorage.setItem('accounts', JSON.stringify(accounts))
+  localStorage.setItem('currentAccount', JSON.stringify(currentAccount))
+}
+
+export const useAuthStore = create((set) => ({
   isAuthenticated: !!localStorage.getItem('token'),
   user: JSON.parse(localStorage.getItem('user') || 'null'),
   accounts: JSON.parse(localStorage.getItem('accounts') || '[]'),
   currentAccount: JSON.parse(localStorage.getItem('currentAccount') || 'null'),
   token: localStorage.getItem('token'),
 
-  login: (token, user, accounts) => {
-    localStorage.setItem('token', token)
-    localStorage.setItem('user', JSON.stringify(user))
-    localStorage.setItem('accounts', JSON.stringify(accounts))
-    localStorage.setItem('currentAccount', JSON.stringify(accounts[0]))
+  login: (token, user, accounts, currentAccount) => {
+    const selectedAccount = currentAccount || accounts[0]
+    saveSession(token, user, accounts, selectedAccount)
     set({
       isAuthenticated: true,
       token,
       user,
       accounts,
-      currentAccount: accounts[0]
+      currentAccount: selectedAccount
     })
+  },
+
+  setSession: (token, user, accounts, currentAccount) => {
+    saveSession(token, user, accounts, currentAccount)
+    set({ token, user, accounts, currentAccount, isAuthenticated: true })
   },
 
   selectAccount: (account) => {

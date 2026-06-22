@@ -14,4 +14,5 @@ public class LoginResponse {
     private Long userId;
     private UserDto user;
     private java.util.List<AccountDto> accounts;
+    private AccountDto currentAccount;
 }
