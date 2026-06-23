@@ -64,3 +64,13 @@ export const festivalEventAPI = {
   updateFestivalStatus: (festivalEventId, status) => axiosInstance.put(`/society/festivals/${festivalEventId}/status`, { status }),
   deleteFestival: (festivalEventId) => axiosInstance.delete(`/society/festivals/${festivalEventId}`)
 }
+
+export const festivalCollectionAPI = {
+  getCollections: (festivalEventId) => axiosInstance.get('/society/festival-collections', { params: { festivalEventId } }),
+  getCollection: (collectionId) => axiosInstance.get(`/society/festival-collections/${collectionId}`),
+  getSummary: (festivalEventId) => axiosInstance.get('/society/festival-collections/summary', { params: { festivalEventId } }),
+  generateDemand: (data) => axiosInstance.post('/society/festival-collections/generate-demand', data),
+  updateDemand: (collectionId, data) => axiosInstance.put(`/society/festival-collections/${collectionId}/demand`, data),
+  addPayment: (collectionId, data) => axiosInstance.post(`/society/festival-collections/${collectionId}/payments`, data),
+  getReceipts: (collectionId) => axiosInstance.get(`/society/festival-collections/${collectionId}/receipts`)
+}

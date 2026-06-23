@@ -11,5 +11,7 @@ import java.util.Optional;
 public interface FestivalCollectionRepository extends JpaRepository<FestivalCollection, Long> {
     List<FestivalCollection> findByAccountIdAndFestivalEventId(Long accountId, Long festivalEventId);
     Optional<FestivalCollection> findByAccountIdAndIdAndFestivalEventId(Long accountId, Long collectionId, Long festivalEventId);
+    Optional<FestivalCollection> findByAccountIdAndId(Long accountId, Long collectionId);
+    Optional<FestivalCollection> findByAccountIdAndFestivalEventIdAndFlatId(Long accountId, Long festivalEventId, Long flatId);
     List<FestivalCollection> findByAccountIdAndFlatId(Long accountId, Long flatId);
 }

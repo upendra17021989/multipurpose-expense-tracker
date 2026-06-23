@@ -11,6 +11,10 @@ import { FlatList } from './pages/society/FlatList'
 import { FlatForm } from './pages/society/FlatForm'
 import { FestivalList } from './pages/society/FestivalList'
 import { FestivalForm } from './pages/society/FestivalForm'
+import { FestivalCollectionDashboard } from './pages/society/FestivalCollectionDashboard'
+import { FestivalCollectionList } from './pages/society/FestivalCollectionList'
+import { FestivalCollectionForm } from './pages/society/FestivalCollectionForm'
+import { FestivalCollectionReceipt } from './pages/society/FestivalCollectionReceipt'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import 'react-toastify/dist/ReactToastify.css'
 import './App.css'
@@ -34,6 +38,10 @@ function App() {
         <Route path="/society/festivals" element={<ProtectedRoute><FestivalList /></ProtectedRoute>} />
         <Route path="/society/festivals/new" element={<ProtectedRoute><FestivalForm /></ProtectedRoute>} />
         <Route path="/society/festivals/:festivalEventId/edit" element={<ProtectedRoute><FestivalForm /></ProtectedRoute>} />
+        <Route path="/society/festival-collections" element={<ProtectedRoute><FestivalCollectionDashboard /></ProtectedRoute>} />
+        <Route path="/society/festival-collections/:festivalEventId" element={<ProtectedRoute><FestivalCollectionList /></ProtectedRoute>} />
+        <Route path="/society/festival-collections/:festivalEventId/:collectionId/payment" element={<ProtectedRoute><FestivalCollectionForm /></ProtectedRoute>} />
+        <Route path="/society/festival-collections/:festivalEventId/:collectionId/receipts" element={<ProtectedRoute><FestivalCollectionReceipt /></ProtectedRoute>} />
         <Route path="/" element={<Navigate to="/home" replace />} />
       </Routes>
       <ToastContainer position="top-right" autoClose={3000} hideProgressBar={false} newestOnTop />

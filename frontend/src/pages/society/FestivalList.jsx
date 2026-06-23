@@ -102,6 +102,7 @@ export const FestivalList = () => {
                 <td><span className={`status-pill ${String(festival.status).toLowerCase()}`}>{festival.status}</span></td>
                 <td className="table-actions">
                   <button onClick={() => navigate(`/society/festivals/${festival.id}/edit`)}>Edit</button>
+                  <button onClick={() => navigate(`/society/festival-collections/${festival.id}`)}>Collections</button>
                   {festival.status !== 'ACTIVE' && <button onClick={() => updateStatus(festival.id, 'ACTIVE')}>Activate</button>}
                   {festival.status !== 'CLOSED' && <button onClick={() => updateStatus(festival.id, 'CLOSED')}>Close</button>}
                   <button className="danger" onClick={() => remove(festival.id)}>Delete</button>
