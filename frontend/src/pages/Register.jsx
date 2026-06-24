@@ -60,9 +60,9 @@ export const Register = () => {
   }
 
   return (
-    <div style={styles.container}>
+    <div className="auth-page" style={styles.container}>
       <ToastContainer position="top-right" autoClose={3000} />
-      <div style={styles.formBox}>
+      <div className="auth-card" style={styles.formBox}>
         <h2 style={styles.title}>Create account</h2>
         <form onSubmit={handleSubmit}>
           <div style={styles.grid}>

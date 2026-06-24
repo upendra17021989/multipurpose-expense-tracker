@@ -56,8 +56,8 @@ export const Login = () => {
   }
 
   return (
-    <div style={styles.container}>
-      <div style={styles.formBox}>
+    <div className="auth-page" style={styles.container}>
+      <div className="auth-card" style={styles.formBox}>
         <h2 style={styles.title}>Login</h2>
         {!pendingSession ? (
           <form onSubmit={handleSubmit}>
