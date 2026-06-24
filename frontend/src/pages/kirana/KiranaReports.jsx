@@ -3,6 +3,7 @@ import { Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer,
 import { toast } from 'react-toastify'
 import { expenseAPI, kiranaCustomerAPI, kiranaProductAPI, kiranaPurchaseAPI, kiranaSalesAPI, kiranaSupplierAPI } from '../../api/endpoints'
 import { useAuthStore } from '../../store/authStore'
+import { exportWorkbook, numberValue } from '../../utils/exportExcel'
 import { formatCurrency } from '../../utils/format'
 import { Shell, SummaryGrid } from '../DashboardRouter'
 
@@ -48,6 +49,62 @@ export const KiranaReports = () => {
 
   const report = useMemo(() => buildReport({ sales, purchases, products, customers, suppliers, expenses, filters }), [sales, purchases, products, customers, suppliers, expenses, filters])
 
+  const exportReport = () => {
+    exportWorkbook([
+      {
+        name: 'Summary',
+        rows: [
+          { Metric: 'Net Sales', Amount: report.netSales },
+          { Metric: 'Purchases', Amount: report.netPurchases },
+          { Metric: 'Store Expenses', Amount: report.storeExpenses },
+          { Metric: 'Gross Margin', Amount: report.grossProfit },
+          { Metric: 'Estimated Net Profit', Amount: report.estimatedNetProfit },
+          { Metric: 'Inventory Value', Amount: report.inventoryValue },
+          { Metric: 'Customer Credit', Amount: report.customerCredit },
+          { Metric: 'Supplier Dues', Amount: report.supplierDues }
+        ]
+      },
+      {
+        name: 'Sales',
+        rows: report.filteredSales.map((sale) => ({
+          Date: sale.saleDate,
+          Customer: sale.customerName || 'Walk-in',
+          PaymentMode: sale.paymentMode,
+          Total: numberValue(sale.totalAmount),
+          Discount: numberValue(sale.discount),
+          Net: numberValue(sale.netAmount),
+          Paid: numberValue(sale.amountPaid),
+          Balance: numberValue(sale.balanceAmount)
+        }))
+      },
+      {
+        name: 'Purchases',
+        rows: report.filteredPurchases.map((purchase) => ({
+          Date: purchase.purchaseDate,
+          Supplier: purchase.supplierName,
+          Invoice: purchase.invoiceNumber,
+          PaymentMode: purchase.paymentMode,
+          Total: numberValue(purchase.totalAmount),
+          Discount: numberValue(purchase.discount),
+          Net: numberValue(purchase.netAmount),
+          Paid: numberValue(purchase.amountPaid),
+          Balance: numberValue(purchase.balanceAmount)
+        }))
+      },
+      {
+        name: 'Low Stock',
+        rows: report.lowStockProducts.map((product) => ({
+          Product: product.productName,
+          Category: product.category || '',
+          Unit: product.unit,
+          CurrentStock: numberValue(product.currentStock),
+          AlertQty: numberValue(product.lowStockAlertQty),
+          InventoryValue: numberValue(product.currentStock) * numberValue(product.purchasePrice)
+        }))
+      }
+    ], `kirana-report-${filters.startDate}-to-${filters.endDate}`)
+  }
+
   if (currentAccount?.accountType !== 'KIRANA_STORE') {
     return (
       <Shell title="Kirana Reports" eyebrow="Kirana module">
@@ -57,7 +114,7 @@ export const KiranaReports = () => {
   }
 
   return (
-    <Shell title="Kirana Reports" eyebrow="Kirana module">
+    <Shell title="Kirana Reports" eyebrow="Kirana module" actions={<button className="primary" onClick={exportReport}>Export Excel</button>}>
       <section className="toolbar-panel">
         <input type="date" value={filters.startDate} onChange={(event) => setFilters({ ...filters, startDate: event.target.value })} />
         <input type="date" value={filters.endDate} onChange={(event) => setFilters({ ...filters, endDate: event.target.value })} />
@@ -184,6 +241,9 @@ const buildReport = ({ sales, purchases, products, customers, suppliers, expense
     paymentModeData: [...paymentModes.entries()].map(([name, amount]) => ({ name, amount })),
     dailyData: [...daily.values()].sort((a, b) => a.day.localeCompare(b.day)).map((entry) => ({ ...entry, day: entry.day.slice(5) })),
     lowStockProducts: products.filter((product) => Number(product.lowStockAlertQty || 0) > 0 && Number(product.currentStock || 0) <= Number(product.lowStockAlertQty || 0))
+    ,
+    filteredSales,
+    filteredPurchases
   }
 }
 

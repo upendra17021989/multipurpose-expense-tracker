@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { toast } from 'react-toastify'
 import { kiranaSalesAPI } from '../../api/endpoints'
 import { useAuthStore } from '../../store/authStore'
+import { exportWorkbook, numberValue } from '../../utils/exportExcel'
 import { formatCurrency, formatDate } from '../../utils/format'
 import { Shell, SummaryGrid } from '../DashboardRouter'
 
@@ -40,6 +41,38 @@ export const SalesList = () => {
   const today = new Date().toISOString().slice(0, 10)
   const todaySales = sales.filter((sale) => sale.saleDate === today).reduce((sum, sale) => sum + Number(sale.netAmount || 0), 0)
 
+  const exportSales = () => {
+    exportWorkbook([
+      {
+        name: 'Sales',
+        rows: visibleSales.map((sale) => ({
+          Date: sale.saleDate,
+          Customer: sale.customerName || 'Walk-in',
+          PaymentMode: sale.paymentMode,
+          Items: sale.items?.length || 0,
+          Total: numberValue(sale.totalAmount),
+          Discount: numberValue(sale.discount),
+          Net: numberValue(sale.netAmount),
+          Paid: numberValue(sale.amountPaid),
+          Balance: numberValue(sale.balanceAmount),
+          Remarks: sale.remarks || ''
+        }))
+      },
+      {
+        name: 'Sale Items',
+        rows: visibleSales.flatMap((sale) => (sale.items || []).map((item) => ({
+          SaleId: sale.id,
+          Date: sale.saleDate,
+          Customer: sale.customerName || 'Walk-in',
+          Product: item.productName,
+          Quantity: numberValue(item.quantity),
+          SellingPrice: numberValue(item.sellingPrice),
+          LineTotal: numberValue(item.lineTotal)
+        })))
+      }
+    ], 'kirana-sales')
+  }
+
   if (currentAccount?.accountType !== 'KIRANA_STORE') {
     return (
       <Shell title="Sales" eyebrow="Kirana module">
@@ -49,7 +82,11 @@ export const SalesList = () => {
   }
 
   return (
-    <Shell title="Sales" eyebrow="Kirana module" actions={<Link className="button-link" to="/kirana/sales/new">New Sale</Link>}>
+    <Shell
+      title="Sales"
+      eyebrow="Kirana module"
+      actions={<><button onClick={exportSales}>Export Excel</button><Link className="button-link" to="/kirana/sales/new">New Sale</Link></>}
+    >
       <SummaryGrid items={[
         ['Today Sales', formatCurrency(todaySales)],
         ['Filtered Sales', formatCurrency(totalSales)],

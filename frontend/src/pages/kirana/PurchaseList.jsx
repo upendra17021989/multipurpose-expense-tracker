@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { toast } from 'react-toastify'
 import { kiranaPurchaseAPI } from '../../api/endpoints'
 import { useAuthStore } from '../../store/authStore'
+import { exportWorkbook, numberValue } from '../../utils/exportExcel'
 import { formatCurrency, formatDate } from '../../utils/format'
 import { Shell, SummaryGrid } from '../DashboardRouter'
 
@@ -38,6 +39,40 @@ export const PurchaseList = () => {
   const totalPurchase = visiblePurchases.reduce((sum, purchase) => sum + Number(purchase.netAmount || 0), 0)
   const totalDue = visiblePurchases.reduce((sum, purchase) => sum + Number(purchase.balanceAmount || 0), 0)
 
+  const exportPurchases = () => {
+    exportWorkbook([
+      {
+        name: 'Purchases',
+        rows: visiblePurchases.map((purchase) => ({
+          Date: purchase.purchaseDate,
+          Supplier: purchase.supplierName,
+          Invoice: purchase.invoiceNumber,
+          PaymentMode: purchase.paymentMode,
+          Items: purchase.items?.length || 0,
+          Total: numberValue(purchase.totalAmount),
+          Discount: numberValue(purchase.discount),
+          Net: numberValue(purchase.netAmount),
+          Paid: numberValue(purchase.amountPaid),
+          Balance: numberValue(purchase.balanceAmount),
+          Remarks: purchase.remarks || ''
+        }))
+      },
+      {
+        name: 'Purchase Items',
+        rows: visiblePurchases.flatMap((purchase) => (purchase.items || []).map((item) => ({
+          PurchaseId: purchase.id,
+          Date: purchase.purchaseDate,
+          Supplier: purchase.supplierName,
+          Invoice: purchase.invoiceNumber,
+          Product: item.productName,
+          Quantity: numberValue(item.quantity),
+          PurchasePrice: numberValue(item.purchasePrice),
+          LineTotal: numberValue(item.lineTotal)
+        })))
+      }
+    ], 'kirana-purchases')
+  }
+
   if (currentAccount?.accountType !== 'KIRANA_STORE') {
     return (
       <Shell title="Purchases" eyebrow="Kirana module">
@@ -47,7 +82,11 @@ export const PurchaseList = () => {
   }
 
   return (
-    <Shell title="Purchases" eyebrow="Kirana module" actions={<Link className="button-link" to="/kirana/purchases/new">New Purchase</Link>}>
+    <Shell
+      title="Purchases"
+      eyebrow="Kirana module"
+      actions={<><button onClick={exportPurchases}>Export Excel</button><Link className="button-link" to="/kirana/purchases/new">New Purchase</Link></>}
+    >
       <SummaryGrid items={[
         ['Filtered Purchase', formatCurrency(totalPurchase)],
         ['Supplier Due', formatCurrency(totalDue)],
