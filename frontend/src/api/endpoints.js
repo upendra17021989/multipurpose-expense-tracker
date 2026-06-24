@@ -78,6 +78,13 @@ export const kiranaSalesAPI = {
   createSale: (data) => axiosInstance.post('/kirana/sales', data)
 }
 
+export const kiranaPurchaseAPI = {
+  getPurchases: () => axiosInstance.get('/kirana/purchases'),
+  getPurchasesByDateRange: (startDate, endDate) => axiosInstance.get('/kirana/purchases/range', { params: { startDate, endDate } }),
+  getPurchase: (purchaseId) => axiosInstance.get(`/kirana/purchases/${purchaseId}`),
+  createPurchase: (data) => axiosInstance.post('/kirana/purchases', data)
+}
+
 
 export const festivalEventAPI = {
   getFestivals: (year) => axiosInstance.get('/society/festivals', { params: year ? { year } : {} }),

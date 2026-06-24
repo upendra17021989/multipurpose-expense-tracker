@@ -53,4 +53,12 @@ public class SupplierPaymentLedger {
 
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
+
+    @PrePersist
+    protected void onCreate() {
+        if (createdAt == null) createdAt = LocalDateTime.now();
+        if (debitAmount == null) debitAmount = BigDecimal.ZERO;
+        if (creditAmount == null) creditAmount = BigDecimal.ZERO;
+        if (balanceAmount == null) balanceAmount = BigDecimal.ZERO;
+    }
 }
