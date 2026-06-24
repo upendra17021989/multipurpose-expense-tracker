@@ -38,13 +38,20 @@ export const FestivalCollectionReceipt = () => {
     <Shell
       title="Collection Receipts"
       eyebrow="Society module"
-      actions={<Link className="button-link" to={`/society/festival-collections/${festivalEventId}/${collectionId}/payment`}>Add Payment</Link>}
+      actions={(
+        <>
+          <Link className="button-link" to={`/society/festival-collections/${festivalEventId}/${collectionId}/payment`}>Add Payment</Link>
+          <button onClick={() => window.print()}>Print</button>
+        </>
+      )}
     >
       {collection && (
         <SummaryGrid items={[
           ['Flat', `${collection.blockName}-${collection.flatNumber}`],
           ['Owner', collection.ownerName],
           ['Collected', formatCurrency(collection.collectedAmount)],
+          ['Pending', formatCurrency(collection.pendingAmount)],
+          ['Excess', formatCurrency(collection.excessAmount)],
           ['Status', collection.paymentStatus]
         ]} />
       )}
@@ -78,6 +85,12 @@ export const FestivalCollectionReceipt = () => {
           </tbody>
         </table>
       </div>
+      {!loading && receipts.length > 0 && (
+        <section className="receipt-total">
+          <span>Total collected in receipts</span>
+          <strong>{formatCurrency(receipts.reduce((sum, receipt) => sum + Number(receipt.amountPaid || 0), 0))}</strong>
+        </section>
+      )}
       {loading && <p className="muted">Loading receipts...</p>}
     </Shell>
   )

@@ -38,6 +38,14 @@ export const FestivalCollectionForm = () => {
 
   const handleSubmit = async (event) => {
     event.preventDefault()
+    if ((form.paymentMode === 'UPI' || form.paymentMode === 'NEFT') && !form.utr.trim()) {
+      toast.error('UTR is required for UPI/NEFT')
+      return
+    }
+    if (form.paymentMode === 'CHEQUE' && !form.chequeNumber.trim()) {
+      toast.error('Cheque number is required for cheque payments')
+      return
+    }
     setSaving(true)
     try {
       await festivalCollectionAPI.addPayment(collectionId, {

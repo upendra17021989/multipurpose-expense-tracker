@@ -15,7 +15,9 @@ export const FestivalCollectionList = () => {
   const [summary, setSummary] = useState(null)
   const [expectedAmount, setExpectedAmount] = useState('')
   const [remarks, setRemarks] = useState('')
-  const [search, setSearch] = useState('')
+  const [filters, setFilters] = useState({ search: '', status: '' })
+  const [editingDemandId, setEditingDemandId] = useState(null)
+  const [demandForm, setDemandForm] = useState({ expectedAmount: '', remarks: '' })
   const [loading, setLoading] = useState(true)
   const [generating, setGenerating] = useState(false)
 
@@ -38,12 +40,12 @@ export const FestivalCollectionList = () => {
   useEffect(loadData, [festivalEventId])
 
   const visibleCollections = useMemo(() => {
-    const query = search.trim().toLowerCase()
-    if (!query) return collections
+    const query = filters.search.trim().toLowerCase()
     return collections.filter((collection) => [collection.blockName, collection.flatNumber, collection.ownerName, collection.paymentStatus]
       .filter(Boolean)
       .some((value) => String(value).toLowerCase().includes(query)))
-  }, [collections, search])
+      .filter((collection) => !filters.status || collection.paymentStatus === filters.status)
+  }, [collections, filters])
 
   const generateDemand = async (event) => {
     event.preventDefault()
@@ -65,6 +67,34 @@ export const FestivalCollectionList = () => {
     }
   }
 
+  const startDemandEdit = (collection) => {
+    setEditingDemandId(collection.id)
+    setDemandForm({
+      expectedAmount: collection.expectedAmount || '',
+      remarks: collection.remarks || ''
+    })
+  }
+
+  const cancelDemandEdit = () => {
+    setEditingDemandId(null)
+    setDemandForm({ expectedAmount: '', remarks: '' })
+  }
+
+  const updateDemand = async (collectionId) => {
+    try {
+      await festivalCollectionAPI.updateDemand(collectionId, {
+        festivalEventId: Number(festivalEventId),
+        expectedAmount: Number(demandForm.expectedAmount),
+        remarks: demandForm.remarks.trim() || null
+      })
+      toast.success('Demand updated')
+      cancelDemandEdit()
+      loadData()
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Unable to update demand')
+    }
+  }
+
   if (currentAccount?.accountType !== 'SOCIETY') {
     return (
       <Shell title="Festival Collections" eyebrow="Society module">
@@ -79,7 +109,11 @@ export const FestivalCollectionList = () => {
         ['Expected', formatCurrency(summary?.totalExpected)],
         ['Collected', formatCurrency(summary?.totalCollected)],
         ['Pending', formatCurrency(summary?.totalPending)],
-        ['Paid Flats', `${summary?.paidFlats || 0}/${summary?.totalFlats || 0}`]
+        ['Excess', formatCurrency(summary?.totalExcess)],
+        ['Paid Flats', `${summary?.paidFlats || 0}/${summary?.totalFlats || 0}`],
+        ['Partial Flats', summary?.partialFlats || 0],
+        ['Pending Flats', summary?.pendingFlats || 0],
+        ['Excess Flats', summary?.excessFlats || 0]
       ]} />
 
       <form className="inline-form collection-demand-form" onSubmit={generateDemand}>
@@ -95,7 +129,15 @@ export const FestivalCollectionList = () => {
       </form>
 
       <section className="toolbar-panel flat-toolbar">
-        <input placeholder="Search flat, owner, status" value={search} onChange={(event) => setSearch(event.target.value)} />
+        <input placeholder="Search flat, owner, status" value={filters.search} onChange={(event) => setFilters({ ...filters, search: event.target.value })} />
+        <select value={filters.status} onChange={(event) => setFilters({ ...filters, status: event.target.value })}>
+          <option value="">All statuses</option>
+          <option value="PENDING">Pending</option>
+          <option value="PARTIAL">Partial</option>
+          <option value="PAID">Paid</option>
+          <option value="EXCESS">Excess</option>
+          <option value="REFUNDED">Refunded</option>
+        </select>
         <strong>{visibleCollections.length} shown</strong>
       </section>
 
@@ -118,14 +160,28 @@ export const FestivalCollectionList = () => {
               <tr key={collection.id}>
                 <td>{collection.blockName}-{collection.flatNumber}</td>
                 <td>{collection.ownerName}</td>
-                <td className="numeric">{formatCurrency(collection.expectedAmount)}</td>
+                <td className="numeric">
+                  {editingDemandId === collection.id ? (
+                    <input className="table-input" type="number" min="0.01" step="0.01" value={demandForm.expectedAmount} onChange={(event) => setDemandForm({ ...demandForm, expectedAmount: event.target.value })} />
+                  ) : formatCurrency(collection.expectedAmount)}
+                </td>
                 <td className="numeric">{formatCurrency(collection.collectedAmount)}</td>
                 <td className="numeric">{formatCurrency(collection.pendingAmount)}</td>
                 <td className="numeric">{formatCurrency(collection.excessAmount)}</td>
                 <td><span className={`status-pill ${String(collection.paymentStatus).toLowerCase()}`}>{collection.paymentStatus}</span></td>
                 <td className="table-actions">
-                  <button onClick={() => navigate(`/society/festival-collections/${festivalEventId}/${collection.id}/payment`)}>Payment</button>
-                  <button onClick={() => navigate(`/society/festival-collections/${festivalEventId}/${collection.id}/receipts`)}>Receipts</button>
+                  {editingDemandId === collection.id ? (
+                    <>
+                      <button className="primary" onClick={() => updateDemand(collection.id)}>Save</button>
+                      <button onClick={cancelDemandEdit}>Cancel</button>
+                    </>
+                  ) : (
+                    <>
+                      <button onClick={() => startDemandEdit(collection)}>Demand</button>
+                      <button onClick={() => navigate(`/society/festival-collections/${festivalEventId}/${collection.id}/payment`)}>Payment</button>
+                      <button onClick={() => navigate(`/society/festival-collections/${festivalEventId}/${collection.id}/receipts`)}>Receipts</button>
+                    </>
+                  )}
                 </td>
               </tr>
             ))}

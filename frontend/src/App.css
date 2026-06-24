@@ -234,6 +234,12 @@ label {
   align-items: end;
 }
 
+.table-input {
+  min-width: 120px;
+  max-width: 150px;
+  padding: 0.45rem 0.55rem;
+}
+
 .toolbar-panel strong {
   min-height: 42px;
   display: inline-flex;
@@ -387,6 +393,48 @@ th {
   border: 1px solid #fecaca;
   background: #fef2f2;
   color: #991b1b;
+}
+
+.receipt-total {
+  border: 1px solid #d9e2ec;
+  border-radius: 8px;
+  padding: 1rem;
+  background: #fff;
+  margin-top: 1rem;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 1rem;
+}
+
+.receipt-total span {
+  color: #64748b;
+  font-weight: 650;
+}
+
+.receipt-total strong {
+  color: #17202a;
+  font-size: 1.2rem;
+}
+
+@media print {
+  .navbar,
+  .header-actions,
+  .button-link,
+  button {
+    display: none !important;
+  }
+
+  .page-shell {
+    max-width: none;
+    padding: 0;
+  }
+
+  .table-wrap,
+  .summary-card,
+  .receipt-total {
+    break-inside: avoid;
+  }
 }
 
 button:disabled,
