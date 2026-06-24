@@ -55,6 +55,22 @@ export const kiranaProductAPI = {
   deleteProduct: (productId) => axiosInstance.delete(`/kirana/products/${productId}`)
 }
 
+export const kiranaSupplierAPI = {
+  getSuppliers: () => axiosInstance.get('/kirana/suppliers'),
+  getSupplier: (supplierId) => axiosInstance.get(`/kirana/suppliers/${supplierId}`),
+  createSupplier: (data) => axiosInstance.post('/kirana/suppliers', data),
+  updateSupplier: (supplierId, data) => axiosInstance.put(`/kirana/suppliers/${supplierId}`, data),
+  deleteSupplier: (supplierId) => axiosInstance.delete(`/kirana/suppliers/${supplierId}`)
+}
+
+export const kiranaCustomerAPI = {
+  getCustomers: () => axiosInstance.get('/kirana/customers'),
+  getCustomer: (customerId) => axiosInstance.get(`/kirana/customers/${customerId}`),
+  createCustomer: (data) => axiosInstance.post('/kirana/customers', data),
+  updateCustomer: (customerId, data) => axiosInstance.put(`/kirana/customers/${customerId}`, data),
+  deleteCustomer: (customerId) => axiosInstance.delete(`/kirana/customers/${customerId}`)
+}
+
 
 export const festivalEventAPI = {
   getFestivals: (year) => axiosInstance.get('/society/festivals', { params: year ? { year } : {} }),

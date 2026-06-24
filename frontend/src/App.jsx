@@ -18,6 +18,10 @@ import { FestivalCollectionForm } from './pages/society/FestivalCollectionForm'
 import { FestivalCollectionReceipt } from './pages/society/FestivalCollectionReceipt'
 import { ProductList } from './pages/kirana/ProductList'
 import { ProductForm } from './pages/kirana/ProductForm'
+import { SupplierList } from './pages/kirana/SupplierList'
+import { SupplierForm } from './pages/kirana/SupplierForm'
+import { CustomerList } from './pages/kirana/CustomerList'
+import { CustomerForm } from './pages/kirana/CustomerForm'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import { AppErrorBoundary } from './components/AppErrorBoundary'
 import 'react-toastify/dist/ReactToastify.css'
@@ -51,6 +55,12 @@ function App() {
           <Route path="/kirana/products" element={<ProtectedRoute><ProductList /></ProtectedRoute>} />
           <Route path="/kirana/products/new" element={<ProtectedRoute><ProductForm /></ProtectedRoute>} />
           <Route path="/kirana/products/:productId/edit" element={<ProtectedRoute><ProductForm /></ProtectedRoute>} />
+          <Route path="/kirana/suppliers" element={<ProtectedRoute><SupplierList /></ProtectedRoute>} />
+          <Route path="/kirana/suppliers/new" element={<ProtectedRoute><SupplierForm /></ProtectedRoute>} />
+          <Route path="/kirana/suppliers/:supplierId/edit" element={<ProtectedRoute><SupplierForm /></ProtectedRoute>} />
+          <Route path="/kirana/customers" element={<ProtectedRoute><CustomerList /></ProtectedRoute>} />
+          <Route path="/kirana/customers/new" element={<ProtectedRoute><CustomerForm /></ProtectedRoute>} />
+          <Route path="/kirana/customers/:customerId/edit" element={<ProtectedRoute><CustomerForm /></ProtectedRoute>} />
           <Route path="/" element={<Navigate to="/home" replace />} />
         </Routes>
         <ToastContainer position="top-right" autoClose={3000} hideProgressBar={false} newestOnTop />

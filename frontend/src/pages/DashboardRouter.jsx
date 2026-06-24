@@ -149,7 +149,7 @@ const KiranaDashboard = () => {
           ['Payment Modes', summary.paymentModes]
         ]}
       />
-      <ActionRow actions={[[ 'Products', '/kirana/products' ], [ 'Add Expense', '/expenses/new' ], [ 'View Expenses', '/expenses' ], [ 'Categories', '/categories' ]]} />
+      <ActionRow actions={[[ 'Products', '/kirana/products' ], [ 'Suppliers', '/kirana/suppliers' ], [ 'Customers', '/kirana/customers' ], [ 'Add Expense', '/expenses/new' ], [ 'View Expenses', '/expenses' ], [ 'Categories', '/categories' ]]} />
     </Shell>
   )
 }
