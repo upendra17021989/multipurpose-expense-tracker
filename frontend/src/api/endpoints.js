@@ -111,3 +111,15 @@ export const festivalCollectionAPI = {
   addPayment: (collectionId, data) => axiosInstance.post(`/society/festival-collections/${collectionId}/payments`, data),
   getReceipts: (collectionId) => axiosInstance.get(`/society/festival-collections/${collectionId}/receipts`)
 }
+export const attachmentAPI = {
+  getAttachments: (referenceType, referenceId) => axiosInstance.get('/attachments', { params: { referenceType, referenceId } }),
+  uploadAttachment: (referenceType, referenceId, file) => {
+    const formData = new FormData()
+    formData.append('referenceType', referenceType)
+    formData.append('referenceId', referenceId)
+    formData.append('file', file)
+    return axiosInstance.post('/attachments', formData, { headers: { 'Content-Type': 'multipart/form-data' } })
+  },
+  deleteAttachment: (attachmentId) => axiosInstance.delete(`/attachments/${attachmentId}`),
+  downloadUrl: (attachmentId) => `/api/attachments/${attachmentId}/download`
+}

@@ -21,6 +21,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -118,6 +119,7 @@ public class ExpenseService {
                 .build();
 
         Expense savedExpense = expenseRepository.save(expense);
+        refreshFestivalExpenseTotal(savedExpense.getFestivalEvent());
         log.info("Expense created with ID: {}", savedExpense.getId());
 
         return mapToDto(savedExpense);
@@ -140,6 +142,7 @@ public class ExpenseService {
         }
 
         validateExpenseRequest(request);
+        FestivalEvent previousFestivalEvent = expense.getFestivalEvent();
 
         ExpenseCategory category = expense.getCategory();
         if (request.getCategoryId() != null && !request.getCategoryId().equals(expense.getCategory().getId())) {
@@ -172,6 +175,8 @@ public class ExpenseService {
         }
 
         Expense updated = expenseRepository.save(expense);
+        refreshFestivalExpenseTotal(previousFestivalEvent);
+        refreshFestivalExpenseTotal(updated.getFestivalEvent());
         return mapToDto(updated);
     }
 
@@ -187,8 +192,10 @@ public class ExpenseService {
             throw new ValidationException("Expense already deleted");
         }
 
+        FestivalEvent festivalEvent = expense.getFestivalEvent();
         expense.setSoftDeleted(true);
         expenseRepository.save(expense);
+        refreshFestivalExpenseTotal(festivalEvent);
     }
 
     public void approveExpense(Long accountId, Long expenseId) {
@@ -298,6 +305,24 @@ public class ExpenseService {
                 .build();
     }
 
+
+    private void refreshFestivalExpenseTotal(FestivalEvent festivalEvent) {
+        if (festivalEvent == null) {
+            return;
+        }
+
+        BigDecimal totalExpense = expenseRepository
+                .findByAccountIdAndFestivalEventIdAndSoftDeletedFalse(
+                        festivalEvent.getAccount().getId(), festivalEvent.getId())
+                .stream()
+                .filter(expense -> expense.getExpenseType() == ExpenseType.FESTIVAL)
+                .map(Expense::getAmount)
+                .filter(amount -> amount != null)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        festivalEvent.setTotalExpense(totalExpense);
+        festivalEventRepository.save(festivalEvent);
+    }
     private ExpenseType getDefaultExpenseType(ExpenseCategory category) {
         return switch (category.getCategoryType()) {
             case PERSONAL -> ExpenseType.PERSONAL;

@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'react-toastify'
-import { expenseAPI, expenseCategoryAPI, festivalEventAPI } from '../api/endpoints'
+import { attachmentAPI, expenseAPI, expenseCategoryAPI, festivalEventAPI } from '../api/endpoints'
 import { useAuthStore } from '../store/authStore'
+import { extractUtrFromImage } from '../utils/utrOcr'
 import { Shell } from './DashboardRouter'
 
 const initialForm = {
@@ -34,6 +35,10 @@ export const ExpenseForm = () => {
   const [form, setForm] = useState(initialForm)
   const [categories, setCategories] = useState([])
   const [festivals, setFestivals] = useState([])
+  const [attachments, setAttachments] = useState([])
+  const [receiptFile, setReceiptFile] = useState(null)
+  const [ocrStatus, setOcrStatus] = useState('')
+  const [saving, setSaving] = useState(false)
   const isEdit = Boolean(expenseId)
   const isApproved = isEdit && form.status === 'APPROVED'
   const showFestivalEvent = currentAccount?.accountType === 'SOCIETY' && form.expenseType === 'FESTIVAL'
@@ -82,12 +87,72 @@ export const ExpenseForm = () => {
       .catch(() => toast.error('Unable to load expense'))
   }, [expenseId, isEdit, availableTypes])
 
+  const loadAttachments = () => {
+    if (!isEdit) return
+    attachmentAPI.getAttachments('EXPENSE', expenseId)
+      .then((response) => setAttachments(response.data || []))
+      .catch(() => {})
+  }
+
+  useEffect(loadAttachments, [expenseId, isEdit])
+
   const update = (field, value) => {
     setForm((current) => ({
       ...current,
       [field]: value,
       ...(field === 'expenseType' && value !== 'FESTIVAL' ? { festivalEventId: '' } : {})
     }))
+  }
+
+  const handleReceiptFile = async (file) => {
+    setReceiptFile(file || null)
+    setOcrStatus('')
+    if (!file) return
+
+    if (!file.type.startsWith('image/')) {
+      setOcrStatus('Receipt selected. OCR works for image screenshots only.')
+      return
+    }
+
+    setOcrStatus('Reading screenshot for UTR...')
+    try {
+      const { transactionId, utr, amount } = await extractUtrFromImage(file)
+      if (transactionId || utr || amount) {
+        setForm((current) => ({
+          ...current,
+          utr: current.utr || utr,
+          transactionId: current.transactionId || transactionId || utr,
+          amount: current.amount || amount,
+          paymentMode: current.paymentMode === 'CASH' ? 'UPI' : current.paymentMode
+        }))
+        const detected = [
+          transactionId ? `Transaction ID: ${transactionId}` : null,
+          utr ? `UTR: ${utr}` : null,
+          amount ? `Amount: ${amount}` : null
+        ].filter(Boolean).join(', ')
+        setOcrStatus(`Detected ${detected}`)
+      } else {
+        setOcrStatus('Could not detect transaction details automatically. Please enter them manually.')
+      }
+    } catch (error) {
+      setOcrStatus('Could not read this screenshot. Please enter UTR manually.')
+    }
+  }
+
+  const uploadReceipt = async (targetExpenseId) => {
+    if (!receiptFile) return
+    await attachmentAPI.uploadAttachment('EXPENSE', targetExpenseId, receiptFile)
+  }
+
+  const deleteAttachment = async (attachmentId) => {
+    if (!window.confirm('Delete this attachment?')) return
+    try {
+      await attachmentAPI.deleteAttachment(attachmentId)
+      toast.success('Attachment deleted')
+      loadAttachments()
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Unable to delete attachment')
+    }
   }
 
   const handleSubmit = async (event) => {
@@ -122,13 +187,19 @@ export const ExpenseForm = () => {
       description: form.description || null
     }
 
+    setSaving(true)
     try {
-      if (isEdit) await expenseAPI.updateExpense(expenseId, payload)
-      else await expenseAPI.createExpense(payload)
-      toast.success(isEdit ? 'Expense updated' : 'Expense created')
+      const response = isEdit
+        ? await expenseAPI.updateExpense(expenseId, payload)
+        : await expenseAPI.createExpense(payload)
+      const savedExpenseId = isEdit ? expenseId : response.data?.id
+      await uploadReceipt(savedExpenseId)
+      toast.success(receiptFile ? 'Expense and receipt saved' : (isEdit ? 'Expense updated' : 'Expense created'))
       navigate('/expenses')
     } catch (error) {
       toast.error(error.response?.data?.message || 'Unable to save expense')
+    } finally {
+      setSaving(false)
     }
   }
 
@@ -210,7 +281,12 @@ export const ExpenseForm = () => {
             Cheque Number
             <input value={form.chequeNumber} onChange={(event) => update('chequeNumber', event.target.value)} disabled={isApproved} />
           </label>
+          <label>
+            Receipt / UTR Screenshot
+            <input type="file" accept="image/*,.jfif,.pdf" onChange={(event) => handleReceiptFile(event.target.files?.[0])} disabled={isApproved || saving} />
+          </label>
         </div>
+        {ocrStatus && <p className="muted">{ocrStatus}</p>}
         <label>
           Description
           <textarea value={form.description} onChange={(event) => update('description', event.target.value)} rows="3" disabled={isApproved} />
@@ -219,11 +295,38 @@ export const ExpenseForm = () => {
           Remarks
           <textarea value={form.remarks} onChange={(event) => update('remarks', event.target.value)} rows="3" disabled={isApproved} />
         </label>
+        {attachments.length > 0 && (
+          <section className="table-wrap" style={{ marginBottom: '1rem' }}>
+            <table>
+              <thead>
+                <tr>
+                  <th>Attachment</th>
+                  <th>Type</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {attachments.map((attachment) => (
+                  <tr key={attachment.id}>
+                    <td>{attachment.fileName}</td>
+                    <td>{attachment.fileType}</td>
+                    <td className="table-actions">
+                      <a className="button-link" href={attachmentAPI.downloadUrl(attachment.id)} target="_blank" rel="noreferrer">Open</a>
+                      <button type="button" className="danger" onClick={() => deleteAttachment(attachment.id)}>Delete</button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </section>
+        )}
         <div className="form-actions">
           <button type="button" onClick={() => navigate('/expenses')}>Cancel</button>
-          <button type="submit" className="primary" disabled={isApproved}>Save Expense</button>
+          <button type="submit" className="primary" disabled={isApproved || saving}>{saving ? 'Saving...' : 'Save Expense'}</button>
         </div>
       </form>
     </Shell>
   )
 }
+
+
