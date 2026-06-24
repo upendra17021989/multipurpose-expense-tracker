@@ -71,6 +71,13 @@ export const kiranaCustomerAPI = {
   deleteCustomer: (customerId) => axiosInstance.delete(`/kirana/customers/${customerId}`)
 }
 
+export const kiranaSalesAPI = {
+  getSales: () => axiosInstance.get('/kirana/sales'),
+  getSalesByDateRange: (startDate, endDate) => axiosInstance.get('/kirana/sales/range', { params: { startDate, endDate } }),
+  getSale: (saleId) => axiosInstance.get(`/kirana/sales/${saleId}`),
+  createSale: (data) => axiosInstance.post('/kirana/sales', data)
+}
+
 
 export const festivalEventAPI = {
   getFestivals: (year) => axiosInstance.get('/society/festivals', { params: year ? { year } : {} }),

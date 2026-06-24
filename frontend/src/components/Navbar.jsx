@@ -40,6 +40,7 @@ export const Navbar = () => {
           {currentAccount?.accountType === 'SOCIETY' && <Link to="/society/flats">Flats</Link>}
           {currentAccount?.accountType === 'SOCIETY' && <Link to="/society/festivals">Festivals</Link>}
           {currentAccount?.accountType === 'KIRANA_STORE' && <Link to="/kirana/products">Products</Link>}
+          {currentAccount?.accountType === 'KIRANA_STORE' && <Link to="/kirana/sales">Sales</Link>}
           {currentAccount?.accountType === 'KIRANA_STORE' && <Link to="/kirana/suppliers">Suppliers</Link>}
           {currentAccount?.accountType === 'KIRANA_STORE' && <Link to="/kirana/customers">Customers</Link>}
         </div>

@@ -22,6 +22,8 @@ import { SupplierList } from './pages/kirana/SupplierList'
 import { SupplierForm } from './pages/kirana/SupplierForm'
 import { CustomerList } from './pages/kirana/CustomerList'
 import { CustomerForm } from './pages/kirana/CustomerForm'
+import { SalesList } from './pages/kirana/SalesList'
+import { SalesForm } from './pages/kirana/SalesForm'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import { AppErrorBoundary } from './components/AppErrorBoundary'
 import 'react-toastify/dist/ReactToastify.css'
@@ -61,6 +63,8 @@ function App() {
           <Route path="/kirana/customers" element={<ProtectedRoute><CustomerList /></ProtectedRoute>} />
           <Route path="/kirana/customers/new" element={<ProtectedRoute><CustomerForm /></ProtectedRoute>} />
           <Route path="/kirana/customers/:customerId/edit" element={<ProtectedRoute><CustomerForm /></ProtectedRoute>} />
+          <Route path="/kirana/sales" element={<ProtectedRoute><SalesList /></ProtectedRoute>} />
+          <Route path="/kirana/sales/new" element={<ProtectedRoute><SalesForm /></ProtectedRoute>} />
           <Route path="/" element={<Navigate to="/home" replace />} />
         </Routes>
         <ToastContainer position="top-right" autoClose={3000} hideProgressBar={false} newestOnTop />

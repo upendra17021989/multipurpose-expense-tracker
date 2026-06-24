@@ -364,6 +364,7 @@ th {
   .report-grid,
   .form-grid,
   .form-grid.two,
+  .line-item-row,
   .inline-form,
   .toolbar-panel {
     grid-template-columns: 1fr;
@@ -430,6 +431,30 @@ th {
 .receipt-total strong {
   color: #17202a;
   font-size: 1.2rem;
+}
+
+.line-items {
+  display: grid;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.line-item-row {
+  display: grid;
+  grid-template-columns: minmax(220px, 1.5fr) minmax(110px, 0.7fr) minmax(130px, 0.8fr) minmax(100px, 0.6fr) auto;
+  gap: 0.75rem;
+  align-items: end;
+  border: 1px solid #e5edf5;
+  border-radius: 8px;
+  padding: 0.75rem;
+}
+
+.line-item-row strong {
+  min-height: 42px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  color: #17202a;
 }
 
 @media print {
