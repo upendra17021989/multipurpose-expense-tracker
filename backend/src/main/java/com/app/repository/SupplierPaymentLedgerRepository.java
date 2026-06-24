@@ -8,5 +8,6 @@ import java.util.List;
 
 @Repository
 public interface SupplierPaymentLedgerRepository extends JpaRepository<SupplierPaymentLedger, Long> {
+    List<SupplierPaymentLedger> findByAccountId(Long accountId);
     List<SupplierPaymentLedger> findByAccountIdAndSupplierId(Long accountId, Long supplierId);
 }

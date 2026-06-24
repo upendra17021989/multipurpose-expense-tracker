@@ -44,6 +44,8 @@ export const Navbar = () => {
           {currentAccount?.accountType === 'KIRANA_STORE' && <Link to="/kirana/purchases">Purchases</Link>}
           {currentAccount?.accountType === 'KIRANA_STORE' && <Link to="/kirana/suppliers">Suppliers</Link>}
           {currentAccount?.accountType === 'KIRANA_STORE' && <Link to="/kirana/customers">Customers</Link>}
+          {currentAccount?.accountType === 'KIRANA_STORE' && <Link to="/kirana/customer-credit">Ledgers</Link>}
+          {currentAccount?.accountType === 'KIRANA_STORE' && <Link to="/kirana/reports">Reports</Link>}
         </div>
         <div className="nav-right">
           {accounts.length > 1 && (

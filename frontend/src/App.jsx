@@ -26,6 +26,9 @@ import { SalesList } from './pages/kirana/SalesList'
 import { SalesForm } from './pages/kirana/SalesForm'
 import { PurchaseList } from './pages/kirana/PurchaseList'
 import { PurchaseForm } from './pages/kirana/PurchaseForm'
+import { CustomerCreditLedger } from './pages/kirana/CustomerCreditLedger'
+import { SupplierPaymentLedger } from './pages/kirana/SupplierPaymentLedger'
+import { KiranaReports } from './pages/kirana/KiranaReports'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import { AppErrorBoundary } from './components/AppErrorBoundary'
 import 'react-toastify/dist/ReactToastify.css'
@@ -69,6 +72,9 @@ function App() {
           <Route path="/kirana/sales/new" element={<ProtectedRoute><SalesForm /></ProtectedRoute>} />
           <Route path="/kirana/purchases" element={<ProtectedRoute><PurchaseList /></ProtectedRoute>} />
           <Route path="/kirana/purchases/new" element={<ProtectedRoute><PurchaseForm /></ProtectedRoute>} />
+          <Route path="/kirana/customer-credit" element={<ProtectedRoute><CustomerCreditLedger /></ProtectedRoute>} />
+          <Route path="/kirana/supplier-payments" element={<ProtectedRoute><SupplierPaymentLedger /></ProtectedRoute>} />
+          <Route path="/kirana/reports" element={<ProtectedRoute><KiranaReports /></ProtectedRoute>} />
           <Route path="/" element={<Navigate to="/home" replace />} />
         </Routes>
         <ToastContainer position="top-right" autoClose={3000} hideProgressBar={false} newestOnTop />

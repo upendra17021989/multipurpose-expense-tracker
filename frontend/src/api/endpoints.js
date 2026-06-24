@@ -85,6 +85,13 @@ export const kiranaPurchaseAPI = {
   createPurchase: (data) => axiosInstance.post('/kirana/purchases', data)
 }
 
+export const kiranaLedgerAPI = {
+  getCustomerLedger: (customerId) => axiosInstance.get('/kirana/ledgers/customer-credit', { params: customerId ? { customerId } : {} }),
+  recordCustomerPayment: (customerId, data) => axiosInstance.post(`/kirana/ledgers/customer-credit/${customerId}/payments`, data),
+  getSupplierLedger: (supplierId) => axiosInstance.get('/kirana/ledgers/supplier-payments', { params: supplierId ? { supplierId } : {} }),
+  recordSupplierPayment: (supplierId, data) => axiosInstance.post(`/kirana/ledgers/supplier-payments/${supplierId}/payments`, data)
+}
+
 
 export const festivalEventAPI = {
   getFestivals: (year) => axiosInstance.get('/society/festivals', { params: year ? { year } : {} }),
