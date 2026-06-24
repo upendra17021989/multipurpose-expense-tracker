@@ -7,6 +7,7 @@ import { ExpenseList } from './pages/ExpenseList'
 import { ExpenseForm } from './pages/ExpenseForm'
 import { CategoryList } from './pages/CategoryList'
 import { BudgetSettings } from './pages/BudgetSettings'
+import { PersonalReports } from './pages/PersonalReports'
 import { FlatList } from './pages/society/FlatList'
 import { FlatForm } from './pages/society/FlatForm'
 import { FestivalList } from './pages/society/FestivalList'
@@ -32,6 +33,7 @@ function App() {
         <Route path="/expenses/:expenseId/edit" element={<ProtectedRoute><ExpenseForm /></ProtectedRoute>} />
         <Route path="/categories" element={<ProtectedRoute><CategoryList /></ProtectedRoute>} />
         <Route path="/budget" element={<ProtectedRoute><BudgetSettings /></ProtectedRoute>} />
+        <Route path="/personal/reports" element={<ProtectedRoute><PersonalReports /></ProtectedRoute>} />
         <Route path="/society/flats" element={<ProtectedRoute><FlatList /></ProtectedRoute>} />
         <Route path="/society/flats/new" element={<ProtectedRoute><FlatForm /></ProtectedRoute>} />
         <Route path="/society/flats/:flatId/edit" element={<ProtectedRoute><FlatForm /></ProtectedRoute>} />

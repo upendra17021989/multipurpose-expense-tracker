@@ -1,15 +1,25 @@
 import { Link, useNavigate } from 'react-router-dom'
 import { useEffect, useMemo, useState } from 'react'
 import { toast } from 'react-toastify'
-import { expenseAPI } from '../api/endpoints'
+import { expenseAPI, expenseCategoryAPI } from '../api/endpoints'
 import { Shell } from './DashboardRouter'
 import { formatCurrency, formatDate } from '../utils/format'
 
 export const ExpenseList = () => {
   const navigate = useNavigate()
   const [expenses, setExpenses] = useState([])
+  const [categories, setCategories] = useState([])
   const [loading, setLoading] = useState(true)
-  const [filters, setFilters] = useState({ search: '', status: '', paymentMode: '' })
+  const [filters, setFilters] = useState({
+    search: '',
+    status: '',
+    paymentMode: '',
+    categoryId: '',
+    startDate: '',
+    endDate: '',
+    minAmount: '',
+    maxAmount: ''
+  })
 
   const loadExpenses = () => {
     setLoading(true)
@@ -21,6 +31,12 @@ export const ExpenseList = () => {
 
   useEffect(loadExpenses, [])
 
+  useEffect(() => {
+    expenseCategoryAPI.getCategories()
+      .then((response) => setCategories(response.data || []))
+      .catch(() => {})
+  }, [])
+
   const visibleExpenses = useMemo(() => {
     const search = filters.search.toLowerCase()
     return expenses.filter((expense) => {
@@ -29,7 +45,13 @@ export const ExpenseList = () => {
         .some((value) => value.toLowerCase().includes(search))
       const matchesStatus = !filters.status || expense.status === filters.status
       const matchesPayment = !filters.paymentMode || expense.paymentMode === filters.paymentMode
-      return matchesSearch && matchesStatus && matchesPayment
+      const matchesCategory = !filters.categoryId || String(expense.categoryId) === filters.categoryId
+      const matchesStartDate = !filters.startDate || expense.expenseDate >= filters.startDate
+      const matchesEndDate = !filters.endDate || expense.expenseDate <= filters.endDate
+      const amount = Number(expense.amount || 0)
+      const matchesMinAmount = !filters.minAmount || amount >= Number(filters.minAmount)
+      const matchesMaxAmount = !filters.maxAmount || amount <= Number(filters.maxAmount)
+      return matchesSearch && matchesStatus && matchesPayment && matchesCategory && matchesStartDate && matchesEndDate && matchesMinAmount && matchesMaxAmount
     })
   }, [expenses, filters])
 
@@ -99,6 +121,14 @@ export const ExpenseList = () => {
           <option value="NEFT">NEFT</option>
           <option value="CHEQUE">Cheque</option>
         </select>
+        <select value={filters.categoryId} onChange={(event) => setFilters({ ...filters, categoryId: event.target.value })}>
+          <option value="">All categories</option>
+          {categories.map((category) => <option key={category.id} value={category.id}>{category.categoryName}</option>)}
+        </select>
+        <input type="date" value={filters.startDate} onChange={(event) => setFilters({ ...filters, startDate: event.target.value })} />
+        <input type="date" value={filters.endDate} onChange={(event) => setFilters({ ...filters, endDate: event.target.value })} />
+        <input type="number" min="0" placeholder="Min amount" value={filters.minAmount} onChange={(event) => setFilters({ ...filters, minAmount: event.target.value })} />
+        <input type="number" min="0" placeholder="Max amount" value={filters.maxAmount} onChange={(event) => setFilters({ ...filters, maxAmount: event.target.value })} />
         <strong>{formatCurrency(total)}</strong>
       </section>
 
@@ -127,7 +157,7 @@ export const ExpenseList = () => {
                 <td><span className={`status-pill ${String(expense.status).toLowerCase()}`}>{expense.status}</span></td>
                 <td className="numeric">{formatCurrency(expense.amount)}</td>
                 <td className="table-actions">
-                  <button onClick={() => navigate(`/expenses/${expense.id}/edit`)}>Edit</button>
+                  <button onClick={() => handleEdit(expense)}>Edit</button>
                   {expense.status === 'SUBMITTED' && <button onClick={() => handleApprove(expense.id)}>Approve</button>}
                   {expense.status === 'SUBMITTED' && <button onClick={() => handleReject(expense.id)}>Reject</button>}
                   <button className="danger" onClick={() => handleDelete(expense.id)}>Delete</button>

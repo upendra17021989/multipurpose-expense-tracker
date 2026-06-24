@@ -63,6 +63,7 @@ const PersonalDashboard = () => {
   const summary = useMemo(() => buildExpenseSummary(expenses), [expenses])
   const budgetAmount = Number(budget?.monthlyBudget || 0)
   const remaining = Math.max(budgetAmount - summary.monthTotal, 0)
+  const budgetUsed = budgetAmount ? `${Math.round((summary.monthTotal / budgetAmount) * 100)}%` : 'Not set'
 
   return (
     <Shell title={accountLabels.INDIVIDUAL}>
@@ -71,7 +72,9 @@ const PersonalDashboard = () => {
           ['Today', formatCurrency(summary.todayTotal)],
           ['This Month', formatCurrency(summary.monthTotal)],
           ['Top Category', summary.topCategory || '-'],
-          ['Remaining Budget', budgetAmount ? formatCurrency(remaining) : 'Not set']
+          ['Remaining Budget', budgetAmount ? formatCurrency(remaining) : 'Not set'],
+          ['Budget Used', budgetUsed],
+          ['Savings Target', budget ? formatCurrency(budget.monthlySavingsTarget) : 'Not set']
         ]}
       />
       <ActionRow
@@ -79,7 +82,8 @@ const PersonalDashboard = () => {
           ['Add Expense', '/expenses/new'],
           ['View Expenses', '/expenses'],
           ['Categories', '/categories'],
-          ['Budget', '/budget']
+          ['Budget', '/budget'],
+          ['Reports', '/personal/reports']
         ]}
       />
       {loading && <p className="muted">Loading dashboard...</p>}
