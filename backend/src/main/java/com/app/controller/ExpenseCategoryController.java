@@ -15,7 +15,6 @@ import java.util.List;
 @Slf4j
 @RestController
 @RequestMapping("/expenses/categories")
-@CrossOrigin(origins = {"http://localhost:3000", "http://localhost:5173"})
 public class ExpenseCategoryController {
 
     private final ExpenseCategoryService categoryService;
