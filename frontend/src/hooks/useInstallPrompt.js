@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 export const useInstallPrompt = () => {
   const [installPrompt, setInstallPrompt] = useState(null)
   const [installed, setInstalled] = useState(() => window.matchMedia?.('(display-mode: standalone)').matches || false)
+  const [isAndroidBrowser] = useState(() => /Android/i.test(navigator.userAgent || ''))
 
   useEffect(() => {
     const handleBeforeInstallPrompt = (event) => {
@@ -25,7 +26,7 @@ export const useInstallPrompt = () => {
   }, [])
 
   const promptInstall = async () => {
-    if (!installPrompt) return false
+    if (!installPrompt) return null
 
     installPrompt.prompt()
     const result = await installPrompt.userChoice
@@ -34,7 +35,8 @@ export const useInstallPrompt = () => {
   }
 
   return {
-    canInstall: Boolean(installPrompt) && !installed,
+    canInstall: (Boolean(installPrompt) || isAndroidBrowser) && !installed,
+    hasNativePrompt: Boolean(installPrompt),
     promptInstall
   }
 }

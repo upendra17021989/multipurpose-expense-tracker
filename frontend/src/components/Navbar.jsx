@@ -8,7 +8,7 @@ import { useAuthStore } from '../store/authStore'
 export const Navbar = () => {
   const navigate = useNavigate()
   const { user, currentAccount, accounts, setSession, logout } = useAuthStore()
-  const { canInstall, promptInstall } = useInstallPrompt()
+  const { canInstall, hasNativePrompt, promptInstall } = useInstallPrompt()
   const [menuOpen, setMenuOpen] = useState(false)
   const [moduleOpen, setModuleOpen] = useState(false)
   const [accountOpen, setAccountOpen] = useState(false)
@@ -22,6 +22,11 @@ export const Navbar = () => {
 
   const handleInstall = async () => {
     const accepted = await promptInstall()
+    if (!hasNativePrompt) {
+      toast.info('Open Chrome menu and choose "Add to Home screen" or "Install app".')
+      closeMenus()
+      return
+    }
     if (accepted) {
       toast.success('App installed')
       closeMenus()
