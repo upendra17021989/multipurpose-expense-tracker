@@ -113,12 +113,12 @@ const SocietyDashboard = () => {
       <SummaryGrid
         items={[
           ['This Month', formatCurrency(summary.monthTotal)],
-          ['Festival Spend', formatCurrency(summary.festivalTotal)],
+          ['Festival / Sports Spend', formatCurrency(summary.festivalTotal)],
           ['Pending Approvals', pending],
           ['Active Flats', flats.length]
         ]}
       />
-      <ActionRow actions={[[ 'Add Expense', '/expenses/new' ], [ 'View Expenses', '/expenses' ], [ 'Categories', '/categories' ], [ 'Flat Master', '/society/flats' ], [ 'Festivals', '/society/festivals' ], [ 'Collections', '/society/festival-collections' ]]} />
+      <ActionRow actions={[[ 'Add Expense', '/expenses/new' ], [ 'View Expenses', '/expenses' ], [ 'Categories', '/categories' ], [ 'Flat Master', '/society/flats' ], [ 'Festival / Sports', '/society/festivals' ], [ 'Collections', '/society/festival-collections' ]]} />
     </Shell>
   )
 }
@@ -186,7 +186,7 @@ const buildExpenseSummary = (expenses) => {
     const amount = Number(expense.amount || 0)
     if (expense.expenseDate === today) todayTotal += amount
     if (expense.expenseDate?.startsWith(monthPrefix)) monthTotal += amount
-    if (expense.expenseType === 'FESTIVAL') festivalTotal += amount
+    if (expense.expenseType === 'FESTIVAL' || expense.expenseType === 'SPORTS') festivalTotal += amount
     if (expense.categoryName) categoryTotals.set(expense.categoryName, (categoryTotals.get(expense.categoryName) || 0) + amount)
     if (expense.paymentMode) paymentModes.add(expense.paymentMode)
   })

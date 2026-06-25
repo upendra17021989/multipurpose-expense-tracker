@@ -14,7 +14,7 @@ export const FestivalCollectionDashboard = () => {
   useEffect(() => {
     festivalEventAPI.getFestivals()
       .then((response) => setFestivals(response.data || []))
-      .catch((error) => toast.error(error.response?.data?.message || 'Unable to load festivals'))
+      .catch((error) => toast.error(error.response?.data?.message || 'Unable to load events'))
       .finally(() => setLoading(false))
   }, [])
 
@@ -27,16 +27,16 @@ export const FestivalCollectionDashboard = () => {
 
   if (currentAccount?.accountType !== 'SOCIETY') {
     return (
-      <Shell title="Festival Collections" eyebrow="Society module">
+      <Shell title="Festival / Sports Collections" eyebrow="Society module">
         <p className="muted">Festival collections are available for society accounts.</p>
       </Shell>
     )
   }
 
   return (
-    <Shell title="Festival Collections" eyebrow="Society module" actions={<Link className="button-link" to="/society/festivals/new">Add Festival</Link>}>
+    <Shell title="Festival / Sports Collections" eyebrow="Society module" actions={<Link className="button-link" to="/society/festivals/new">Add Event</Link>}>
       <SummaryGrid items={[
-        ['Festivals', summary.festivals],
+        ['Events', summary.festivals],
         ['Active', summary.active],
         ['Collected', formatCurrency(summary.collected)],
         ['Balance', formatCurrency(summary.balance)]
@@ -46,7 +46,7 @@ export const FestivalCollectionDashboard = () => {
         <table>
           <thead>
             <tr>
-              <th>Festival</th>
+              <th>Event</th>
               <th>Year</th>
               <th>Dates</th>
               <th className="numeric">Collected</th>
@@ -69,11 +69,11 @@ export const FestivalCollectionDashboard = () => {
                 </td>
               </tr>
             ))}
-            {!loading && festivals.length === 0 && <tr><td colSpan="7" className="empty-state">Create a festival before tracking collections.</td></tr>}
+            {!loading && festivals.length === 0 && <tr><td colSpan="7" className="empty-state">Create a festival or sports event before tracking collections.</td></tr>}
           </tbody>
         </table>
       </div>
-      {loading && <p className="muted">Loading festival collections...</p>}
+      {loading && <p className="muted">Loading collections...</p>}
     </Shell>
   )
 }

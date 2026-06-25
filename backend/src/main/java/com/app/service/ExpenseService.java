@@ -256,11 +256,11 @@ public class ExpenseService {
                 }
             }
             case SOCIETY -> {
-                if (expenseType != ExpenseType.SOCIETY_REGULAR && expenseType != ExpenseType.FESTIVAL) {
-                    throw new ValidationException("Society expenses must be SOCIETY_REGULAR or FESTIVAL");
+                if (expenseType != ExpenseType.SOCIETY_REGULAR && expenseType != ExpenseType.FESTIVAL && expenseType != ExpenseType.SPORTS) {
+                    throw new ValidationException("Society expenses must be SOCIETY_REGULAR, FESTIVAL, or SPORTS");
                 }
-                if (expenseType == ExpenseType.FESTIVAL && request.getFestivalEventId() == null) {
-                    throw new ValidationException("Festival expenses require a festival event");
+                if ((expenseType == ExpenseType.FESTIVAL || expenseType == ExpenseType.SPORTS) && request.getFestivalEventId() == null) {
+                    throw new ValidationException("Festival or sports expenses require an event");
                 }
             }
             case KIRANA_STORE -> {
@@ -272,11 +272,11 @@ public class ExpenseService {
     }
 
     private FestivalEvent resolveFestivalEvent(Long accountId, ExpenseType expenseType, Long festivalEventId) {
-        if (expenseType != ExpenseType.FESTIVAL) {
+        if (expenseType != ExpenseType.FESTIVAL && expenseType != ExpenseType.SPORTS) {
             return null;
         }
         return festivalEventRepository.findByAccountIdAndId(accountId, festivalEventId)
-                .orElseThrow(() -> new ResourceNotFoundException("Festival event not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Festival or sports event not found"));
     }
 
     private ExpenseDto mapToDto(Expense expense) {
@@ -315,7 +315,7 @@ public class ExpenseService {
                 .findByAccountIdAndFestivalEventIdAndSoftDeletedFalse(
                         festivalEvent.getAccount().getId(), festivalEvent.getId())
                 .stream()
-                .filter(expense -> expense.getExpenseType() == ExpenseType.FESTIVAL)
+                .filter(expense -> expense.getExpenseType() == ExpenseType.FESTIVAL || expense.getExpenseType() == ExpenseType.SPORTS)
                 .map(Expense::getAmount)
                 .filter(amount -> amount != null)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
@@ -328,6 +328,7 @@ public class ExpenseService {
             case PERSONAL -> ExpenseType.PERSONAL;
             case SOCIETY_REGULAR -> ExpenseType.SOCIETY_REGULAR;
             case FESTIVAL -> ExpenseType.FESTIVAL;
+            case SPORTS -> ExpenseType.SPORTS;
             case STORE -> ExpenseType.STORE_EXPENSE;
         };
     }

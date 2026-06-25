@@ -119,7 +119,7 @@ public class ExpenseCategoryService {
                     "Medical", "Education", "Bills", "Entertainment", "Miscellaneous");
             case SOCIETY -> List.of(
                     "Maintenance", "Security", "Cleaning", "Electricity", "Plumbing", "Lift",
-                    "Garden", "Office/Admin", "Festival", "Miscellaneous");
+                    "Garden", "Office/Admin", "Festival", "Sports", "Miscellaneous");
             case KIRANA_STORE -> List.of(
                     "Shop Rent", "Electricity", "Staff Salary", "Transport", "Packaging",
                     "Maintenance", "Miscellaneous");
@@ -129,7 +129,11 @@ public class ExpenseCategoryService {
     private CategoryType defaultCategoryType(AccountType accountType, String categoryName) {
         return switch (accountType) {
             case INDIVIDUAL -> CategoryType.PERSONAL;
-            case SOCIETY -> "Festival".equals(categoryName) ? CategoryType.FESTIVAL : CategoryType.SOCIETY_REGULAR;
+            case SOCIETY -> switch (categoryName) {
+                case "Festival" -> CategoryType.FESTIVAL;
+                case "Sports" -> CategoryType.SPORTS;
+                default -> CategoryType.SOCIETY_REGULAR;
+            };
             case KIRANA_STORE -> CategoryType.STORE;
         };
     }

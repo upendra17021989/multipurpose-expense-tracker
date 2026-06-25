@@ -24,7 +24,7 @@ const initialForm = {
 
 const expenseTypesByAccount = {
   INDIVIDUAL: ['PERSONAL'],
-  SOCIETY: ['SOCIETY_REGULAR', 'FESTIVAL'],
+  SOCIETY: ['SOCIETY_REGULAR', 'FESTIVAL', 'SPORTS'],
   KIRANA_STORE: ['STORE_EXPENSE']
 }
 
@@ -41,7 +41,7 @@ export const ExpenseForm = () => {
   const [saving, setSaving] = useState(false)
   const isEdit = Boolean(expenseId)
   const isApproved = isEdit && form.status === 'APPROVED'
-  const showFestivalEvent = currentAccount?.accountType === 'SOCIETY' && form.expenseType === 'FESTIVAL'
+  const showFestivalEvent = currentAccount?.accountType === 'SOCIETY' && (form.expenseType === 'FESTIVAL' || form.expenseType === 'SPORTS')
 
   const availableTypes = useMemo(() => expenseTypesByAccount[currentAccount?.accountType] || ['PERSONAL'], [currentAccount])
 
@@ -100,7 +100,7 @@ export const ExpenseForm = () => {
     setForm((current) => ({
       ...current,
       [field]: value,
-      ...(field === 'expenseType' && value !== 'FESTIVAL' ? { festivalEventId: '' } : {})
+      ...(field === 'expenseType' && value !== 'FESTIVAL' && value !== 'SPORTS' ? { festivalEventId: '' } : {})
     }))
   }
 
@@ -174,7 +174,7 @@ export const ExpenseForm = () => {
       return
     }
     if (showFestivalEvent && !form.festivalEventId) {
-      toast.error('Festival event is required')
+      toast.error('Festival or sports event is required')
       return
     }
     if ((form.paymentMode === 'UPI' || form.paymentMode === 'NEFT') && !form.utr.trim()) {
@@ -243,9 +243,9 @@ export const ExpenseForm = () => {
           </label>
           {showFestivalEvent && (
             <label>
-              Festival Event
+              Festival / Sports Event
               <select value={form.festivalEventId} onChange={(event) => update('festivalEventId', event.target.value)} required disabled={isApproved}>
-                <option value="">Select festival</option>
+                <option value="">Select event</option>
                 {festivals.map((festival) => (
                   <option key={festival.id} value={festival.id}>{festival.festivalName} ({festival.year})</option>
                 ))}

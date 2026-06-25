@@ -35,7 +35,7 @@ export const FestivalForm = () => {
           budgetAmount: festival.budgetAmount || ''
         })
       })
-      .catch((error) => toast.error(error.response?.data?.message || 'Unable to load festival'))
+      .catch((error) => toast.error(error.response?.data?.message || 'Unable to load event'))
   }, [festivalEventId, isEdit])
 
   const update = (field, value) => setForm((current) => ({ ...current, [field]: value }))
@@ -54,10 +54,10 @@ export const FestivalForm = () => {
     try {
       if (isEdit) await festivalEventAPI.updateFestival(festivalEventId, payload)
       else await festivalEventAPI.createFestival(payload)
-      toast.success(isEdit ? 'Festival updated' : 'Festival created')
+      toast.success(isEdit ? 'Event updated' : 'Event created')
       navigate('/society/festivals')
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Unable to save festival')
+      toast.error(error.response?.data?.message || 'Unable to save event')
     } finally {
       setSaving(false)
     }
@@ -65,19 +65,19 @@ export const FestivalForm = () => {
 
   if (currentAccount?.accountType !== 'SOCIETY') {
     return (
-      <Shell title={isEdit ? 'Edit Festival' : 'Add Festival'} eyebrow="Society module">
-        <p className="muted">Festival events are available for society accounts.</p>
+      <Shell title={isEdit ? 'Edit Event' : 'Add Event'} eyebrow="Society module">
+        <p className="muted">Festival and sports events are available for society accounts.</p>
       </Shell>
     )
   }
 
   return (
-    <Shell title={isEdit ? 'Edit Festival' : 'Add Festival'} eyebrow="Society module">
+    <Shell title={isEdit ? 'Edit Event' : 'Add Event'} eyebrow="Society module">
       <form className="form-panel narrow" onSubmit={handleSubmit}>
         <div className="form-grid two">
           <label>
-            Festival Name
-            <input value={form.festivalName} onChange={(event) => update('festivalName', event.target.value)} required placeholder="Navratri 2026" />
+            Event Name
+            <input value={form.festivalName} onChange={(event) => update('festivalName', event.target.value)} required placeholder="Sports Day 2026" />
           </label>
           <label>
             Year
@@ -98,7 +98,7 @@ export const FestivalForm = () => {
         </div>
         <div className="form-actions">
           <button type="button" onClick={() => navigate('/society/festivals')}>Cancel</button>
-          <button type="submit" className="primary" disabled={saving}>{saving ? 'Saving...' : 'Save Festival'}</button>
+          <button type="submit" className="primary" disabled={saving}>{saving ? 'Saving...' : 'Save Event'}</button>
         </div>
       </form>
     </Shell>

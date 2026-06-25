@@ -17,7 +17,7 @@ export const FestivalList = () => {
     setLoading(true)
     festivalEventAPI.getFestivals(year || undefined)
       .then((response) => setFestivals(response.data || []))
-      .catch((error) => toast.error(error.response?.data?.message || 'Unable to load festivals'))
+      .catch((error) => toast.error(error.response?.data?.message || 'Unable to load events'))
       .finally(() => setLoading(false))
   }
 
@@ -32,10 +32,10 @@ export const FestivalList = () => {
   }, [festivals])
 
   const remove = async (festivalEventId) => {
-    if (!window.confirm('Delete this festival event?')) return
+    if (!window.confirm('Delete this event?')) return
     try {
       await festivalEventAPI.deleteFestival(festivalEventId)
-      toast.success('Festival deleted')
+      toast.success('Event deleted')
       loadFestivals()
     } catch (error) {
       toast.error(error.response?.data?.message || 'Delete failed')
@@ -54,16 +54,16 @@ export const FestivalList = () => {
 
   if (currentAccount?.accountType !== 'SOCIETY') {
     return (
-      <Shell title="Festival Events" eyebrow="Society module">
-        <p className="muted">Festival events are available for society accounts.</p>
+      <Shell title="Festival / Sports Events" eyebrow="Society module">
+        <p className="muted">Festival and sports events are available for society accounts.</p>
       </Shell>
     )
   }
 
   return (
-    <Shell title="Festival Events" eyebrow="Society module" actions={<Link className="button-link" to="/society/festivals/new">Add Festival</Link>}>
+    <Shell title="Festival / Sports Events" eyebrow="Society module" actions={<Link className="button-link" to="/society/festivals/new">Add Event</Link>}>
       <SummaryGrid items={[
-        ['Total Festivals', festivals.length],
+        ['Total Events', festivals.length],
         ['Active', summary.active],
         ['Budget', formatCurrency(summary.budget)],
         ['Collected', formatCurrency(summary.collected)]
@@ -78,7 +78,7 @@ export const FestivalList = () => {
         <table>
           <thead>
             <tr>
-              <th>Festival</th>
+              <th>Event</th>
               <th>Year</th>
               <th>Dates</th>
               <th className="numeric">Budget</th>
@@ -109,11 +109,11 @@ export const FestivalList = () => {
                 </td>
               </tr>
             ))}
-            {!loading && festivals.length === 0 && <tr><td colSpan="9" className="empty-state">No festival events found.</td></tr>}
+            {!loading && festivals.length === 0 && <tr><td colSpan="9" className="empty-state">No festival or sports events found.</td></tr>}
           </tbody>
         </table>
       </div>
-      {loading && <p className="muted">Loading festivals...</p>}
+      {loading && <p className="muted">Loading events...</p>}
     </Shell>
   )
 }

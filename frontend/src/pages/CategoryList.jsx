@@ -6,13 +6,13 @@ import { Shell } from './DashboardRouter'
 
 const categoryDefaults = {
   INDIVIDUAL: ['PERSONAL'],
-  SOCIETY: ['SOCIETY_REGULAR', 'FESTIVAL'],
+  SOCIETY: ['SOCIETY_REGULAR', 'FESTIVAL', 'SPORTS'],
   KIRANA_STORE: ['STORE']
 }
 
 const defaultCategoryNames = {
   INDIVIDUAL: ['Food', 'Grocery', 'Rent', 'Travel', 'Fuel', 'Shopping', 'Medical', 'Education', 'Bills', 'Entertainment', 'Miscellaneous'],
-  SOCIETY: ['Maintenance', 'Security', 'Cleaning', 'Electricity', 'Plumbing', 'Lift', 'Garden', 'Office/Admin', 'Festival', 'Miscellaneous'],
+  SOCIETY: ['Maintenance', 'Security', 'Cleaning', 'Electricity', 'Plumbing', 'Lift', 'Garden', 'Office/Admin', 'Festival', 'Sports', 'Miscellaneous'],
   KIRANA_STORE: ['Shop Rent', 'Electricity', 'Staff Salary', 'Transport', 'Packaging', 'Maintenance', 'Miscellaneous']
 }
 
@@ -44,6 +44,7 @@ export const CategoryList = () => {
 
   const categoryTypeForName = (name) => {
     if (currentAccount?.accountType === 'SOCIETY' && name === 'Festival') return 'FESTIVAL'
+    if (currentAccount?.accountType === 'SOCIETY' && name === 'Sports') return 'SPORTS'
     return categoryTypes[0]
   }
 
