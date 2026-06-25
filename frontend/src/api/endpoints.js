@@ -136,6 +136,7 @@ export const sportsAPI = {
   deleteEvent: (eventId) => axiosInstance.delete(`/sports/events/${eventId}`),
   getExpenses: () => axiosInstance.get('/sports/expenses'),
   createExpense: (data) => axiosInstance.post('/sports/expenses', data),
+  updateExpense: (expenseId, data) => axiosInstance.put(`/sports/expenses/${expenseId}`, data),
   deleteExpense: (expenseId) => axiosInstance.delete(`/sports/expenses/${expenseId}`),
   getCollections: (sportsEventId) => axiosInstance.get('/sports/collections', { params: { sportsEventId } }),
   getCollectionSummary: (sportsEventId) => axiosInstance.get('/sports/collections/summary', { params: { sportsEventId } }),

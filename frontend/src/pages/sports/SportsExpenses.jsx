@@ -42,6 +42,7 @@ export const SportsExpenses = () => {
   const [events, setEvents] = useState([])
   const [expenses, setExpenses] = useState([])
   const [form, setForm] = useState(initialForm)
+  const [editingId, setEditingId] = useState(null)
   const [filters, setFilters] = useState({ search: '', eventId: '', paymentMode: '' })
   const [loading, setLoading] = useState(true)
 
@@ -78,33 +79,64 @@ export const SportsExpenses = () => {
     }))
   }
 
+  const resetForm = () => {
+    setEditingId(null)
+    setForm(initialForm)
+  }
+
+  const buildPayload = () => {
+    const category = form.category === 'Other' ? form.customCategory.trim() : form.category
+    if (!category) return null
+    return {
+      ...form,
+      category,
+      customCategory: undefined,
+      sportsEventId: form.sportsEventId ? Number(form.sportsEventId) : null,
+      amount: Number(form.amount),
+      utr: form.utr || null,
+      chequeNumber: form.chequeNumber || null,
+      description: form.description.trim() || null,
+      vendorName: form.vendorName.trim() || null,
+      remarks: form.remarks.trim() || null
+    }
+  }
+
   const submit = async (event) => {
     event.preventDefault()
-    const category = form.category === 'Other' ? form.customCategory.trim() : form.category
-    if (!category) {
+    const payload = buildPayload()
+    if (!payload) {
       toast.error('Category is required')
       return
     }
 
     try {
-      await sportsAPI.createExpense({
-        ...form,
-        category,
-        customCategory: undefined,
-        sportsEventId: form.sportsEventId ? Number(form.sportsEventId) : null,
-        amount: Number(form.amount),
-        utr: form.utr || null,
-        chequeNumber: form.chequeNumber || null,
-        description: form.description.trim() || null,
-        vendorName: form.vendorName.trim() || null,
-        remarks: form.remarks.trim() || null
-      })
-      setForm(initialForm)
-      toast.success('Expense added')
+      if (editingId) await sportsAPI.updateExpense(editingId, payload)
+      else await sportsAPI.createExpense(payload)
+      toast.success(editingId ? 'Expense updated' : 'Expense added')
+      resetForm()
       loadData()
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Unable to add expense')
+      toast.error(error.response?.data?.message || 'Unable to save expense')
     }
+  }
+
+  const edit = (expense) => {
+    const isKnownCategory = sportsCategories.includes(expense.category)
+    setEditingId(expense.id)
+    setForm({
+      sportsEventId: expense.sportsEventId || '',
+      expenseDate: expense.expenseDate || today,
+      category: isKnownCategory ? expense.category : 'Other',
+      customCategory: isKnownCategory ? '' : expense.category || '',
+      amount: expense.amount || '',
+      paymentMode: expense.paymentMode || 'CASH',
+      vendorName: expense.vendorName || '',
+      utr: expense.utr || '',
+      chequeNumber: expense.chequeNumber || '',
+      description: expense.description || '',
+      remarks: expense.remarks || '',
+      status: expense.status || 'DRAFT'
+    })
   }
 
   const remove = async (expenseId) => {
@@ -112,6 +144,7 @@ export const SportsExpenses = () => {
     try {
       await sportsAPI.deleteExpense(expenseId)
       toast.success('Expense deleted')
+      if (editingId === expenseId) resetForm()
       loadData()
     } catch (error) {
       toast.error(error.response?.data?.message || 'Delete failed')
@@ -143,7 +176,8 @@ export const SportsExpenses = () => {
         <select value={form.paymentMode} onChange={(event) => updateForm('paymentMode', event.target.value)}>{paymentModes.map((mode) => <option key={mode}>{mode}</option>)}</select>
         <input placeholder="Vendor / Paid to" value={form.vendorName} onChange={(event) => updateForm('vendorName', event.target.value)} />
         <input placeholder="UTR" value={form.utr} onChange={(event) => updateForm('utr', event.target.value)} />
-        <button className="primary" type="submit">Add Expense</button>
+        <button className="primary" type="submit">{editingId ? 'Update Expense' : 'Add Expense'}</button>
+        {editingId && <button type="button" onClick={resetForm}>Cancel</button>}
       </form>
       <section className="toolbar-panel flat-toolbar">
         <input placeholder="Search event, category, description, vendor" value={filters.search} onChange={(event) => setFilters({ ...filters, search: event.target.value })} />
@@ -155,7 +189,7 @@ export const SportsExpenses = () => {
         <table>
           <thead><tr><th>Date</th><th>Event</th><th>Category</th><th>Description</th><th>Vendor</th><th>Payment</th><th>Status</th><th className="numeric">Amount</th><th>Actions</th></tr></thead>
           <tbody>
-            {visibleExpenses.map((expense) => <tr key={expense.id}><td>{formatDate(expense.expenseDate)}</td><td>{expense.eventName || '-'}</td><td>{expense.category}</td><td>{expense.description || '-'}</td><td>{expense.vendorName || '-'}</td><td>{expense.paymentMode}</td><td>{expense.status}</td><td className="numeric">{formatCurrency(expense.amount)}</td><td className="table-actions"><button className="danger" onClick={() => remove(expense.id)}>Delete</button></td></tr>)}
+            {visibleExpenses.map((expense) => <tr key={expense.id}><td>{formatDate(expense.expenseDate)}</td><td>{expense.eventName || '-'}</td><td>{expense.category}</td><td>{expense.description || '-'}</td><td>{expense.vendorName || '-'}</td><td>{expense.paymentMode}</td><td>{expense.status}</td><td className="numeric">{formatCurrency(expense.amount)}</td><td className="table-actions"><button onClick={() => edit(expense)}>Edit</button><button className="danger" onClick={() => remove(expense.id)}>Delete</button></td></tr>)}
             {!loading && visibleExpenses.length === 0 && <tr><td colSpan="9" className="empty-state">No sports expenses found.</td></tr>}
           </tbody>
         </table>
