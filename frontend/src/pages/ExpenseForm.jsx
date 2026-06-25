@@ -155,6 +155,18 @@ export const ExpenseForm = () => {
     }
   }
 
+  const openAttachment = async (attachment) => {
+    try {
+      const response = await attachmentAPI.downloadAttachment(attachment.id)
+      const blob = new Blob([response.data], { type: attachment.fileType || response.data?.type || 'application/octet-stream' })
+      const url = URL.createObjectURL(blob)
+      window.open(url, '_blank', 'noopener,noreferrer')
+      window.setTimeout(() => URL.revokeObjectURL(url), 60_000)
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Unable to open attachment')
+    }
+  }
+
   const handleSubmit = async (event) => {
     event.preventDefault()
     if (isApproved) {
@@ -311,7 +323,7 @@ export const ExpenseForm = () => {
                     <td>{attachment.fileName}</td>
                     <td>{attachment.fileType}</td>
                     <td className="table-actions">
-                      <a className="button-link" href={attachmentAPI.downloadUrl(attachment.id)} target="_blank" rel="noreferrer">Open</a>
+                      <button type="button" className="primary" onClick={() => openAttachment(attachment)}>Open</button>
                       <button type="button" className="danger" onClick={() => deleteAttachment(attachment.id)}>Delete</button>
                     </td>
                   </tr>

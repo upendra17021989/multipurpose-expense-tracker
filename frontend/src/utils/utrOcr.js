@@ -1,5 +1,3 @@
-import Tesseract from 'tesseract.js'
-
 const TRANSACTION_ID_LABEL = /\b(?:transaction\s*(?:id|no|number)|txn\s*(?:id|no|number))\b/i
 const UTR_LABEL = /\b(?:utr|upi\s*(?:ref(?:erence)?|transaction)?|ref(?:erence)?\s*(?:no|id|number)?)\b/i
 const MONEY_PATTERN = /(?:\u20b9|rs\.?|inr)\s*([0-9][0-9,]*(?:\.\d{1,2})?)/i
@@ -9,6 +7,7 @@ export const extractUtrFromImage = async (file) => {
     return { text: '', utr: '', transactionId: '', amount: '' }
   }
 
+  const { default: Tesseract } = await import('tesseract.js')
   const result = await Tesseract.recognize(file, 'eng')
   const text = result?.data?.text || ''
   return { text, ...extractPaymentDetails(text) }
@@ -94,9 +93,9 @@ const findLikelyAmount = (lines) => {
 }
 
 const firstAmountInLine = (line) => {
-  const matches = String(line || '').matchAll(/(^|[^A-Z0-9-])([0-9]{1,7})(?:\.\d{1,2})?\b/gi)
+  const matches = String(line || '').matchAll(/(^|[^A-Z0-9-])((?:[0-9]{1,3}(?:,[0-9]{2,3})+|[0-9]{1,7})(?:\.\d{1,2})?)\b/gi)
   for (const match of matches) {
-    const value = match[2]
+    const value = match[2].replace(/,/g, '')
     const numeric = Number(value)
     if (numeric > 0 && numeric <= 100000 && !/^[0-9]{10,}$/.test(value)) {
       return value

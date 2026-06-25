@@ -121,5 +121,6 @@ export const attachmentAPI = {
     return axiosInstance.post('/attachments', formData, { headers: { 'Content-Type': 'multipart/form-data' } })
   },
   deleteAttachment: (attachmentId) => axiosInstance.delete(`/attachments/${attachmentId}`),
+  downloadAttachment: (attachmentId) => axiosInstance.get(`/attachments/${attachmentId}/download`, { responseType: 'blob' }),
   downloadUrl: (attachmentId) => `/api/attachments/${attachmentId}/download`
 }
