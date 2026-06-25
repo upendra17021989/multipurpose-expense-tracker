@@ -1,0 +1,19 @@
+{
+  "name": "Multi-Purpose Expense Tracker",
+  "short_name": "Expense Tracker",
+  "description": "Track personal, society, and kirana store expenses from the web or installed app.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f8fafc",
+  "theme_color": "#17202a",
+  "icons": [
+    {
+      "src": "/app-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

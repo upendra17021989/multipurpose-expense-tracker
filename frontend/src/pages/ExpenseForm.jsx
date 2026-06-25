@@ -295,7 +295,7 @@ export const ExpenseForm = () => {
           </label>
           <label>
             Receipt / UTR Screenshot
-            <input type="file" accept="image/*,.jfif,.pdf" onChange={(event) => handleReceiptFile(event.target.files?.[0])} disabled={isApproved || saving} />
+            <input type="file" accept="image/*,.jfif,.pdf" capture="environment" onChange={(event) => handleReceiptFile(event.target.files?.[0])} disabled={isApproved || saving} />
           </label>
         </div>
         {ocrStatus && <p className="muted">{ocrStatus}</p>}

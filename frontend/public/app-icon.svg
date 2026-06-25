@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Expense Tracker">
+  <rect width="512" height="512" rx="96" fill="#17202a"/>
+  <path fill="#0f766e" d="M96 142c0-30 24-54 54-54h212c30 0 54 24 54 54v228c0 30-24 54-54 54H150c-30 0-54-24-54-54V142Z"/>
+  <path fill="#fff" d="M150 124h212c10 0 18 8 18 18v46H132v-46c0-10 8-18 18-18Z"/>
+  <path fill="#17202a" d="M176 250h160v28H176v-28Zm0 62h160v28H176v-28Z"/>
+  <path fill="#f8fafc" d="M348 226c-20-20-53-20-73 0l-73 73 73 73c20 20 53 20 73 0l43-43-30-30-43 43c-3 3-9 3-12 0l-43-43 43-43c3-3 9-3 12 0l43 43 30-30-43-43Z"/>
+</svg>
