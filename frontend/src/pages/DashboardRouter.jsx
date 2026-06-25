@@ -134,7 +134,7 @@ const SportsHomeDashboard = () => {
         ['Collections', 'Separate table'],
         ['Expenses', 'Separate table']
       ]} />
-      <ActionRow actions={[[ 'Open Sports Module', '/sports' ]]} />
+      <ActionRow actions={[[ 'Overview', '/sports' ], [ 'Members', '/sports/members' ], [ 'Events', '/sports/events' ], [ 'Expenses', '/sports/expenses' ], [ 'Collections', '/sports/collections' ]]} />
     </Shell>
   )
 }

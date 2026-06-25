@@ -105,7 +105,11 @@ export const Navbar = () => {
                 {currentAccount?.accountType === 'KIRANA_STORE' && <Link to="/kirana/customer-credit" onClick={closeMenus}>Customer Credit</Link>}
                 {currentAccount?.accountType === 'KIRANA_STORE' && <Link to="/kirana/supplier-payments" onClick={closeMenus}>Supplier Dues</Link>}
                 {currentAccount?.accountType === 'KIRANA_STORE' && <Link to="/kirana/reports" onClick={closeMenus}>Reports</Link>}
-                {currentAccount?.accountType === 'SPORTS' && <Link to="/sports" onClick={closeMenus}>Sports Module</Link>}
+                {currentAccount?.accountType === 'SPORTS' && <Link to="/sports" onClick={closeMenus}>Overview</Link>}
+                {currentAccount?.accountType === 'SPORTS' && <Link to="/sports/members" onClick={closeMenus}>Members</Link>}
+                {currentAccount?.accountType === 'SPORTS' && <Link to="/sports/events" onClick={closeMenus}>Events</Link>}
+                {currentAccount?.accountType === 'SPORTS' && <Link to="/sports/expenses" onClick={closeMenus}>Expenses</Link>}
+                {currentAccount?.accountType === 'SPORTS' && <Link to="/sports/collections" onClick={closeMenus}>Collections</Link>}
               </div>
             </div>
           </div>

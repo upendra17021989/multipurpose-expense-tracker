@@ -30,6 +30,10 @@ import { CustomerCreditLedger } from './pages/kirana/CustomerCreditLedger'
 import { SupplierPaymentLedger } from './pages/kirana/SupplierPaymentLedger'
 import { KiranaReports } from './pages/kirana/KiranaReports'
 import { SportsDashboard } from './pages/sports/SportsDashboard'
+import { SportsMembers } from './pages/sports/SportsMembers'
+import { SportsEvents } from './pages/sports/SportsEvents'
+import { SportsExpenses } from './pages/sports/SportsExpenses'
+import { SportsCollections } from './pages/sports/SportsCollections'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import { AppErrorBoundary } from './components/AppErrorBoundary'
 import 'react-toastify/dist/ReactToastify.css'
@@ -77,6 +81,10 @@ function App() {
           <Route path="/kirana/supplier-payments" element={<ProtectedRoute><SupplierPaymentLedger /></ProtectedRoute>} />
           <Route path="/kirana/reports" element={<ProtectedRoute><KiranaReports /></ProtectedRoute>} />
           <Route path="/sports" element={<ProtectedRoute><SportsDashboard /></ProtectedRoute>} />
+          <Route path="/sports/members" element={<ProtectedRoute><SportsMembers /></ProtectedRoute>} />
+          <Route path="/sports/events" element={<ProtectedRoute><SportsEvents /></ProtectedRoute>} />
+          <Route path="/sports/expenses" element={<ProtectedRoute><SportsExpenses /></ProtectedRoute>} />
+          <Route path="/sports/collections" element={<ProtectedRoute><SportsCollections /></ProtectedRoute>} />
           <Route path="/" element={<Navigate to="/home" replace />} />
         </Routes>
         <ToastContainer position="top-right" autoClose={3000} hideProgressBar={false} newestOnTop />
