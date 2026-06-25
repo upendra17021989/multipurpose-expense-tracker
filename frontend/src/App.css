@@ -203,6 +203,13 @@ button.danger {
   color: #fff;
 }
 
+.install-btn {
+  border-color: rgba(255,255,255,0.24);
+  background: #fff;
+  color: #17202a;
+  font-weight: 750;
+}
+
 .page-shell {
   max-width: 1200px;
   margin: 0 auto;
@@ -594,6 +601,13 @@ th {
 
   .logout-btn {
     width: 100%;
+  }
+
+  .install-btn {
+    width: 100%;
+    background: #0f766e;
+    border-color: #0f766e;
+    color: #fff;
   }
 
   .summary-grid,

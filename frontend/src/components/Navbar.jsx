@@ -2,11 +2,13 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { toast } from 'react-toastify'
 import { authAPI } from '../api/endpoints'
+import { useInstallPrompt } from '../hooks/useInstallPrompt'
 import { useAuthStore } from '../store/authStore'
 
 export const Navbar = () => {
   const navigate = useNavigate()
   const { user, currentAccount, accounts, setSession, logout } = useAuthStore()
+  const { canInstall, promptInstall } = useInstallPrompt()
   const [menuOpen, setMenuOpen] = useState(false)
   const [moduleOpen, setModuleOpen] = useState(false)
   const [accountOpen, setAccountOpen] = useState(false)
@@ -16,6 +18,14 @@ export const Navbar = () => {
     setAccountOpen(false)
     setMenuOpen(false)
     navigate('/login')
+  }
+
+  const handleInstall = async () => {
+    const accepted = await promptInstall()
+    if (accepted) {
+      toast.success('App installed')
+      closeMenus()
+    }
   }
 
   const handleAccountChange = async (event) => {
@@ -92,6 +102,9 @@ export const Navbar = () => {
             </div>
           </div>
           <div className="nav-right">
+            {canInstall && (
+              <button type="button" className="install-btn" onClick={handleInstall}>Install app</button>
+            )}
             <div className={`nav-account ${accountOpen ? 'open' : ''}`}>
               <button type="button" className="nav-account-trigger" onClick={() => setAccountOpen((open) => !open)}>
                 <span>{user?.name || 'Account'}</span>
