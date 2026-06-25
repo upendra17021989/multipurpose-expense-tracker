@@ -29,6 +29,7 @@ import { PurchaseForm } from './pages/kirana/PurchaseForm'
 import { CustomerCreditLedger } from './pages/kirana/CustomerCreditLedger'
 import { SupplierPaymentLedger } from './pages/kirana/SupplierPaymentLedger'
 import { KiranaReports } from './pages/kirana/KiranaReports'
+import { SportsDashboard } from './pages/sports/SportsDashboard'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import { AppErrorBoundary } from './components/AppErrorBoundary'
 import 'react-toastify/dist/ReactToastify.css'
@@ -75,6 +76,7 @@ function App() {
           <Route path="/kirana/customer-credit" element={<ProtectedRoute><CustomerCreditLedger /></ProtectedRoute>} />
           <Route path="/kirana/supplier-payments" element={<ProtectedRoute><SupplierPaymentLedger /></ProtectedRoute>} />
           <Route path="/kirana/reports" element={<ProtectedRoute><KiranaReports /></ProtectedRoute>} />
+          <Route path="/sports" element={<ProtectedRoute><SportsDashboard /></ProtectedRoute>} />
           <Route path="/" element={<Navigate to="/home" replace />} />
         </Routes>
         <ToastContainer position="top-right" autoClose={3000} hideProgressBar={false} newestOnTop />

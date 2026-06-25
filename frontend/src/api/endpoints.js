@@ -124,3 +124,22 @@ export const attachmentAPI = {
   downloadAttachment: (attachmentId) => axiosInstance.get(`/attachments/${attachmentId}/download`, { responseType: 'blob' }),
   downloadUrl: (attachmentId) => `/api/attachments/${attachmentId}/download`
 }
+
+export const sportsAPI = {
+  getMembers: () => axiosInstance.get('/sports/members'),
+  createMember: (data) => axiosInstance.post('/sports/members', data),
+  updateMember: (memberId, data) => axiosInstance.put(`/sports/members/${memberId}`, data),
+  deleteMember: (memberId) => axiosInstance.delete(`/sports/members/${memberId}`),
+  getEvents: (year) => axiosInstance.get('/sports/events', { params: year ? { year } : {} }),
+  createEvent: (data) => axiosInstance.post('/sports/events', data),
+  updateEventStatus: (eventId, status) => axiosInstance.put(`/sports/events/${eventId}/status`, { status }),
+  deleteEvent: (eventId) => axiosInstance.delete(`/sports/events/${eventId}`),
+  getExpenses: () => axiosInstance.get('/sports/expenses'),
+  createExpense: (data) => axiosInstance.post('/sports/expenses', data),
+  deleteExpense: (expenseId) => axiosInstance.delete(`/sports/expenses/${expenseId}`),
+  getCollections: (sportsEventId) => axiosInstance.get('/sports/collections', { params: { sportsEventId } }),
+  getCollectionSummary: (sportsEventId) => axiosInstance.get('/sports/collections/summary', { params: { sportsEventId } }),
+  generateDemand: (data) => axiosInstance.post('/sports/collections/generate-demand', data),
+  addPayment: (collectionId, data) => axiosInstance.post(`/sports/collections/${collectionId}/payments`, data),
+  getReceipts: (collectionId) => axiosInstance.get(`/sports/collections/${collectionId}/receipts`)
+}

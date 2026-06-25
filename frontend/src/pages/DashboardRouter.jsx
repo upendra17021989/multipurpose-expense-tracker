@@ -8,7 +8,8 @@ import { expenseAPI, kiranaProductAPI, personalBudgetAPI, societyFlatAPI } from 
 const accountLabels = {
   INDIVIDUAL: 'Personal Expense Tracker',
   SOCIETY: 'Society Expense Management',
-  KIRANA_STORE: 'Kirana Store Management'
+  KIRANA_STORE: 'Kirana Store Management',
+  SPORTS: 'Sports Management'
 }
 
 export const DashboardRouter = () => {
@@ -24,6 +25,7 @@ export const DashboardRouter = () => {
 
   if (currentAccount.accountType === 'SOCIETY') return <SocietyDashboard />
   if (currentAccount.accountType === 'KIRANA_STORE') return <KiranaDashboard />
+  if (currentAccount.accountType === 'SPORTS') return <SportsHomeDashboard />
   return <PersonalDashboard />
 }
 
@@ -113,16 +115,29 @@ const SocietyDashboard = () => {
       <SummaryGrid
         items={[
           ['This Month', formatCurrency(summary.monthTotal)],
-          ['Festival / Sports Spend', formatCurrency(summary.festivalTotal)],
+          ['Festival Spend', formatCurrency(summary.festivalTotal)],
           ['Pending Approvals', pending],
           ['Active Flats', flats.length]
         ]}
       />
-      <ActionRow actions={[[ 'Add Expense', '/expenses/new' ], [ 'View Expenses', '/expenses' ], [ 'Categories', '/categories' ], [ 'Flat Master', '/society/flats' ], [ 'Festival / Sports', '/society/festivals' ], [ 'Collections', '/society/festival-collections' ]]} />
+      <ActionRow actions={[[ 'Add Expense', '/expenses/new' ], [ 'View Expenses', '/expenses' ], [ 'Categories', '/categories' ], [ 'Flat Master', '/society/flats' ], [ 'Festivals', '/society/festivals' ], [ 'Collections', '/society/festival-collections' ]]} />
     </Shell>
   )
 }
 
+const SportsHomeDashboard = () => {
+  return (
+    <Shell title={accountLabels.SPORTS}>
+      <SummaryGrid items={[
+        ['Members', 'Separate table'],
+        ['Events', 'Separate table'],
+        ['Collections', 'Separate table'],
+        ['Expenses', 'Separate table']
+      ]} />
+      <ActionRow actions={[[ 'Open Sports Module', '/sports' ]]} />
+    </Shell>
+  )
+}
 const KiranaDashboard = () => {
   const [expenses, setExpenses] = useState([])
   const [lowStock, setLowStock] = useState([])
@@ -186,7 +201,7 @@ const buildExpenseSummary = (expenses) => {
     const amount = Number(expense.amount || 0)
     if (expense.expenseDate === today) todayTotal += amount
     if (expense.expenseDate?.startsWith(monthPrefix)) monthTotal += amount
-    if (expense.expenseType === 'FESTIVAL' || expense.expenseType === 'SPORTS') festivalTotal += amount
+    if (expense.expenseType === 'FESTIVAL') festivalTotal += amount
     if (expense.categoryName) categoryTotals.set(expense.categoryName, (categoryTotals.get(expense.categoryName) || 0) + amount)
     if (expense.paymentMode) paymentModes.add(expense.paymentMode)
   })

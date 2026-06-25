@@ -7,7 +7,8 @@ import 'react-toastify/dist/ReactToastify.css'
 const accountTypeLabels = {
   INDIVIDUAL: 'Individual',
   SOCIETY: 'Society',
-  KIRANA_STORE: 'Kirana store'
+  KIRANA_STORE: 'Kirana store',
+  SPORTS: 'Sports'
 }
 
 export const Register = () => {
@@ -28,6 +29,7 @@ export const Register = () => {
   const accountNamePlaceholder = useMemo(() => {
     if (formData.accountType === 'SOCIETY') return 'e.g. Shree Residency Society'
     if (formData.accountType === 'KIRANA_STORE') return 'e.g. Patel Kirana Store'
+    if (formData.accountType === 'SPORTS') return 'e.g. Sunday Cricket Club'
     return 'e.g. Personal Expenses'
   }, [formData.accountType])
 

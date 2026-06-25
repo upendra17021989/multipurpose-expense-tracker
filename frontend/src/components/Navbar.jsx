@@ -60,7 +60,9 @@ export const Navbar = () => {
     ? 'Kirana'
     : currentAccount?.accountType === 'SOCIETY'
       ? 'Society'
-      : 'Personal'
+      : currentAccount?.accountType === 'SPORTS'
+        ? 'Sports'
+        : 'Personal'
 
   return (
     <nav className="navbar">
@@ -83,8 +85,8 @@ export const Navbar = () => {
         <div className={`nav-menu ${menuOpen ? 'open' : ''}`}>
           <div className="nav-links">
             <Link to="/home" onClick={closeMenus}>Dashboard</Link>
-            <Link to="/expenses" onClick={closeMenus}>Expenses</Link>
-            <Link to="/categories" onClick={closeMenus}>Categories</Link>
+            {currentAccount?.accountType !== 'SPORTS' && <Link to="/expenses" onClick={closeMenus}>Expenses</Link>}
+            {currentAccount?.accountType !== 'SPORTS' && <Link to="/categories" onClick={closeMenus}>Categories</Link>}
             <div className={`nav-dropdown ${moduleOpen ? 'open' : ''}`}>
               <button type="button" className="nav-dropdown-trigger" onClick={() => setModuleOpen((open) => !open)}>
                 {moduleLabel}
@@ -93,7 +95,7 @@ export const Navbar = () => {
                 {currentAccount?.accountType === 'INDIVIDUAL' && <Link to="/budget" onClick={closeMenus}>Budget</Link>}
                 {currentAccount?.accountType === 'INDIVIDUAL' && <Link to="/personal/reports" onClick={closeMenus}>Reports</Link>}
                 {currentAccount?.accountType === 'SOCIETY' && <Link to="/society/flats" onClick={closeMenus}>Flats</Link>}
-                {currentAccount?.accountType === 'SOCIETY' && <Link to="/society/festivals" onClick={closeMenus}>Festival / Sports</Link>}
+                {currentAccount?.accountType === 'SOCIETY' && <Link to="/society/festivals" onClick={closeMenus}>Festivals</Link>}
                 {currentAccount?.accountType === 'SOCIETY' && <Link to="/society/festival-collections" onClick={closeMenus}>Collections</Link>}
                 {currentAccount?.accountType === 'KIRANA_STORE' && <Link to="/kirana/products" onClick={closeMenus}>Products</Link>}
                 {currentAccount?.accountType === 'KIRANA_STORE' && <Link to="/kirana/sales" onClick={closeMenus}>Sales</Link>}
@@ -103,6 +105,7 @@ export const Navbar = () => {
                 {currentAccount?.accountType === 'KIRANA_STORE' && <Link to="/kirana/customer-credit" onClick={closeMenus}>Customer Credit</Link>}
                 {currentAccount?.accountType === 'KIRANA_STORE' && <Link to="/kirana/supplier-payments" onClick={closeMenus}>Supplier Dues</Link>}
                 {currentAccount?.accountType === 'KIRANA_STORE' && <Link to="/kirana/reports" onClick={closeMenus}>Reports</Link>}
+                {currentAccount?.accountType === 'SPORTS' && <Link to="/sports" onClick={closeMenus}>Sports Module</Link>}
               </div>
             </div>
           </div>

@@ -178,6 +178,7 @@ public class AuthService {
                 case INDIVIDUAL -> user.getName() + "'s Account";
                 case SOCIETY -> request.getSocietyName();
                 case KIRANA_STORE -> request.getStoreName();
+                case SPORTS -> request.getAccountName();
             };
         }
         if (accountName == null || accountName.isBlank()) {
@@ -203,7 +204,7 @@ public class AuthService {
         return switch (accountType) {
             case SOCIETY -> UserRole.ADMIN;
             case KIRANA_STORE -> UserRole.STORE_OWNER;
-            case INDIVIDUAL -> UserRole.OWNER;
+            case INDIVIDUAL, SPORTS -> UserRole.OWNER;
         };
     }
 }

@@ -256,12 +256,15 @@ public class ExpenseService {
                 }
             }
             case SOCIETY -> {
-                if (expenseType != ExpenseType.SOCIETY_REGULAR && expenseType != ExpenseType.FESTIVAL && expenseType != ExpenseType.SPORTS) {
-                    throw new ValidationException("Society expenses must be SOCIETY_REGULAR, FESTIVAL, or SPORTS");
+                if (expenseType != ExpenseType.SOCIETY_REGULAR && expenseType != ExpenseType.FESTIVAL) {
+                    throw new ValidationException("Society expenses must be SOCIETY_REGULAR or FESTIVAL");
                 }
-                if ((expenseType == ExpenseType.FESTIVAL || expenseType == ExpenseType.SPORTS) && request.getFestivalEventId() == null) {
-                    throw new ValidationException("Festival or sports expenses require an event");
+                if (expenseType == ExpenseType.FESTIVAL && request.getFestivalEventId() == null) {
+                    throw new ValidationException("Festival expenses require a festival event");
                 }
+            }
+            case SPORTS -> {
+                throw new ValidationException("Use the sports module for sports account expenses");
             }
             case KIRANA_STORE -> {
                 if (expenseType != ExpenseType.STORE_EXPENSE) {
@@ -315,7 +318,7 @@ public class ExpenseService {
                 .findByAccountIdAndFestivalEventIdAndSoftDeletedFalse(
                         festivalEvent.getAccount().getId(), festivalEvent.getId())
                 .stream()
-                .filter(expense -> expense.getExpenseType() == ExpenseType.FESTIVAL || expense.getExpenseType() == ExpenseType.SPORTS)
+                .filter(expense -> expense.getExpenseType() == ExpenseType.FESTIVAL)
                 .map(Expense::getAmount)
                 .filter(amount -> amount != null)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);

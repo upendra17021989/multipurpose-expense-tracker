@@ -119,7 +119,8 @@ public class ExpenseCategoryService {
                     "Medical", "Education", "Bills", "Entertainment", "Miscellaneous");
             case SOCIETY -> List.of(
                     "Maintenance", "Security", "Cleaning", "Electricity", "Plumbing", "Lift",
-                    "Garden", "Office/Admin", "Festival", "Sports", "Miscellaneous");
+                    "Garden", "Office/Admin", "Festival", "Miscellaneous");
+            case SPORTS -> List.of();
             case KIRANA_STORE -> List.of(
                     "Shop Rent", "Electricity", "Staff Salary", "Transport", "Packaging",
                     "Maintenance", "Miscellaneous");
@@ -134,6 +135,7 @@ public class ExpenseCategoryService {
                 case "Sports" -> CategoryType.SPORTS;
                 default -> CategoryType.SOCIETY_REGULAR;
             };
+            case SPORTS -> CategoryType.SPORTS;
             case KIRANA_STORE -> CategoryType.STORE;
         };
     }
