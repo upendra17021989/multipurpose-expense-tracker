@@ -3,6 +3,7 @@ import { Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer,
 import { toast } from 'react-toastify'
 import { expenseAPI, personalBudgetAPI } from '../api/endpoints'
 import { useAuthStore } from '../store/authStore'
+import { exportWorkbook, numberValue } from '../utils/exportExcel'
 import { formatCurrency } from '../utils/format'
 import { Shell, SummaryGrid } from './DashboardRouter'
 
@@ -29,6 +30,48 @@ export const PersonalReports = () => {
 
   const report = useMemo(() => buildPersonalReport(expenses, budget), [expenses, budget])
 
+  const exportReport = () => {
+    exportWorkbook([
+      {
+        name: 'Summary',
+        rows: [
+          { Metric: 'This Month', Amount: report.monthTotal },
+          { Metric: 'Daily Average', Amount: report.dailyAverage },
+          { Metric: 'Budget Used', Value: report.budgetUsed },
+          { Metric: 'Monthly Budget', Amount: numberValue(budget?.monthlyBudget) },
+          { Metric: 'Savings Target', Amount: numberValue(budget?.monthlySavingsTarget) }
+        ]
+      },
+      {
+        name: 'Category Totals',
+        rows: report.categoryData.map((category) => ({
+          Category: category.name,
+          Amount: category.amount,
+          Share: report.monthTotal ? `${Math.round((category.amount / report.monthTotal) * 100)}%` : '0%'
+        }))
+      },
+      {
+        name: 'Daily Totals',
+        rows: report.dailyData.map((day) => ({
+          Day: day.day,
+          Amount: day.amount
+        }))
+      },
+      {
+        name: 'Expenses',
+        rows: report.filteredExpenses.map((expense) => ({
+          Date: expense.expenseDate,
+          Category: expense.categoryName || 'Uncategorized',
+          Description: expense.description || '',
+          Vendor: expense.vendorName || '',
+          PaymentMode: expense.paymentMode || '',
+          Amount: numberValue(expense.amount),
+          Status: expense.status || ''
+        }))
+      }
+    ], `personal-report-${report.monthPrefix}`)
+  }
+
   if (currentAccount?.accountType !== 'INDIVIDUAL') {
     return (
       <Shell title="Personal Reports" eyebrow="Individual module">
@@ -38,7 +81,7 @@ export const PersonalReports = () => {
   }
 
   return (
-    <Shell title="Personal Reports" eyebrow="Individual module">
+    <Shell title="Personal Reports" eyebrow="Individual module" actions={<button className="primary" onClick={exportReport}>Export Excel</button>}>
       <SummaryGrid
         items={[
           ['This Month', formatCurrency(report.monthTotal)],
@@ -70,7 +113,7 @@ export const PersonalReports = () => {
               <BarChart data={report.dailyData}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} />
                 <XAxis dataKey="day" />
-                <YAxis tickFormatter={(value) => `₹${value}`} width={58} />
+                <YAxis tickFormatter={(value) => `Rs ${value}`} width={58} />
                 <Tooltip formatter={(value) => formatCurrency(value)} />
                 <Bar dataKey="amount" fill="#2563eb" radius={[4, 4, 0, 0]} />
               </BarChart>
@@ -113,18 +156,17 @@ const buildPersonalReport = (expenses, budget) => {
   const currentDay = now.getDate()
   const categoryTotals = new Map()
   const dailyTotals = new Map()
+  const filteredExpenses = expenses.filter((expense) => expense.expenseDate?.startsWith(monthPrefix))
   let monthTotal = 0
 
-  expenses
-    .filter((expense) => expense.expenseDate?.startsWith(monthPrefix))
-    .forEach((expense) => {
-      const amount = Number(expense.amount || 0)
-      const category = expense.categoryName || 'Uncategorized'
-      const day = expense.expenseDate.slice(8, 10)
-      monthTotal += amount
-      categoryTotals.set(category, (categoryTotals.get(category) || 0) + amount)
-      dailyTotals.set(day, (dailyTotals.get(day) || 0) + amount)
-    })
+  filteredExpenses.forEach((expense) => {
+    const amount = Number(expense.amount || 0)
+    const category = expense.categoryName || 'Uncategorized'
+    const day = expense.expenseDate.slice(8, 10)
+    monthTotal += amount
+    categoryTotals.set(category, (categoryTotals.get(category) || 0) + amount)
+    dailyTotals.set(day, (dailyTotals.get(day) || 0) + amount)
+  })
 
   const budgetAmount = Number(budget?.monthlyBudget || 0)
 
@@ -137,6 +179,8 @@ const buildPersonalReport = (expenses, budget) => {
       .sort((a, b) => b.amount - a.amount),
     dailyData: [...dailyTotals.entries()]
       .map(([day, amount]) => ({ day, amount }))
-      .sort((a, b) => Number(a.day) - Number(b.day))
+      .sort((a, b) => Number(a.day) - Number(b.day)),
+    filteredExpenses,
+    monthPrefix
   }
 }

@@ -120,9 +120,9 @@ export const ExpenseForm = () => {
       if (transactionId || utr || amount) {
         setForm((current) => ({
           ...current,
-          utr: current.utr || utr,
-          transactionId: current.transactionId || transactionId || utr,
-          amount: current.amount || amount,
+          utr: utr || current.utr,
+          transactionId: transactionId || utr || current.transactionId,
+          amount: amount || current.amount,
           paymentMode: current.paymentMode === 'CASH' ? 'UPI' : current.paymentMode
         }))
         const detected = [
