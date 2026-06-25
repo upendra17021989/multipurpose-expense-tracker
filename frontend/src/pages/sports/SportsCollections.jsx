@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { toast } from 'react-toastify'
 import { sportsAPI } from '../../api/endpoints'
 import { useAuthStore } from '../../store/authStore'
@@ -134,11 +134,11 @@ export const SportsCollections = () => {
       </form>
       <div className="table-wrap">
         <table>
-          <thead><tr><th>Member</th><th>Mobile</th><th className="numeric">Expected</th><th className="numeric">Collected</th><th className="numeric">Pending</th><th className="numeric">Excess</th><th>Status</th></tr></thead>
+          <thead><tr><th>Member</th><th>Mobile</th><th className="numeric">Expected</th><th className="numeric">Collected</th><th className="numeric">Pending</th><th className="numeric">Excess</th><th>Status</th><th>Actions</th></tr></thead>
           <tbody>
-            {visibleCollections.map((collection) => <tr key={collection.id}><td>{collection.memberName}</td><td>{collection.mobile || '-'}</td><td className="numeric">{formatCurrency(collection.expectedAmount)}</td><td className="numeric">{formatCurrency(collection.collectedAmount)}</td><td className="numeric">{formatCurrency(collection.pendingAmount)}</td><td className="numeric">{formatCurrency(collection.excessAmount)}</td><td><span className={`status-pill ${String(collection.paymentStatus).toLowerCase()}`}>{collection.paymentStatus}</span></td></tr>)}
-            {!loading && selectedEventId && visibleCollections.length === 0 && <tr><td colSpan="7" className="empty-state">Generate demand to create member-wise collection rows.</td></tr>}
-            {!selectedEventId && <tr><td colSpan="7" className="empty-state">Select an event to manage collections.</td></tr>}
+            {visibleCollections.map((collection) => <tr key={collection.id}><td>{collection.memberName}</td><td>{collection.mobile || '-'}</td><td className="numeric">{formatCurrency(collection.expectedAmount)}</td><td className="numeric">{formatCurrency(collection.collectedAmount)}</td><td className="numeric">{formatCurrency(collection.pendingAmount)}</td><td className="numeric">{formatCurrency(collection.excessAmount)}</td><td><span className={`status-pill ${String(collection.paymentStatus).toLowerCase()}`}>{collection.paymentStatus}</span></td><td className="table-actions"><Link className="button-link secondary" to={`/sports/collections/${collection.id}/receipts?eventId=${selectedEventId}`}>Receipts</Link></td></tr>)}
+            {!loading && selectedEventId && visibleCollections.length === 0 && <tr><td colSpan="8" className="empty-state">Generate demand to create member-wise collection rows.</td></tr>}
+            {!selectedEventId && <tr><td colSpan="8" className="empty-state">Select an event to manage collections.</td></tr>}
           </tbody>
         </table>
       </div>
