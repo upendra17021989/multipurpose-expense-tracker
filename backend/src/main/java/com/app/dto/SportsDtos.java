@@ -6,6 +6,7 @@ import lombok.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 
 public class SportsDtos {
     @Data @NoArgsConstructor @AllArgsConstructor @Builder
@@ -118,6 +119,7 @@ public class SportsDtos {
     public static class DemandRequest {
         @NotNull private Long sportsEventId;
         @NotNull @DecimalMin("0.01") private BigDecimal expectedAmount;
+        private List<Long> sportsMemberIds;
         private String remarks;
     }
 

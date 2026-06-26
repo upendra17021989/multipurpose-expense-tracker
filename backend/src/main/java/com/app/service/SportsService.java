@@ -226,7 +226,12 @@ public class SportsService {
         Account account = requireSportsAccount(accountId);
         SportsEvent event = findEvent(accountId, request.getSportsEventId());
         List<SportsMember> members = memberRepository.findByAccountIdAndActiveTrue(accountId);
-        if (members.isEmpty()) throw new ValidationException("Add active sports members before generating collection demand");
+        if (request.getSportsMemberIds() != null && !request.getSportsMemberIds().isEmpty()) {
+            members = members.stream()
+                    .filter(member -> request.getSportsMemberIds().contains(member.getId()))
+                    .collect(Collectors.toList());
+        }
+        if (members.isEmpty()) throw new ValidationException("Select at least one active sports member before generating collection demand");
         for (SportsMember member : members) {
             SportsCollection collection = collectionRepository.findByAccountIdAndSportsEventIdAndSportsMemberId(accountId, event.getId(), member.getId())
                     .orElseGet(() -> SportsCollection.builder().account(account).sportsEvent(event).sportsMember(member)
@@ -249,6 +254,18 @@ public class SportsService {
         SportsCollection saved = collectionRepository.save(collection);
         refreshEventCollectedAmount(saved.getSportsEvent());
         return mapCollection(saved);
+    }
+
+    public void deleteDemand(Long accountId, Long collectionId) {
+        requireSportsAccount(accountId);
+        SportsCollection collection = findCollection(accountId, collectionId);
+        if (nonNull(collection.getCollectedAmount()).compareTo(BigDecimal.ZERO) > 0
+                || !receiptRepository.findBySportsCollectionId(collectionId).isEmpty()) {
+            throw new ValidationException("Cannot delete demand after payment has been collected");
+        }
+        SportsEvent event = collection.getSportsEvent();
+        collectionRepository.delete(collection);
+        refreshEventCollectedAmount(event);
     }
 
     public ReceiptDto addPayment(Long accountId, Long collectionId, PaymentRequest request) {

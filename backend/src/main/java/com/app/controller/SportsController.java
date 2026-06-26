@@ -122,6 +122,12 @@ public class SportsController {
         return ResponseEntity.ok(sportsService.updateDemand(userPrincipal.getAccountId(), collectionId, request));
     }
 
+    @DeleteMapping("/collections/{collectionId}/demand")
+    public ResponseEntity<Void> deleteDemand(@AuthenticationPrincipal UserPrincipal userPrincipal, @PathVariable Long collectionId) {
+        sportsService.deleteDemand(userPrincipal.getAccountId(), collectionId);
+        return ResponseEntity.noContent().build();
+    }
+
     @PostMapping("/collections/{collectionId}/payments")
     public ResponseEntity<ReceiptDto> addPayment(@AuthenticationPrincipal UserPrincipal userPrincipal, @PathVariable Long collectionId, @Valid @RequestBody PaymentRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(sportsService.addPayment(userPrincipal.getAccountId(), collectionId, request));

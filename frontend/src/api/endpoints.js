@@ -132,6 +132,7 @@ export const sportsAPI = {
   deleteMember: (memberId) => axiosInstance.delete(`/sports/members/${memberId}`),
   getEvents: (year) => axiosInstance.get('/sports/events', { params: year ? { year } : {} }),
   createEvent: (data) => axiosInstance.post('/sports/events', data),
+  updateEvent: (eventId, data) => axiosInstance.put(`/sports/events/${eventId}`, data),
   updateEventStatus: (eventId, status) => axiosInstance.put(`/sports/events/${eventId}/status`, { status }),
   deleteEvent: (eventId) => axiosInstance.delete(`/sports/events/${eventId}`),
   getExpenses: () => axiosInstance.get('/sports/expenses'),
@@ -142,5 +143,8 @@ export const sportsAPI = {
   getCollectionSummary: (sportsEventId) => axiosInstance.get('/sports/collections/summary', { params: { sportsEventId } }),
   generateDemand: (data) => axiosInstance.post('/sports/collections/generate-demand', data),
   addPayment: (collectionId, data) => axiosInstance.post(`/sports/collections/${collectionId}/payments`, data),
+  deleteDemand: (collectionId) => axiosInstance.delete(`/sports/collections/${collectionId}/demand`),
   getReceipts: (collectionId) => axiosInstance.get(`/sports/collections/${collectionId}/receipts`)
 }
+
+

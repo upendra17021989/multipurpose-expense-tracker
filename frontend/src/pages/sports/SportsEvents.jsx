@@ -15,6 +15,7 @@ export const SportsEvents = () => {
   const { currentAccount } = useAuthStore()
   const [events, setEvents] = useState([])
   const [form, setForm] = useState(initialForm)
+  const [editingEventId, setEditingEventId] = useState(null)
   const [year, setYear] = useState('')
   const [loading, setLoading] = useState(true)
 
@@ -37,14 +38,37 @@ export const SportsEvents = () => {
 
   const submit = async (event) => {
     event.preventDefault()
+    const payload = { ...form, year: Number(form.year), budgetAmount: form.budgetAmount === '' ? null : Number(form.budgetAmount) }
     try {
-      await sportsAPI.createEvent({ ...form, year: Number(form.year), budgetAmount: form.budgetAmount === '' ? null : Number(form.budgetAmount) })
+      if (editingEventId) {
+        await sportsAPI.updateEvent(editingEventId, payload)
+        toast.success('Event updated')
+      } else {
+        await sportsAPI.createEvent(payload)
+        toast.success('Event added')
+      }
       setForm(initialForm)
-      toast.success('Event added')
+      setEditingEventId(null)
       loadEvents()
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Unable to add event')
+      toast.error(error.response?.data?.message || (editingEventId ? 'Unable to update event' : 'Unable to add event'))
     }
+  }
+
+  const edit = (sportsEvent) => {
+    setEditingEventId(sportsEvent.id)
+    setForm({
+      eventName: sportsEvent.eventName || '',
+      year: sportsEvent.year || currentYear,
+      startDate: sportsEvent.startDate || today,
+      endDate: sportsEvent.endDate || today,
+      budgetAmount: sportsEvent.budgetAmount ?? ''
+    })
+  }
+
+  const cancelEdit = () => {
+    setEditingEventId(null)
+    setForm(initialForm)
   }
 
   const updateStatus = async (eventId, status) => {
@@ -87,7 +111,8 @@ export const SportsEvents = () => {
         <input type="date" value={form.startDate} onChange={(event) => setForm({ ...form, startDate: event.target.value })} required />
         <input type="date" value={form.endDate} onChange={(event) => setForm({ ...form, endDate: event.target.value })} required />
         <input type="number" min="0" step="0.01" placeholder="Budget" value={form.budgetAmount} onChange={(event) => setForm({ ...form, budgetAmount: event.target.value })} />
-        <button className="primary" type="submit">Add Event</button>
+        <button className="primary" type="submit">{editingEventId ? 'Update Event' : 'Add Event'}</button>
+        {editingEventId && <button type="button" onClick={cancelEdit}>Cancel</button>}
       </form>
       <section className="toolbar-panel flat-toolbar">
         <input type="number" placeholder="Filter by year" value={year} onChange={(event) => setYear(event.target.value)} min="2020" max="2100" />
@@ -100,7 +125,7 @@ export const SportsEvents = () => {
             {events.map((sportsEvent) => (
               <tr key={sportsEvent.id}>
                 <td>{sportsEvent.eventName}</td><td>{sportsEvent.year}</td><td>{formatDate(sportsEvent.startDate)} - {formatDate(sportsEvent.endDate)}</td><td className="numeric">{formatCurrency(sportsEvent.budgetAmount)}</td><td className="numeric">{formatCurrency(sportsEvent.collectedAmount)}</td><td className="numeric">{formatCurrency(sportsEvent.totalExpense)}</td><td className="numeric">{formatCurrency(sportsEvent.balanceAmount)}</td><td><span className={`status-pill ${String(sportsEvent.status).toLowerCase()}`}>{sportsEvent.status}</span></td>
-                <td className="table-actions"><button onClick={() => navigate(`/sports/collections?eventId=${sportsEvent.id}`)}>Collections</button>{sportsEvent.status !== 'ACTIVE' && <button onClick={() => updateStatus(sportsEvent.id, 'ACTIVE')}>Activate</button>}{sportsEvent.status !== 'CLOSED' && <button onClick={() => updateStatus(sportsEvent.id, 'CLOSED')}>Close</button>}<button className="danger" onClick={() => remove(sportsEvent.id)}>Delete</button></td>
+                <td className="table-actions"><button onClick={() => navigate(`/sports/collections?eventId=${sportsEvent.id}`)}>Collections</button><button onClick={() => edit(sportsEvent)}>Edit</button>{sportsEvent.status !== 'ACTIVE' && <button onClick={() => updateStatus(sportsEvent.id, 'ACTIVE')}>Activate</button>}{sportsEvent.status !== 'CLOSED' && <button onClick={() => updateStatus(sportsEvent.id, 'CLOSED')}>Close</button>}<button className="danger" onClick={() => remove(sportsEvent.id)}>Delete</button></td>
               </tr>
             ))}
             {!loading && events.length === 0 && <tr><td colSpan="9" className="empty-state">No sports events found.</td></tr>}
@@ -111,3 +136,4 @@ export const SportsEvents = () => {
     </Shell>
   )
 }
+
