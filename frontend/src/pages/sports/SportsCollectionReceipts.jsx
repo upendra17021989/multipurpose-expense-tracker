@@ -11,11 +11,13 @@ export const SportsCollectionReceipts = () => {
   const [searchParams] = useSearchParams()
   const eventId = searchParams.get('eventId')
   const { currentAccount } = useAuthStore()
+  const isSportsAdmin = ['OWNER', 'ADMIN', 'TREASURER'].includes(currentAccount?.role)
   const [collection, setCollection] = useState(null)
   const [receipts, setReceipts] = useState([])
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
+  const loadReceipts = () => {
+    setLoading(true)
     const collectionRequest = eventId
       ? sportsAPI.getCollections(eventId).then((response) => (response.data || []).find((item) => String(item.id) === String(collectionId)) || null)
       : Promise.resolve(null)
@@ -30,9 +32,24 @@ export const SportsCollectionReceipts = () => {
       })
       .catch((error) => toast.error(error.response?.data?.message || 'Unable to load receipts'))
       .finally(() => setLoading(false))
-  }, [collectionId, eventId])
+  }
 
-  const receiptTotal = useMemo(() => receipts.reduce((sum, receipt) => sum + Number(receipt.amountPaid || 0), 0), [receipts])
+  useEffect(loadReceipts, [collectionId, eventId])
+
+  const voidReceipt = async (receipt) => {
+    const voidReason = window.prompt(`Reason for voiding ${receipt.receiptNumber}`)
+    if (!voidReason || !voidReason.trim()) return
+    try {
+      await sportsAPI.voidReceipt(receipt.id, { voidReason: voidReason.trim() })
+      toast.success('Receipt voided')
+      loadReceipts()
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Unable to void receipt')
+    }
+  }
+
+  const activeReceipts = useMemo(() => receipts.filter((receipt) => receipt.status !== 'VOIDED'), [receipts])
+  const receiptTotal = useMemo(() => activeReceipts.reduce((sum, receipt) => sum + Number(receipt.amountPaid || 0), 0), [activeReceipts])
 
   if (currentAccount?.accountType !== 'SPORTS') {
     return <Shell title="Sports Receipts" eyebrow="Sports"><p className="muted">Sports receipts are available for sports accounts.</p></Shell>
@@ -72,6 +89,8 @@ export const SportsCollectionReceipts = () => {
               <th>Reference</th>
               <th>Collected By</th>
               <th>Remarks</th>
+              <th>Status</th>
+              <th>Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -84,15 +103,17 @@ export const SportsCollectionReceipts = () => {
                 <td>{receipt.utr || receipt.chequeNumber || receipt.transactionId || '-'}</td>
                 <td>{receipt.collectedBy}</td>
                 <td>{receipt.remarks || '-'}</td>
+                <td>{receipt.status || 'ACTIVE'}{receipt.voidReason ? ` - ${receipt.voidReason}` : ''}</td>
+                <td className="table-actions">{isSportsAdmin && receipt.status !== 'VOIDED' && <button className="danger" onClick={() => voidReceipt(receipt)}>Void</button>}</td>
               </tr>
             ))}
-            {!loading && receipts.length === 0 && <tr><td colSpan="7" className="empty-state">No payments recorded yet.</td></tr>}
+            {!loading && receipts.length === 0 && <tr><td colSpan="9" className="empty-state">No payments recorded yet.</td></tr>}
           </tbody>
         </table>
       </div>
       {!loading && receipts.length > 0 && (
         <section className="receipt-total">
-          <span>Total collected in receipts</span>
+          <span>Total active receipts</span>
           <strong>{formatCurrency(receiptTotal)}</strong>
         </section>
       )}

@@ -43,6 +43,14 @@ public class SportsCollectionReceipt {
 
     private String remarks;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    @Builder.Default
+    private ReceiptStatus status = ReceiptStatus.ACTIVE;
+
+    private String voidReason;
+    private LocalDateTime voidedAt;
+
     @Builder.Default
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();

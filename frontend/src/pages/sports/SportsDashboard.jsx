@@ -8,6 +8,7 @@ import { ActionRow, Shell, SummaryGrid } from '../DashboardRouter'
 
 export const SportsDashboard = () => {
   const { currentAccount } = useAuthStore()
+  const isSportsAdmin = ['OWNER', 'ADMIN', 'TREASURER'].includes(currentAccount?.role)
   const [members, setMembers] = useState([])
   const [events, setEvents] = useState([])
   const [expenses, setExpenses] = useState([])
@@ -38,7 +39,7 @@ export const SportsDashboard = () => {
   }
 
   return (
-    <Shell title="Sports Management" eyebrow="Sports module" actions={<Link className="button-link" to="/sports/events">Add Event</Link>}>
+    <Shell title="Sports Management" eyebrow="Sports module" actions={isSportsAdmin ? <Link className="button-link" to="/sports/events">Add Event</Link> : null}>
       <SummaryGrid items={[
         ['Members', summary.members],
         ['Events', summary.events],
@@ -47,12 +48,15 @@ export const SportsDashboard = () => {
         ['Expenses', formatCurrency(summary.expenses)],
         ['Balance', formatCurrency(summary.balance)]
       ]} />
-      <ActionRow actions={[
+      <ActionRow actions={(isSportsAdmin ? [
         ['Members', '/sports/members'],
         ['Events', '/sports/events'],
         ['Expenses', '/sports/expenses'],
         ['Collections', '/sports/collections']
-      ]} />
+      ] : [
+        ['Events', '/sports/events'],
+        ['Collections', '/sports/collections']
+      ])} />
       {loading && <p className="muted">Loading sports dashboard...</p>}
     </Shell>
   )

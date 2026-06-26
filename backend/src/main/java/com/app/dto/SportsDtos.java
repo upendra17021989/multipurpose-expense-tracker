@@ -17,6 +17,7 @@ public class SportsDtos {
         private String mobile;
         private String email;
         private String role;
+        private String defaultPassword;
         private Boolean active;
         private LocalDateTime createdAt;
     }
@@ -29,6 +30,17 @@ public class SportsDtos {
         private String role;
     }
 
+
+    @Data @NoArgsConstructor @AllArgsConstructor @Builder
+    public static class MemberLoginDto {
+        private Long sportsMemberId;
+        private String memberName;
+        private String mobile;
+        private String role;
+        private String defaultPassword;
+        private Boolean created;
+        private String message;
+    }
     @Data @NoArgsConstructor @AllArgsConstructor @Builder
     public static class EventDto {
         private Long id;
@@ -111,6 +123,9 @@ public class SportsDtos {
         private BigDecimal refundedAmount;
         private PaymentStatus paymentStatus;
         private String remarks;
+        private ReceiptStatus status;
+        private String voidReason;
+        private LocalDateTime voidedAt;
         private LocalDateTime createdAt;
         private LocalDateTime updatedAt;
     }
@@ -148,9 +163,17 @@ public class SportsDtos {
         private String collectedBy;
         private String receiptNumber;
         private String remarks;
+        private ReceiptStatus status;
+        private String voidReason;
+        private LocalDateTime voidedAt;
         private LocalDateTime createdAt;
     }
 
+
+    @Data
+    public static class VoidReceiptRequest {
+        @NotBlank private String voidReason;
+    }
     @Data @NoArgsConstructor @AllArgsConstructor @Builder
     public static class CollectionSummaryDto {
         private Long sportsEventId;
@@ -166,3 +189,5 @@ public class SportsDtos {
         private long totalMembers;
     }
 }
+
+

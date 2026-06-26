@@ -4,7 +4,7 @@ import { sportsAPI } from '../../api/endpoints'
 import { useAuthStore } from '../../store/authStore'
 import { Shell, SummaryGrid } from '../DashboardRouter'
 
-const initialForm = { memberName: '', mobile: '', email: '', role: '' }
+const initialForm = { memberName: '', mobile: '', email: '', role: 'MEMBER' }
 
 export const SportsMembers = () => {
   const { currentAccount } = useAuthStore()
@@ -13,6 +13,8 @@ export const SportsMembers = () => {
   const [editingId, setEditingId] = useState(null)
   const [search, setSearch] = useState('')
   const [loading, setLoading] = useState(true)
+  const [lastPassword, setLastPassword] = useState(null)
+  const [bulkLogins, setBulkLogins] = useState([])
 
   const loadMembers = () => {
     setLoading(true)
@@ -46,8 +48,10 @@ export const SportsMembers = () => {
       role: form.role.trim() || null
     }
     try {
-      if (editingId) await sportsAPI.updateMember(editingId, payload)
-      else await sportsAPI.createMember(payload)
+      let response
+      if (editingId) response = await sportsAPI.updateMember(editingId, payload)
+      else response = await sportsAPI.createMember(payload)
+      setLastPassword(response?.data?.defaultPassword ? { memberName: response.data.memberName, mobile: response.data.mobile, password: response.data.defaultPassword } : null)
       toast.success(editingId ? 'Member updated' : 'Member added')
       reset()
       loadMembers()
@@ -58,9 +62,24 @@ export const SportsMembers = () => {
 
   const edit = (member) => {
     setEditingId(member.id)
+    setLastPassword(null)
     setForm({ memberName: member.memberName || '', mobile: member.mobile || '', email: member.email || '', role: member.role || '' })
   }
 
+
+  const generateLogins = async () => {
+    if (!window.confirm('Generate login passwords for existing members without users?')) return
+    try {
+      const response = await sportsAPI.generateMemberLogins()
+      const results = response.data || []
+      setBulkLogins(results)
+      const created = results.filter((item) => item.created).length
+      toast.success(`${created} login${created === 1 ? '' : 's'} created`)
+      loadMembers()
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Unable to generate member logins')
+    }
+  }
   const remove = async (memberId) => {
     if (!window.confirm('Delete this member?')) return
     try {
@@ -83,10 +102,17 @@ export const SportsMembers = () => {
         <input placeholder="Member name" value={form.memberName} onChange={(event) => setForm({ ...form, memberName: event.target.value })} required />
         <input placeholder="Mobile" value={form.mobile} onChange={(event) => setForm({ ...form, mobile: event.target.value })} />
         <input placeholder="Email" value={form.email} onChange={(event) => setForm({ ...form, email: event.target.value })} />
-        <input placeholder="Role" value={form.role} onChange={(event) => setForm({ ...form, role: event.target.value })} />
+        <select value={form.role} onChange={(event) => setForm({ ...form, role: event.target.value })}>
+          <option value="MEMBER">Member</option>
+          <option value="ADMIN">Admin</option>
+          <option value="TREASURER">Treasurer</option>
+        </select>
         <button className="primary" type="submit">{editingId ? 'Update' : 'Add'} Member</button>
         {editingId && <button type="button" onClick={reset}>Cancel</button>}
       </form>
+      <section className="toolbar-panel flat-toolbar"><button type="button" onClick={generateLogins}>Generate Missing Logins</button></section>
+      {lastPassword && <section className="toolbar-panel flat-toolbar"><strong>Default login</strong><span>{lastPassword.memberName} ({lastPassword.mobile})</span><code>{lastPassword.password}</code></section>}
+      {bulkLogins.length > 0 && <section className="toolbar-panel flat-toolbar"><strong>Generated logins</strong>{bulkLogins.map((item) => <span key={item.sportsMemberId}>{item.memberName} ({item.mobile}) - {item.defaultPassword ? <code>{item.defaultPassword}</code> : item.message}</span>)}</section>}
       <section className="toolbar-panel flat-toolbar">
         <input placeholder="Search member, mobile, role" value={search} onChange={(event) => setSearch(event.target.value)} />
         <strong>{visibleMembers.length} shown</strong>
@@ -109,3 +135,5 @@ export const SportsMembers = () => {
     </Shell>
   )
 }
+
+

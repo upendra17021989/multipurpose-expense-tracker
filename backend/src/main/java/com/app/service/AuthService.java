@@ -12,6 +12,7 @@ import com.app.entity.UserRole;
 import com.app.exception.UnauthorizedException;
 import com.app.exception.ValidationException;
 import com.app.repository.AccountRepository;
+import com.app.repository.AccountUserMembershipRepository;
 import com.app.repository.UserRepository;
 import com.app.util.JwtTokenProvider;
 import lombok.extern.slf4j.Slf4j;
@@ -19,8 +20,10 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.Map;
 
 @Slf4j
 @Service
@@ -28,15 +31,18 @@ public class AuthService {
 
     private final UserRepository userRepository;
     private final AccountRepository accountRepository;
+    private final AccountUserMembershipRepository membershipRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider tokenProvider;
     private final ExpenseCategoryService expenseCategoryService;
 
     public AuthService(UserRepository userRepository, AccountRepository accountRepository,
+                       AccountUserMembershipRepository membershipRepository,
                        PasswordEncoder passwordEncoder, JwtTokenProvider tokenProvider,
                        ExpenseCategoryService expenseCategoryService) {
         this.userRepository = userRepository;
         this.accountRepository = accountRepository;
+        this.membershipRepository = membershipRepository;
         this.passwordEncoder = passwordEncoder;
         this.tokenProvider = tokenProvider;
         this.expenseCategoryService = expenseCategoryService;
@@ -64,15 +70,13 @@ public class AuthService {
             throw new UnauthorizedException("Invalid mobile or password");
         }
 
-        List<Account> accounts = accountRepository.findByUserIdAndActive(user.getId(), true);
-
+        List<AccountDto> accounts = getAccessibleAccountDtos(user.getId());
         if (accounts.isEmpty()) {
             throw new ValidationException("No active account found for this user");
         }
 
-        Account firstAccount = accounts.get(0);
+        AccountDto firstAccount = accounts.get(0);
         String token = tokenProvider.generateToken(user.getId(), firstAccount.getId());
-
         return buildLoginResponse(user, accounts, firstAccount, token);
     }
 
@@ -94,26 +98,37 @@ public class AuthService {
     }
 
     private LoginResponse buildAccountLoginResponse(User user, Long accountId) {
-        Account account = accountRepository.findByIdAndUserId(accountId, user.getId())
+        List<AccountDto> accounts = getAccessibleAccountDtos(user.getId());
+        AccountDto selectedAccount = accounts.stream()
+                .filter(account -> account.getId().equals(accountId))
+                .findFirst()
                 .orElseThrow(() -> new ValidationException("Account not found or not accessible"));
 
-        if (!account.getActive()) {
-            throw new ValidationException("Account is inactive");
-        }
-
-        List<Account> accounts = accountRepository.findByUserIdAndActive(user.getId(), true);
-        String token = tokenProvider.generateToken(user.getId(), account.getId());
-        return buildLoginResponse(user, accounts, account, token);
+        String token = tokenProvider.generateToken(user.getId(), selectedAccount.getId());
+        return buildLoginResponse(user, accounts, selectedAccount, token);
     }
 
-    private LoginResponse buildLoginResponse(User user, List<Account> accounts, Account currentAccount, String token) {
+    private LoginResponse buildLoginResponse(User user, List<AccountDto> accounts, AccountDto currentAccount, String token) {
         return LoginResponse.builder()
                 .token(token)
                 .userId(user.getId())
                 .user(mapToUserDto(user))
-                .accounts(accounts.stream().map(this::mapToAccountDto).collect(Collectors.toList()))
-                .currentAccount(mapToAccountDto(currentAccount))
+                .accounts(accounts)
+                .currentAccount(currentAccount)
                 .build();
+    }
+
+    private List<AccountDto> getAccessibleAccountDtos(Long userId) {
+        Map<Long, AccountDto> accounts = new LinkedHashMap<>();
+        accountRepository.findByUserIdAndActive(userId, true)
+                .forEach(account -> accounts.put(account.getId(), mapToAccountDto(account)));
+        membershipRepository.findByUserIdAndActiveTrue(userId).forEach(membership -> {
+            Account account = membership.getAccount();
+            if (Boolean.TRUE.equals(account.getActive())) {
+                accounts.put(account.getId(), mapToAccountDto(account, membership.getRole(), userId));
+            }
+        });
+        return new ArrayList<>(accounts.values());
     }
 
     private User validateExistingUserForNewAccount(User user, RegisterRequest request) {
@@ -156,15 +171,19 @@ public class AuthService {
     }
 
     private AccountDto mapToAccountDto(Account account) {
+        return mapToAccountDto(account, account.getRole(), account.getUser().getId());
+    }
+
+    private AccountDto mapToAccountDto(Account account, UserRole role, Long userId) {
         return AccountDto.builder()
                 .id(account.getId())
-                .userId(account.getUser().getId())
+                .userId(userId)
                 .accountType(account.getAccountType())
                 .accountName(account.getAccountName())
                 .address(account.getAddress())
                 .societyName(account.getSocietyName())
                 .storeName(account.getStoreName())
-                .role(account.getRole())
+                .role(role)
                 .active(account.getActive())
                 .createdAt(account.getCreatedAt())
                 .build();

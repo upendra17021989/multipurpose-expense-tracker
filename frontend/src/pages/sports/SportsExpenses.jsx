@@ -161,7 +161,7 @@ export const SportsExpenses = () => {
       <form className="inline-form" onSubmit={submit}>
         <select value={form.sportsEventId} onChange={(event) => updateForm('sportsEventId', event.target.value)}>
           <option value="">No event</option>
-          {events.map((sportsEvent) => <option key={sportsEvent.id} value={sportsEvent.id}>{sportsEvent.eventName}</option>)}
+          {events.map((sportsEvent) => <option key={sportsEvent.id} value={sportsEvent.id}>{sportsEvent.eventName} ({sportsEvent.year})</option>)}
         </select>
         <input type="date" value={form.expenseDate} onChange={(event) => updateForm('expenseDate', event.target.value)} required />
         <select value={form.category} onChange={(event) => updateForm('category', event.target.value)} required>
@@ -181,7 +181,7 @@ export const SportsExpenses = () => {
       </form>
       <section className="toolbar-panel flat-toolbar">
         <input placeholder="Search event, category, description, vendor" value={filters.search} onChange={(event) => setFilters({ ...filters, search: event.target.value })} />
-        <select value={filters.eventId} onChange={(event) => setFilters({ ...filters, eventId: event.target.value })}><option value="">All events</option>{events.map((sportsEvent) => <option key={sportsEvent.id} value={sportsEvent.id}>{sportsEvent.eventName}</option>)}</select>
+        <select value={filters.eventId} onChange={(event) => setFilters({ ...filters, eventId: event.target.value })}><option value="">All events</option>{events.map((sportsEvent) => <option key={sportsEvent.id} value={sportsEvent.id}>{sportsEvent.eventName} ({sportsEvent.year})</option>)}</select>
         <select value={filters.paymentMode} onChange={(event) => setFilters({ ...filters, paymentMode: event.target.value })}><option value="">All modes</option>{paymentModes.map((mode) => <option key={mode}>{mode}</option>)}</select>
         <strong>{formatCurrency(total)}</strong>
       </section>

@@ -24,6 +24,12 @@ public class SportsController {
         return ResponseEntity.ok(sportsService.getMembers(userPrincipal.getAccountId()));
     }
 
+
+    @PostMapping("/members/generate-logins")
+    public ResponseEntity<List<MemberLoginDto>> generateMemberLogins(@AuthenticationPrincipal UserPrincipal userPrincipal) {
+        sportsService.requireSportsAdmin(userPrincipal.getAccountId(), userPrincipal.getUserId());
+        return ResponseEntity.ok(sportsService.generateMissingMemberLogins(userPrincipal.getAccountId()));
+    }
     @GetMapping("/members/{memberId}")
     public ResponseEntity<MemberDto> getMember(@AuthenticationPrincipal UserPrincipal userPrincipal, @PathVariable Long memberId) {
         return ResponseEntity.ok(sportsService.getMember(userPrincipal.getAccountId(), memberId));
@@ -31,16 +37,19 @@ public class SportsController {
 
     @PostMapping("/members")
     public ResponseEntity<MemberDto> createMember(@AuthenticationPrincipal UserPrincipal userPrincipal, @Valid @RequestBody MemberRequest request) {
+        sportsService.requireSportsAdmin(userPrincipal.getAccountId(), userPrincipal.getUserId());
         return ResponseEntity.status(HttpStatus.CREATED).body(sportsService.createMember(userPrincipal.getAccountId(), request));
     }
 
     @PutMapping("/members/{memberId}")
     public ResponseEntity<MemberDto> updateMember(@AuthenticationPrincipal UserPrincipal userPrincipal, @PathVariable Long memberId, @Valid @RequestBody MemberRequest request) {
+        sportsService.requireSportsAdmin(userPrincipal.getAccountId(), userPrincipal.getUserId());
         return ResponseEntity.ok(sportsService.updateMember(userPrincipal.getAccountId(), memberId, request));
     }
 
     @DeleteMapping("/members/{memberId}")
     public ResponseEntity<Void> deleteMember(@AuthenticationPrincipal UserPrincipal userPrincipal, @PathVariable Long memberId) {
+        sportsService.requireSportsAdmin(userPrincipal.getAccountId(), userPrincipal.getUserId());
         sportsService.deleteMember(userPrincipal.getAccountId(), memberId);
         return ResponseEntity.noContent().build();
     }
@@ -57,21 +66,25 @@ public class SportsController {
 
     @PostMapping("/events")
     public ResponseEntity<EventDto> createEvent(@AuthenticationPrincipal UserPrincipal userPrincipal, @Valid @RequestBody EventRequest request) {
+        sportsService.requireSportsAdmin(userPrincipal.getAccountId(), userPrincipal.getUserId());
         return ResponseEntity.status(HttpStatus.CREATED).body(sportsService.createEvent(userPrincipal.getAccountId(), request));
     }
 
     @PutMapping("/events/{eventId}")
     public ResponseEntity<EventDto> updateEvent(@AuthenticationPrincipal UserPrincipal userPrincipal, @PathVariable Long eventId, @Valid @RequestBody EventRequest request) {
+        sportsService.requireSportsAdmin(userPrincipal.getAccountId(), userPrincipal.getUserId());
         return ResponseEntity.ok(sportsService.updateEvent(userPrincipal.getAccountId(), eventId, request));
     }
 
     @PutMapping("/events/{eventId}/status")
     public ResponseEntity<EventDto> updateEventStatus(@AuthenticationPrincipal UserPrincipal userPrincipal, @PathVariable Long eventId, @Valid @RequestBody StatusRequest request) {
+        sportsService.requireSportsAdmin(userPrincipal.getAccountId(), userPrincipal.getUserId());
         return ResponseEntity.ok(sportsService.updateEventStatus(userPrincipal.getAccountId(), eventId, request));
     }
 
     @DeleteMapping("/events/{eventId}")
     public ResponseEntity<Void> deleteEvent(@AuthenticationPrincipal UserPrincipal userPrincipal, @PathVariable Long eventId) {
+        sportsService.requireSportsAdmin(userPrincipal.getAccountId(), userPrincipal.getUserId());
         sportsService.deleteEvent(userPrincipal.getAccountId(), eventId);
         return ResponseEntity.noContent().build();
     }
@@ -88,16 +101,19 @@ public class SportsController {
 
     @PostMapping("/expenses")
     public ResponseEntity<ExpenseDto> createExpense(@AuthenticationPrincipal UserPrincipal userPrincipal, @Valid @RequestBody ExpenseRequest request) {
+        sportsService.requireSportsAdmin(userPrincipal.getAccountId(), userPrincipal.getUserId());
         return ResponseEntity.status(HttpStatus.CREATED).body(sportsService.createExpense(userPrincipal.getAccountId(), request));
     }
 
     @PutMapping("/expenses/{expenseId}")
     public ResponseEntity<ExpenseDto> updateExpense(@AuthenticationPrincipal UserPrincipal userPrincipal, @PathVariable Long expenseId, @Valid @RequestBody ExpenseRequest request) {
+        sportsService.requireSportsAdmin(userPrincipal.getAccountId(), userPrincipal.getUserId());
         return ResponseEntity.ok(sportsService.updateExpense(userPrincipal.getAccountId(), expenseId, request));
     }
 
     @DeleteMapping("/expenses/{expenseId}")
     public ResponseEntity<Void> deleteExpense(@AuthenticationPrincipal UserPrincipal userPrincipal, @PathVariable Long expenseId) {
+        sportsService.requireSportsAdmin(userPrincipal.getAccountId(), userPrincipal.getUserId());
         sportsService.deleteExpense(userPrincipal.getAccountId(), expenseId);
         return ResponseEntity.noContent().build();
     }
@@ -114,27 +130,40 @@ public class SportsController {
 
     @PostMapping("/collections/generate-demand")
     public ResponseEntity<List<CollectionDto>> generateDemand(@AuthenticationPrincipal UserPrincipal userPrincipal, @Valid @RequestBody DemandRequest request) {
+        sportsService.requireSportsAdmin(userPrincipal.getAccountId(), userPrincipal.getUserId());
         return ResponseEntity.status(HttpStatus.CREATED).body(sportsService.generateDemand(userPrincipal.getAccountId(), request));
     }
 
     @PutMapping("/collections/{collectionId}/demand")
     public ResponseEntity<CollectionDto> updateDemand(@AuthenticationPrincipal UserPrincipal userPrincipal, @PathVariable Long collectionId, @Valid @RequestBody DemandRequest request) {
+        sportsService.requireSportsAdmin(userPrincipal.getAccountId(), userPrincipal.getUserId());
         return ResponseEntity.ok(sportsService.updateDemand(userPrincipal.getAccountId(), collectionId, request));
     }
 
     @DeleteMapping("/collections/{collectionId}/demand")
     public ResponseEntity<Void> deleteDemand(@AuthenticationPrincipal UserPrincipal userPrincipal, @PathVariable Long collectionId) {
+        sportsService.requireSportsAdmin(userPrincipal.getAccountId(), userPrincipal.getUserId());
         sportsService.deleteDemand(userPrincipal.getAccountId(), collectionId);
         return ResponseEntity.noContent().build();
     }
 
     @PostMapping("/collections/{collectionId}/payments")
     public ResponseEntity<ReceiptDto> addPayment(@AuthenticationPrincipal UserPrincipal userPrincipal, @PathVariable Long collectionId, @Valid @RequestBody PaymentRequest request) {
+        sportsService.requireSportsAdmin(userPrincipal.getAccountId(), userPrincipal.getUserId());
         return ResponseEntity.status(HttpStatus.CREATED).body(sportsService.addPayment(userPrincipal.getAccountId(), collectionId, request));
     }
 
+
+    @PostMapping("/receipts/{receiptId}/void")
+    public ResponseEntity<ReceiptDto> voidReceipt(@AuthenticationPrincipal UserPrincipal userPrincipal, @PathVariable Long receiptId, @Valid @RequestBody VoidReceiptRequest request) {
+        sportsService.requireSportsAdmin(userPrincipal.getAccountId(), userPrincipal.getUserId());
+        return ResponseEntity.ok(sportsService.voidReceipt(userPrincipal.getAccountId(), receiptId, request));
+    }
     @GetMapping("/collections/{collectionId}/receipts")
     public ResponseEntity<List<ReceiptDto>> getReceipts(@AuthenticationPrincipal UserPrincipal userPrincipal, @PathVariable Long collectionId) {
         return ResponseEntity.ok(sportsService.getReceipts(userPrincipal.getAccountId(), collectionId));
     }
 }
+
+
+
