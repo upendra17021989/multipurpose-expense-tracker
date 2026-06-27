@@ -112,6 +112,7 @@ export const Navbar = () => {
                 {currentAccount?.accountType === 'SPORTS' && <Link to="/sports/events" onClick={closeMenus}>Events</Link>}
                 {currentAccount?.accountType === 'SPORTS' && isSportsAdmin && <Link to="/sports/expenses" onClick={closeMenus}>Expenses</Link>}
                 {currentAccount?.accountType === 'SPORTS' && <Link to="/sports/collections" onClick={closeMenus}>Collections</Link>}
+                {currentAccount?.accountType === 'SPORTS' && <Link to="/sports/reports" onClick={closeMenus}>Reports</Link>}
               </div>
             </div>
           </div>

@@ -52,10 +52,12 @@ export const SportsDashboard = () => {
         ['Members', '/sports/members'],
         ['Events', '/sports/events'],
         ['Expenses', '/sports/expenses'],
-        ['Collections', '/sports/collections']
+        ['Collections', '/sports/collections'],
+        ['Reports', '/sports/reports']
       ] : [
         ['Events', '/sports/events'],
-        ['Collections', '/sports/collections']
+        ['Collections', '/sports/collections'],
+        ['Reports', '/sports/reports']
       ])} />
       {loading && <p className="muted">Loading sports dashboard...</p>}
     </Shell>

@@ -35,6 +35,7 @@ import { SportsEvents } from './pages/sports/SportsEvents'
 import { SportsExpenses } from './pages/sports/SportsExpenses'
 import { SportsCollections } from './pages/sports/SportsCollections'
 import { SportsCollectionReceipts } from './pages/sports/SportsCollectionReceipts'
+import { SportsReports } from './pages/sports/SportsReports'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import { AppErrorBoundary } from './components/AppErrorBoundary'
 import 'react-toastify/dist/ReactToastify.css'
@@ -87,6 +88,7 @@ function App() {
           <Route path="/sports/expenses" element={<ProtectedRoute><SportsExpenses /></ProtectedRoute>} />
           <Route path="/sports/collections" element={<ProtectedRoute><SportsCollections /></ProtectedRoute>} />
           <Route path="/sports/collections/:collectionId/receipts" element={<ProtectedRoute><SportsCollectionReceipts /></ProtectedRoute>} />
+          <Route path="/sports/reports" element={<ProtectedRoute><SportsReports /></ProtectedRoute>} />
           <Route path="/" element={<Navigate to="/home" replace />} />
         </Routes>
         <ToastContainer position="top-right" autoClose={3000} hideProgressBar={false} newestOnTop />
