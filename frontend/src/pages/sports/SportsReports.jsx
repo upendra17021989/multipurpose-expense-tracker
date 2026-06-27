@@ -42,9 +42,9 @@ export const SportsReports = () => {
     const memberMap = new Map()
     collections.forEach((row) => {
       const key = String(row.sportsMemberId || row.memberName)
-      const current = memberMap.get(key) || { sportsMemberId: row.sportsMemberId, memberName: row.memberName, mobile: row.mobile, eventIds: new Set(), expectedAmount: 0, collectedAmount: 0, pendingAmount: 0, excessAmount: 0, refundedAmount: 0 }
+      const current = memberMap.get(key) || { sportsMemberId: row.sportsMemberId, memberName: row.memberName, mobile: row.mobile, eventIds: new Set(), expectedAmount: 0, openingBalance: 0, openingDue: 0, collectedAmount: 0, pendingAmount: 0, excessAmount: 0, refundedAmount: 0 }
       current.eventIds.add(String(row.sportsEventId))
-      ;['expectedAmount', 'collectedAmount', 'pendingAmount', 'excessAmount', 'refundedAmount'].forEach((field) => { current[field] += numberValue(row[field]) })
+      ;['expectedAmount', 'openingBalance', 'openingDue', 'collectedAmount', 'pendingAmount', 'excessAmount', 'refundedAmount'].forEach((field) => { current[field] += numberValue(row[field]) })
       memberMap.set(key, current)
     })
     const memberTotals = [...memberMap.values()].map((row) => ({ ...row, eventCount: row.eventIds.size })).sort((a, b) => a.memberName.localeCompare(b.memberName))
@@ -94,8 +94,8 @@ export const SportsReports = () => {
       </section>
       {!!selectedEventIds.length && <h2 className="report-print-title">{reportTitle}</h2>}
       <SummaryGrid items={[[ 'Expected', formatCurrency(report.expected) ], [ 'Collected', formatCurrency(report.collected) ], [ 'Pending', formatCurrency(report.pending) ], [ 'Event Expenses', formatCurrency(report.expenseTotal) ], [ 'Balance', formatCurrency(report.collected - report.expenseTotal) ], [ 'Pending Members', report.pendingMembers.length ]]} />
-      <ReportTable title="Total Collections by Member" columns={['Member', 'Mobile', 'Events', 'Expected', 'Collected', 'Pending', 'Excess']} rows={report.memberTotals.map((row) => [row.memberName, row.mobile || '-', row.eventCount, formatCurrency(row.expectedAmount), formatCurrency(row.collectedAmount), formatCurrency(row.pendingAmount), formatCurrency(row.excessAmount)])} />
-      <ReportTable title="Event-wise Collection Detail" columns={['Event', 'Member', 'Expected', 'Collected', 'Pending', 'Status']} rows={collections.map((row) => [row.eventName, row.memberName, formatCurrency(row.expectedAmount), formatCurrency(row.collectedAmount), formatCurrency(row.pendingAmount), row.paymentStatus])} />
+      <ReportTable title="Total Collections by Member" columns={['Member', 'Mobile', 'Events', 'Expected', 'Opening Credit', 'Opening Due', 'Collected', 'Pending', 'Excess']} rows={report.memberTotals.map((row) => [row.memberName, row.mobile || '-', row.eventCount, formatCurrency(row.expectedAmount), formatCurrency(row.openingBalance), formatCurrency(row.openingDue), formatCurrency(row.collectedAmount), formatCurrency(row.pendingAmount), formatCurrency(row.excessAmount)])} />
+      <ReportTable title="Event-wise Collection Detail" columns={['Event', 'Member', 'Expected', 'Opening Credit', 'Opening Due', 'Collected', 'Pending', 'Status']} rows={collections.map((row) => [row.eventName, row.memberName, formatCurrency(row.expectedAmount), formatCurrency(row.openingBalance), formatCurrency(row.openingDue), formatCurrency(row.collectedAmount), formatCurrency(row.pendingAmount), row.paymentStatus])} />
       <ReportTable title="Pending-member Report" columns={['Member', 'Mobile', 'Expected', 'Collected', 'Pending']} rows={report.pendingMembers.map((row) => [row.memberName, row.mobile || '-', formatCurrency(row.expectedAmount), formatCurrency(row.collectedAmount), formatCurrency(row.pendingAmount)])} />
       <ReportTable title="Event Expense Report" columns={['Date', 'Category', 'Description', 'Vendor', 'Payment', 'Amount']} rows={report.eventExpenses.map((row) => [formatDate(row.expenseDate), row.category, row.description || '-', row.vendorName || '-', row.paymentMode, formatCurrency(row.amount)])} />
       {!selectedEventIds.length && !loading && <p className="empty-state">Select one or more events to generate reports.</p>}
@@ -104,8 +104,8 @@ export const SportsReports = () => {
   )
 }
 
-const collectionRow = (row) => ({ Member: row.memberName, Mobile: row.mobile || '', Expected: numberValue(row.expectedAmount), Collected: numberValue(row.collectedAmount), Pending: numberValue(row.pendingAmount), Excess: numberValue(row.excessAmount), Refunded: numberValue(row.refundedAmount), Status: row.paymentStatus })
+const collectionRow = (row) => ({ Member: row.memberName, Mobile: row.mobile || '', Expected: numberValue(row.expectedAmount), OpeningCredit: numberValue(row.openingBalance), OpeningDue: numberValue(row.openingDue), Collected: numberValue(row.collectedAmount), Pending: numberValue(row.pendingAmount), Excess: numberValue(row.excessAmount), Refunded: numberValue(row.refundedAmount), Status: row.paymentStatus })
 
-const memberTotalRow = (row) => ({ Member: row.memberName, Mobile: row.mobile || '', Events: row.eventCount, Expected: row.expectedAmount, Collected: row.collectedAmount, Pending: row.pendingAmount, Excess: row.excessAmount, Refunded: row.refundedAmount })
+const memberTotalRow = (row) => ({ Member: row.memberName, Mobile: row.mobile || '', Events: row.eventCount, Expected: row.expectedAmount, OpeningCredit: row.openingBalance, OpeningDue: row.openingDue, Collected: row.collectedAmount, Pending: row.pendingAmount, Excess: row.excessAmount, Refunded: row.refundedAmount })
 
 const ReportTable = ({ title, columns, rows }) => <section className="report-panel sports-report-section"><h2>{title}</h2><div className="table-wrap"><table><thead><tr>{columns.map((column) => <th key={column}>{column}</th>)}</tr></thead><tbody>{rows.map((row, index) => <tr key={index}>{row.map((value, cell) => <td key={cell}>{value}</td>)}</tr>)}{rows.length === 0 && <tr><td colSpan={columns.length} className="empty-state">No data available.</td></tr>}</tbody></table></div></section>

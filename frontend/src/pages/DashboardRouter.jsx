@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom'
+import { Link, Navigate } from 'react-router-dom'
 import { Navbar } from '../components/Navbar'
 import { useAuthStore } from '../store/authStore'
 import { formatCurrency } from '../utils/format'
@@ -25,7 +25,7 @@ export const DashboardRouter = () => {
 
   if (currentAccount.accountType === 'SOCIETY') return <SocietyDashboard />
   if (currentAccount.accountType === 'KIRANA_STORE') return <KiranaDashboard />
-  if (currentAccount.accountType === 'SPORTS') return <SportsHomeDashboard />
+  if (currentAccount.accountType === 'SPORTS') return <Navigate to="/sports" replace />
   return <PersonalDashboard />
 }
 
@@ -125,19 +125,6 @@ const SocietyDashboard = () => {
   )
 }
 
-const SportsHomeDashboard = () => {
-  return (
-    <Shell title={accountLabels.SPORTS}>
-      <SummaryGrid items={[
-        ['Members', 'Separate table'],
-        ['Events', 'Separate table'],
-        ['Collections', 'Separate table'],
-        ['Expenses', 'Separate table']
-      ]} />
-      <ActionRow actions={[[ 'Overview', '/sports' ], [ 'Members', '/sports/members' ], [ 'Events', '/sports/events' ], [ 'Expenses', '/sports/expenses' ], [ 'Collections', '/sports/collections' ]]} />
-    </Shell>
-  )
-}
 const KiranaDashboard = () => {
   const [expenses, setExpenses] = useState([])
   const [lowStock, setLowStock] = useState([])

@@ -71,6 +71,8 @@ export const SportsCollectionReceipts = () => {
           ['Member', collection.memberName],
           ['Event', collection.eventName],
           ['Expected', formatCurrency(collection.expectedAmount)],
+          ['Opening Balance', formatCurrency(collection.openingBalance)],
+          ['Opening Due', formatCurrency(collection.openingDue)],
           ['Collected', formatCurrency(collection.collectedAmount)],
           ['Pending', formatCurrency(collection.pendingAmount)],
           ['Status', collection.paymentStatus]

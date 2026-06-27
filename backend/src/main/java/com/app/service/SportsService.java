@@ -12,6 +12,7 @@ import java.math.BigDecimal;
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -218,6 +219,8 @@ public class SportsService {
         List<SportsCollection> collections = collectionRepository.findByAccountIdAndSportsEventId(accountId, eventId);
         BigDecimal expected = BigDecimal.ZERO;
         BigDecimal collected = BigDecimal.ZERO;
+        BigDecimal opening = BigDecimal.ZERO;
+        BigDecimal openingDue = BigDecimal.ZERO;
         BigDecimal pending = BigDecimal.ZERO;
         BigDecimal excess = BigDecimal.ZERO;
         BigDecimal refunded = BigDecimal.ZERO;
@@ -225,6 +228,8 @@ public class SportsService {
         for (SportsCollection collection : collections) {
             expected = expected.add(nonNull(collection.getExpectedAmount()));
             collected = collected.add(nonNull(collection.getCollectedAmount()));
+            opening = opening.add(nonNull(collection.getOpeningBalance()));
+            openingDue = openingDue.add(nonNull(collection.getOpeningDue()));
             pending = pending.add(nonNull(collection.getPendingAmount()));
             excess = excess.add(nonNull(collection.getExcessAmount()));
             refunded = refunded.add(nonNull(collection.getRefundedAmount()));
@@ -233,7 +238,7 @@ public class SportsService {
             if (collection.getPaymentStatus() == PaymentStatus.PARTIAL) partial++;
             if (collection.getPaymentStatus() == PaymentStatus.EXCESS) excessCount++;
         }
-        return CollectionSummaryDto.builder().sportsEventId(eventId).totalExpected(expected).totalCollected(collected)
+        return CollectionSummaryDto.builder().sportsEventId(eventId).totalExpected(expected).totalCollected(collected).totalOpeningBalance(opening).totalOpeningDue(openingDue)
                 .totalPending(pending).totalExcess(excess).totalRefunded(refunded).paidMembers(paid)
                 .pendingMembers(pendingCount).partialMembers(partial).excessMembers(excessCount).totalMembers(collections.size()).build();
     }
@@ -249,9 +254,14 @@ public class SportsService {
         }
         if (members.isEmpty()) throw new ValidationException("Select at least one active sports member before generating collection demand");
         for (SportsMember member : members) {
-            SportsCollection collection = collectionRepository.findByAccountIdAndSportsEventIdAndSportsMemberId(accountId, event.getId(), member.getId())
-                    .orElseGet(() -> SportsCollection.builder().account(account).sportsEvent(event).sportsMember(member)
-                            .collectedAmount(BigDecimal.ZERO).excessAmount(BigDecimal.ZERO).refundedAmount(BigDecimal.ZERO).build());
+            Optional<SportsCollection> existing = collectionRepository.findByAccountIdAndSportsEventIdAndSportsMemberId(accountId, event.getId(), member.getId());
+            SportsCollection collection = existing.orElseGet(() -> SportsCollection.builder().account(account).sportsEvent(event).sportsMember(member)
+                    .collectedAmount(BigDecimal.ZERO).openingBalance(BigDecimal.ZERO).openingDue(BigDecimal.ZERO).excessAmount(BigDecimal.ZERO)
+                    .carriedForwardAmount(BigDecimal.ZERO).carriedForwardPendingAmount(BigDecimal.ZERO).refundedAmount(BigDecimal.ZERO).build());
+            if (nonNull(collection.getOpeningBalance()).compareTo(BigDecimal.ZERO) == 0
+                    && nonNull(collection.getOpeningDue()).compareTo(BigDecimal.ZERO) == 0) {
+                applyOpeningBalance(accountId, event, member, collection);
+            }
             collection.setExpectedAmount(request.getExpectedAmount());
             collection.setRemarks(trimToNull(request.getRemarks()));
             recalculateCollection(collection);
@@ -275,6 +285,9 @@ public class SportsService {
     public void deleteDemand(Long accountId, Long collectionId) {
         requireSportsAccount(accountId);
         SportsCollection collection = findCollection(accountId, collectionId);
+        if (nonNull(collection.getOpeningBalance()).compareTo(BigDecimal.ZERO) > 0 || nonNull(collection.getOpeningDue()).compareTo(BigDecimal.ZERO) > 0) {
+            throw new ValidationException("Cannot delete a demand that contains a carried-forward opening balance or due");
+        }
         if (nonNull(collection.getCollectedAmount()).compareTo(BigDecimal.ZERO) > 0
                 || !receiptRepository.findBySportsCollectionId(collectionId).isEmpty()) {
             throw new ValidationException("Cannot delete demand after payment has been collected");
@@ -288,6 +301,9 @@ public class SportsService {
         requireSportsAccount(accountId);
         validatePayment(request.getPaymentMode(), request.getUtr(), request.getChequeNumber());
         SportsCollection collection = findCollection(accountId, collectionId);
+        if (nonNull(collection.getCarriedForwardPendingAmount()).compareTo(BigDecimal.ZERO) > 0) {
+            throw new ValidationException("This pending amount was carried to a later event; record payment against the latest event");
+        }
         SportsCollectionReceipt receipt = SportsCollectionReceipt.builder()
                 .sportsCollection(collection)
                 .paymentDate(request.getPaymentDate())
@@ -319,6 +335,9 @@ public class SportsService {
         }
         if (receipt.getStatus() == ReceiptStatus.VOIDED) {
             throw new ValidationException("Receipt is already voided");
+        }
+        if (nonNull(collection.getCarriedForwardAmount()).compareTo(BigDecimal.ZERO) > 0 || nonNull(collection.getCarriedForwardPendingAmount()).compareTo(BigDecimal.ZERO) > 0) {
+            throw new ValidationException("Cannot void payment after the balance has been carried to another event");
         }
         receipt.setStatus(ReceiptStatus.VOIDED);
         receipt.setVoidReason(trimToNull(request.getVoidReason()));
@@ -473,15 +492,31 @@ public class SportsService {
         recalculateCollection(collection);
     }
     private void recalculateCollection(SportsCollection collection) {
-        BigDecimal expected = nonNull(collection.getExpectedAmount());
+        BigDecimal expected = nonNull(collection.getExpectedAmount()).add(nonNull(collection.getOpeningDue()));
         BigDecimal collected = nonNull(collection.getCollectedAmount());
-        collection.setPendingAmount(expected.subtract(collected).max(BigDecimal.ZERO));
-        collection.setExcessAmount(collected.subtract(expected).max(BigDecimal.ZERO));
+        BigDecimal available = collected.add(nonNull(collection.getOpeningBalance()));
+        collection.setPendingAmount(expected.subtract(available).max(BigDecimal.ZERO));
+        collection.setExcessAmount(available.subtract(expected).max(BigDecimal.ZERO));
         collection.setUpdatedAt(LocalDateTime.now());
-        if (collected.compareTo(BigDecimal.ZERO) == 0) collection.setPaymentStatus(PaymentStatus.PENDING);
-        else if (collected.compareTo(expected) < 0) collection.setPaymentStatus(PaymentStatus.PARTIAL);
-        else if (collected.compareTo(expected) == 0) collection.setPaymentStatus(PaymentStatus.PAID);
+        if (available.compareTo(BigDecimal.ZERO) == 0) collection.setPaymentStatus(PaymentStatus.PENDING);
+        else if (available.compareTo(expected) < 0) collection.setPaymentStatus(PaymentStatus.PARTIAL);
+        else if (available.compareTo(expected) == 0) collection.setPaymentStatus(PaymentStatus.PAID);
         else collection.setPaymentStatus(PaymentStatus.EXCESS);
+    }
+
+    private void applyOpeningBalance(Long accountId, SportsEvent event, SportsMember member, SportsCollection destination) {
+        for (SportsCollection source : collectionRepository.findPriorCollections(accountId, member.getId(), event.getStartDate(), event.getId())) {
+            BigDecimal credit = nonNull(source.getExcessAmount()).subtract(nonNull(source.getCarriedForwardAmount())).max(BigDecimal.ZERO);
+            BigDecimal due = nonNull(source.getPendingAmount()).subtract(nonNull(source.getCarriedForwardPendingAmount())).max(BigDecimal.ZERO);
+            if (credit.compareTo(BigDecimal.ZERO) <= 0 && due.compareTo(BigDecimal.ZERO) <= 0) continue;
+            destination.setOpeningBalance(credit);
+            destination.setOpeningDue(due);
+            source.setCarriedForwardAmount(nonNull(source.getCarriedForwardAmount()).add(credit));
+            source.setCarriedForwardPendingAmount(nonNull(source.getCarriedForwardPendingAmount()).add(due));
+            source.setUpdatedAt(LocalDateTime.now());
+            collectionRepository.save(source);
+            break;
+        }
     }
 
     private void refreshEventCollectedAmount(SportsEvent event) {
@@ -507,7 +542,7 @@ public class SportsService {
     private MemberDto mapMember(SportsMember member) { return MemberDto.builder().id(member.getId()).accountId(member.getAccount().getId()).memberName(member.getMemberName()).mobile(member.getMobile()).email(member.getEmail()).role(member.getRole()).active(member.getActive()).createdAt(member.getCreatedAt()).build(); }
     private EventDto mapEvent(SportsEvent event) { return EventDto.builder().id(event.getId()).accountId(event.getAccount().getId()).eventName(event.getEventName()).year(event.getYear()).startDate(event.getStartDate()).endDate(event.getEndDate()).budgetAmount(event.getBudgetAmount()).collectedAmount(event.getCollectedAmount()).totalExpense(event.getTotalExpense()).balanceAmount(event.getBalanceAmount()).status(event.getStatus()).createdAt(event.getCreatedAt()).build(); }
     private ExpenseDto mapExpense(SportsExpense expense) { SportsEvent event = expense.getSportsEvent(); return ExpenseDto.builder().id(expense.getId()).accountId(expense.getAccount().getId()).sportsEventId(event != null ? event.getId() : null).eventName(event != null ? event.getEventName() : null).expenseDate(expense.getExpenseDate()).category(expense.getCategory()).vendorName(expense.getVendorName()).description(expense.getDescription()).amount(expense.getAmount()).paymentMode(expense.getPaymentMode()).transactionId(expense.getTransactionId()).utr(expense.getUtr()).chequeNumber(expense.getChequeNumber()).remarks(expense.getRemarks()).status(expense.getStatus()).createdAt(expense.getCreatedAt()).build(); }
-    private CollectionDto mapCollection(SportsCollection collection) { SportsMember member = collection.getSportsMember(); SportsEvent event = collection.getSportsEvent(); return CollectionDto.builder().id(collection.getId()).accountId(collection.getAccount().getId()).sportsEventId(event.getId()).eventName(event.getEventName()).sportsMemberId(member.getId()).memberName(member.getMemberName()).mobile(member.getMobile()).expectedAmount(collection.getExpectedAmount()).collectedAmount(collection.getCollectedAmount()).pendingAmount(collection.getPendingAmount()).excessAmount(collection.getExcessAmount()).refundedAmount(collection.getRefundedAmount()).paymentStatus(collection.getPaymentStatus()).remarks(collection.getRemarks()).createdAt(collection.getCreatedAt()).updatedAt(collection.getUpdatedAt()).build(); }
+    private CollectionDto mapCollection(SportsCollection collection) { SportsMember member = collection.getSportsMember(); SportsEvent event = collection.getSportsEvent(); return CollectionDto.builder().id(collection.getId()).accountId(collection.getAccount().getId()).sportsEventId(event.getId()).eventName(event.getEventName()).sportsMemberId(member.getId()).memberName(member.getMemberName()).mobile(member.getMobile()).expectedAmount(collection.getExpectedAmount()).collectedAmount(collection.getCollectedAmount()).openingBalance(collection.getOpeningBalance()).openingDue(collection.getOpeningDue()).pendingAmount(collection.getPendingAmount()).excessAmount(collection.getExcessAmount()).carriedForwardAmount(collection.getCarriedForwardAmount()).carriedForwardPendingAmount(collection.getCarriedForwardPendingAmount()).refundedAmount(collection.getRefundedAmount()).paymentStatus(collection.getPaymentStatus()).remarks(collection.getRemarks()).createdAt(collection.getCreatedAt()).updatedAt(collection.getUpdatedAt()).build(); }
     private ReceiptDto mapReceipt(SportsCollectionReceipt receipt) { return ReceiptDto.builder().id(receipt.getId()).sportsCollectionId(receipt.getSportsCollection().getId()).paymentDate(receipt.getPaymentDate()).amountPaid(receipt.getAmountPaid()).paymentMode(receipt.getPaymentMode()).transactionId(receipt.getTransactionId()).utr(receipt.getUtr()).chequeNumber(receipt.getChequeNumber()).collectedBy(receipt.getCollectedBy()).receiptNumber(receipt.getReceiptNumber()).remarks(receipt.getRemarks()).status(receipt.getStatus()).voidReason(receipt.getVoidReason()).voidedAt(receipt.getVoidedAt()).createdAt(receipt.getCreatedAt()).build(); }
     private BigDecimal nonNull(BigDecimal amount) { return amount != null ? amount : BigDecimal.ZERO; }
     private String trimToNull(String value) { return value == null || value.isBlank() ? null : value.trim(); }

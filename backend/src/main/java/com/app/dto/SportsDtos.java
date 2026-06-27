@@ -118,8 +118,12 @@ public class SportsDtos {
         private String mobile;
         private BigDecimal expectedAmount;
         private BigDecimal collectedAmount;
+        private BigDecimal openingBalance;
+        private BigDecimal openingDue;
         private BigDecimal pendingAmount;
         private BigDecimal excessAmount;
+        private BigDecimal carriedForwardAmount;
+        private BigDecimal carriedForwardPendingAmount;
         private BigDecimal refundedAmount;
         private PaymentStatus paymentStatus;
         private String remarks;
@@ -179,6 +183,8 @@ public class SportsDtos {
         private Long sportsEventId;
         private BigDecimal totalExpected;
         private BigDecimal totalCollected;
+        private BigDecimal totalOpeningBalance;
+        private BigDecimal totalOpeningDue;
         private BigDecimal totalPending;
         private BigDecimal totalExcess;
         private BigDecimal totalRefunded;

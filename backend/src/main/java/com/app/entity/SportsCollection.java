@@ -37,11 +37,27 @@ public class SportsCollection {
 
     @Builder.Default
     @Column(nullable = false)
+    private BigDecimal openingBalance = BigDecimal.ZERO;
+
+    @Builder.Default
+    @Column(nullable = false)
+    private BigDecimal openingDue = BigDecimal.ZERO;
+
+    @Builder.Default
+    @Column(nullable = false)
     private BigDecimal pendingAmount = BigDecimal.ZERO;
 
     @Builder.Default
     @Column(nullable = false)
     private BigDecimal excessAmount = BigDecimal.ZERO;
+
+    @Builder.Default
+    @Column(nullable = false)
+    private BigDecimal carriedForwardAmount = BigDecimal.ZERO;
+
+    @Builder.Default
+    @Column(nullable = false)
+    private BigDecimal carriedForwardPendingAmount = BigDecimal.ZERO;
 
     @Builder.Default
     @Column(nullable = false)

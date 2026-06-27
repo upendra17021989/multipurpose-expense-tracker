@@ -135,6 +135,8 @@ export const SportsCollections = () => {
       <SummaryGrid items={[
         ['Expected', formatCurrency(summary?.totalExpected)],
         ['Collected', formatCurrency(summary?.totalCollected)],
+        ['Opening Balance', formatCurrency(summary?.totalOpeningBalance)],
+        ['Opening Due', formatCurrency(summary?.totalOpeningDue)],
         ['Pending', formatCurrency(summary?.totalPending)],
         ['Paid Members', `${summary?.paidMembers || 0}/${summary?.totalMembers || 0}`],
         ['Partial', summary?.partialMembers || 0],
@@ -190,15 +192,19 @@ export const SportsCollections = () => {
       </form>}
       <div className="table-wrap">
         <table>
-          <thead><tr><th>Member</th><th>Mobile</th><th className="numeric">Expected</th><th className="numeric">Collected</th><th className="numeric">Pending</th><th className="numeric">Excess</th><th>Status</th><th>Actions</th></tr></thead>
+          <thead><tr><th>Member</th><th>Mobile</th><th className="numeric">Expected</th><th className="numeric">Opening Credit</th><th className="numeric">Opening Due</th><th className="numeric">Collected</th><th className="numeric">Pending</th><th className="numeric">Excess</th><th>Status</th><th>Actions</th></tr></thead>
           <tbody>
             {visibleCollections.map((collection) => {
               const canRemoveDemand = Number(collection.collectedAmount || 0) === 0
+                && Number(collection.openingBalance || 0) === 0
+                && Number(collection.openingDue || 0) === 0
               return (
                 <tr key={collection.id}>
                   <td>{collection.memberName}</td>
                   <td>{collection.mobile || '-'}</td>
                   <td className="numeric">{formatCurrency(collection.expectedAmount)}</td>
+                  <td className="numeric">{formatCurrency(collection.openingBalance)}</td>
+                  <td className="numeric">{formatCurrency(collection.openingDue)}</td>
                   <td className="numeric">{formatCurrency(collection.collectedAmount)}</td>
                   <td className="numeric">{formatCurrency(collection.pendingAmount)}</td>
                   <td className="numeric">{formatCurrency(collection.excessAmount)}</td>
@@ -210,8 +216,8 @@ export const SportsCollections = () => {
                 </tr>
               )
             })}
-            {!loading && selectedEventId && visibleCollections.length === 0 && <tr><td colSpan="8" className="empty-state">Generate demand to create member-wise collection rows.</td></tr>}
-            {!selectedEventId && <tr><td colSpan="8" className="empty-state">Select an event to manage collections.</td></tr>}
+            {!loading && selectedEventId && visibleCollections.length === 0 && <tr><td colSpan="10" className="empty-state">Generate demand to create member-wise collection rows.</td></tr>}
+            {!selectedEventId && <tr><td colSpan="10" className="empty-state">Select an event to manage collections.</td></tr>}
           </tbody>
         </table>
       </div>
