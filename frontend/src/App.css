@@ -812,6 +812,19 @@ th {
 }
 
 @media print {
+  @page {
+    size: A4 landscape;
+    margin: 12mm;
+  }
+
+  html,
+  body {
+    width: auto;
+    height: auto;
+    overflow: visible !important;
+    background: #fff;
+  }
+
   .navbar,
   .header-actions,
   .button-link,
@@ -828,6 +841,57 @@ th {
   .summary-card,
   .receipt-total {
     break-inside: avoid;
+  }
+
+  .sports-report-section {
+    display: block;
+    min-height: 0;
+    padding: 0;
+    border: 0;
+    break-inside: auto;
+    page-break-inside: auto;
+  }
+
+  .sports-report-section + .sports-report-section {
+    break-before: page;
+    page-break-before: always;
+  }
+
+  .sports-report-section .table-wrap {
+    display: block;
+    overflow: visible !important;
+    border: 0;
+    break-inside: auto;
+    page-break-inside: auto;
+  }
+
+  .sports-report-section table {
+    min-width: 0;
+    width: 100%;
+    font-size: 9pt;
+  }
+
+  .sports-report-section thead {
+    display: table-header-group;
+  }
+
+  .sports-report-section tfoot {
+    display: table-footer-group;
+  }
+
+  .sports-report-section tr {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .sports-report-section th,
+  .sports-report-section td {
+    padding: 5px 6px;
+  }
+
+  .sports-report-section h2 {
+    break-after: avoid;
+    page-break-after: avoid;
   }
 }
 
