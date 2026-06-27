@@ -8,6 +8,7 @@ const initialForm = { memberName: '', mobile: '', email: '', role: 'MEMBER' }
 
 export const SportsMembers = () => {
   const { currentAccount } = useAuthStore()
+  const isSportsAdmin = ['OWNER', 'ADMIN', 'TREASURER'].includes(currentAccount?.role)
   const [members, setMembers] = useState([])
   const [form, setForm] = useState(initialForm)
   const [editingId, setEditingId] = useState(null)
@@ -98,7 +99,7 @@ export const SportsMembers = () => {
   return (
     <Shell title="Sports Members" eyebrow="Sports module">
       <SummaryGrid items={[[ 'Total Members', members.length ], [ 'Shown', visibleMembers.length ]]} />
-      <form className="inline-form" onSubmit={submit}>
+      {isSportsAdmin && <form className="inline-form" onSubmit={submit}>
         <input placeholder="Member name" value={form.memberName} onChange={(event) => setForm({ ...form, memberName: event.target.value })} required />
         <input placeholder="Mobile" value={form.mobile} onChange={(event) => setForm({ ...form, mobile: event.target.value })} />
         <input placeholder="Email" value={form.email} onChange={(event) => setForm({ ...form, email: event.target.value })} />
@@ -109,25 +110,25 @@ export const SportsMembers = () => {
         </select>
         <button className="primary" type="submit">{editingId ? 'Update' : 'Add'} Member</button>
         {editingId && <button type="button" onClick={reset}>Cancel</button>}
-      </form>
-      <section className="toolbar-panel flat-toolbar"><button type="button" onClick={generateLogins}>Generate Missing Logins</button></section>
-      {lastPassword && <section className="toolbar-panel flat-toolbar"><strong>Default login</strong><span>{lastPassword.memberName} ({lastPassword.mobile})</span><code>{lastPassword.password}</code></section>}
-      {bulkLogins.length > 0 && <section className="toolbar-panel flat-toolbar"><strong>Generated logins</strong>{bulkLogins.map((item) => <span key={item.sportsMemberId}>{item.memberName} ({item.mobile}) - {item.defaultPassword ? <code>{item.defaultPassword}</code> : item.message}</span>)}</section>}
+      </form>}
+      {isSportsAdmin && <section className="toolbar-panel flat-toolbar"><button type="button" onClick={generateLogins}>Generate Missing Logins</button></section>}
+      {isSportsAdmin && lastPassword && <section className="toolbar-panel flat-toolbar"><strong>Default login</strong><span>{lastPassword.memberName} ({lastPassword.mobile})</span><code>{lastPassword.password}</code></section>}
+      {isSportsAdmin && bulkLogins.length > 0 && <section className="toolbar-panel flat-toolbar"><strong>Generated logins</strong>{bulkLogins.map((item) => <span key={item.sportsMemberId}>{item.memberName} ({item.mobile}) - {item.defaultPassword ? <code>{item.defaultPassword}</code> : item.message}</span>)}</section>}
       <section className="toolbar-panel flat-toolbar">
         <input placeholder="Search member, mobile, role" value={search} onChange={(event) => setSearch(event.target.value)} />
         <strong>{visibleMembers.length} shown</strong>
       </section>
       <div className="table-wrap">
         <table>
-          <thead><tr><th>Name</th><th>Mobile</th><th>Email</th><th>Role</th><th>Status</th><th>Actions</th></tr></thead>
+          <thead><tr><th>Name</th><th>Mobile</th><th>Email</th><th>Role</th><th>Status</th>{isSportsAdmin && <th>Actions</th>}</tr></thead>
           <tbody>
             {visibleMembers.map((member) => (
               <tr key={member.id}>
                 <td>{member.memberName}</td><td>{member.mobile || '-'}</td><td>{member.email || '-'}</td><td>{member.role || '-'}</td><td>{member.active ? 'Active' : 'Inactive'}</td>
-                <td className="table-actions"><button onClick={() => edit(member)}>Edit</button><button className="danger" onClick={() => remove(member.id)}>Delete</button></td>
+                {isSportsAdmin && <td className="table-actions"><button onClick={() => edit(member)}>Edit</button><button className="danger" onClick={() => remove(member.id)}>Delete</button></td>}
               </tr>
             ))}
-            {!loading && visibleMembers.length === 0 && <tr><td colSpan="6" className="empty-state">No members found.</td></tr>}
+            {!loading && visibleMembers.length === 0 && <tr><td colSpan={isSportsAdmin ? 6 : 5} className="empty-state">No members found.</td></tr>}
           </tbody>
         </table>
       </div>

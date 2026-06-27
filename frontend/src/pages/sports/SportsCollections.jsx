@@ -11,6 +11,7 @@ const paymentModes = ['CASH', 'BANK', 'UPI', 'CARD', 'NEFT', 'CHEQUE']
 
 export const SportsCollections = () => {
   const { currentAccount } = useAuthStore()
+  const isSportsAdmin = ['OWNER', 'ADMIN', 'TREASURER'].includes(currentAccount?.role)
   const [searchParams, setSearchParams] = useSearchParams()
   const [events, setEvents] = useState([])
   const [members, setMembers] = useState([])
@@ -155,7 +156,7 @@ export const SportsCollections = () => {
         </select>
         <strong>{visibleCollections.length} shown</strong>
       </section>
-      <form className="inline-form" onSubmit={generateDemand}>
+      {isSportsAdmin && <form className="inline-form" onSubmit={generateDemand}>
         <input type="number" min="0.01" step="0.01" placeholder="Amount per member" value={demandForm.expectedAmount} onChange={(event) => setDemandForm({ ...demandForm, expectedAmount: event.target.value })} required />
         <select value={demandForm.memberMode} onChange={(event) => setDemandForm({ ...demandForm, memberMode: event.target.value, sportsMemberIds: [] })}>
           <option value="ALL">All active members</option>
@@ -163,8 +164,8 @@ export const SportsCollections = () => {
         </select>
         <input placeholder="Remarks" value={demandForm.remarks} onChange={(event) => setDemandForm({ ...demandForm, remarks: event.target.value })} />
         <button className="primary" type="submit" disabled={!selectedEventId}>Generate Demand</button>
-      </form>
-      {demandForm.memberMode === 'SELECTED' && (
+      </form>}
+      {isSportsAdmin && demandForm.memberMode === 'SELECTED' && (
         <section className="toolbar-panel flat-toolbar">
           {members.map((member) => (
             <label key={member.id}>
@@ -175,7 +176,7 @@ export const SportsCollections = () => {
           <strong>{demandForm.sportsMemberIds.length} selected</strong>
         </section>
       )}
-      <form className="inline-form" onSubmit={addPayment}>
+      {isSportsAdmin && <form className="inline-form" onSubmit={addPayment}>
         <select value={paymentForm.collectionId} onChange={(event) => setPaymentForm({ ...paymentForm, collectionId: event.target.value })} required>
           <option value="">Select member demand</option>
           {paymentCollections.map((collection) => <option key={collection.id} value={collection.id}>{collection.memberName} - {formatCurrency(collection.pendingAmount)} pending ({collection.paymentStatus})</option>)}
@@ -186,7 +187,7 @@ export const SportsCollections = () => {
         <input placeholder="UTR" value={paymentForm.utr} onChange={(event) => setPaymentForm({ ...paymentForm, utr: event.target.value })} />
         <input placeholder="Collected by" value={paymentForm.collectedBy} onChange={(event) => setPaymentForm({ ...paymentForm, collectedBy: event.target.value })} required />
         <button className="primary" type="submit" disabled={!selectedEventId}>Add Payment</button>
-      </form>
+      </form>}
       <div className="table-wrap">
         <table>
           <thead><tr><th>Member</th><th>Mobile</th><th className="numeric">Expected</th><th className="numeric">Collected</th><th className="numeric">Pending</th><th className="numeric">Excess</th><th>Status</th><th>Actions</th></tr></thead>
@@ -204,7 +205,7 @@ export const SportsCollections = () => {
                   <td><span className={`status-pill ${String(collection.paymentStatus).toLowerCase()}`}>{collection.paymentStatus}</span></td>
                   <td className="table-actions">
                     <Link className="button-link secondary" to={`/sports/collections/${collection.id}/receipts?eventId=${selectedEventId}`}>Receipts</Link>
-                    {canRemoveDemand && <button type="button" className="danger" onClick={() => removeDemand(collection)}>Remove Demand</button>}
+                    {isSportsAdmin && canRemoveDemand && <button type="button" className="danger" onClick={() => removeDemand(collection)}>Remove Demand</button>}
                   </td>
                 </tr>
               )

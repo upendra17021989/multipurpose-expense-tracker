@@ -48,17 +48,13 @@ export const SportsDashboard = () => {
         ['Expenses', formatCurrency(summary.expenses)],
         ['Balance', formatCurrency(summary.balance)]
       ]} />
-      <ActionRow actions={(isSportsAdmin ? [
+      <ActionRow actions={[
         ['Members', '/sports/members'],
         ['Events', '/sports/events'],
         ['Expenses', '/sports/expenses'],
         ['Collections', '/sports/collections'],
         ['Reports', '/sports/reports']
-      ] : [
-        ['Events', '/sports/events'],
-        ['Collections', '/sports/collections'],
-        ['Reports', '/sports/reports']
-      ])} />
+      ]} />
       {loading && <p className="muted">Loading sports dashboard...</p>}
     </Shell>
   )

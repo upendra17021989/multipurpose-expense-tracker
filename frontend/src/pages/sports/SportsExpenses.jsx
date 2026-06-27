@@ -39,6 +39,7 @@ const initialForm = {
 
 export const SportsExpenses = () => {
   const { currentAccount } = useAuthStore()
+  const isSportsAdmin = ['OWNER', 'ADMIN', 'TREASURER'].includes(currentAccount?.role)
   const [events, setEvents] = useState([])
   const [expenses, setExpenses] = useState([])
   const [form, setForm] = useState(initialForm)
@@ -158,7 +159,7 @@ export const SportsExpenses = () => {
   return (
     <Shell title="Sports Expenses" eyebrow="Sports module">
       <SummaryGrid items={[[ 'Shown Total', formatCurrency(total) ], [ 'Expenses', visibleExpenses.length ]]} />
-      <form className="inline-form" onSubmit={submit}>
+      {isSportsAdmin && <form className="inline-form" onSubmit={submit}>
         <select value={form.sportsEventId} onChange={(event) => updateForm('sportsEventId', event.target.value)}>
           <option value="">No event</option>
           {events.map((sportsEvent) => <option key={sportsEvent.id} value={sportsEvent.id}>{sportsEvent.eventName} ({sportsEvent.year})</option>)}
@@ -178,7 +179,7 @@ export const SportsExpenses = () => {
         <input placeholder="UTR" value={form.utr} onChange={(event) => updateForm('utr', event.target.value)} />
         <button className="primary" type="submit">{editingId ? 'Update Expense' : 'Add Expense'}</button>
         {editingId && <button type="button" onClick={resetForm}>Cancel</button>}
-      </form>
+      </form>}
       <section className="toolbar-panel flat-toolbar">
         <input placeholder="Search event, category, description, vendor" value={filters.search} onChange={(event) => setFilters({ ...filters, search: event.target.value })} />
         <select value={filters.eventId} onChange={(event) => setFilters({ ...filters, eventId: event.target.value })}><option value="">All events</option>{events.map((sportsEvent) => <option key={sportsEvent.id} value={sportsEvent.id}>{sportsEvent.eventName} ({sportsEvent.year})</option>)}</select>
@@ -187,10 +188,10 @@ export const SportsExpenses = () => {
       </section>
       <div className="table-wrap">
         <table>
-          <thead><tr><th>Date</th><th>Event</th><th>Category</th><th>Description</th><th>Vendor</th><th>Payment</th><th>Status</th><th className="numeric">Amount</th><th>Actions</th></tr></thead>
+          <thead><tr><th>Date</th><th>Event</th><th>Category</th><th>Description</th><th>Vendor</th><th>Payment</th><th>Status</th><th className="numeric">Amount</th>{isSportsAdmin && <th>Actions</th>}</tr></thead>
           <tbody>
-            {visibleExpenses.map((expense) => <tr key={expense.id}><td>{formatDate(expense.expenseDate)}</td><td>{expense.eventName || '-'}</td><td>{expense.category}</td><td>{expense.description || '-'}</td><td>{expense.vendorName || '-'}</td><td>{expense.paymentMode}</td><td>{expense.status}</td><td className="numeric">{formatCurrency(expense.amount)}</td><td className="table-actions"><button onClick={() => edit(expense)}>Edit</button><button className="danger" onClick={() => remove(expense.id)}>Delete</button></td></tr>)}
-            {!loading && visibleExpenses.length === 0 && <tr><td colSpan="9" className="empty-state">No sports expenses found.</td></tr>}
+            {visibleExpenses.map((expense) => <tr key={expense.id}><td>{formatDate(expense.expenseDate)}</td><td>{expense.eventName || '-'}</td><td>{expense.category}</td><td>{expense.description || '-'}</td><td>{expense.vendorName || '-'}</td><td>{expense.paymentMode}</td><td>{expense.status}</td><td className="numeric">{formatCurrency(expense.amount)}</td>{isSportsAdmin && <td className="table-actions"><button onClick={() => edit(expense)}>Edit</button><button className="danger" onClick={() => remove(expense.id)}>Delete</button></td>}</tr>)}
+            {!loading && visibleExpenses.length === 0 && <tr><td colSpan={isSportsAdmin ? 9 : 8} className="empty-state">No sports expenses found.</td></tr>}
           </tbody>
         </table>
       </div>

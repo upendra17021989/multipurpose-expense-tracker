@@ -13,6 +13,7 @@ const initialForm = { eventName: '', year: currentYear, startDate: today, endDat
 export const SportsEvents = () => {
   const navigate = useNavigate()
   const { currentAccount } = useAuthStore()
+  const isSportsAdmin = ['OWNER', 'ADMIN', 'TREASURER'].includes(currentAccount?.role)
   const [events, setEvents] = useState([])
   const [form, setForm] = useState(initialForm)
   const [editingEventId, setEditingEventId] = useState(null)
@@ -105,7 +106,7 @@ export const SportsEvents = () => {
         ['Collected', formatCurrency(summary.collected)],
         ['Expenses', formatCurrency(summary.expenses)]
       ]} />
-      <form className="inline-form" onSubmit={submit}>
+      {isSportsAdmin && <form className="inline-form" onSubmit={submit}>
         <input placeholder="Event name" value={form.eventName} onChange={(event) => setForm({ ...form, eventName: event.target.value })} required />
         <input type="number" min="2020" max="2100" value={form.year} onChange={(event) => setForm({ ...form, year: event.target.value })} required />
         <input type="date" value={form.startDate} onChange={(event) => setForm({ ...form, startDate: event.target.value })} required />
@@ -113,7 +114,7 @@ export const SportsEvents = () => {
         <input type="number" min="0" step="0.01" placeholder="Budget" value={form.budgetAmount} onChange={(event) => setForm({ ...form, budgetAmount: event.target.value })} />
         <button className="primary" type="submit">{editingEventId ? 'Update Event' : 'Add Event'}</button>
         {editingEventId && <button type="button" onClick={cancelEdit}>Cancel</button>}
-      </form>
+      </form>}
       <section className="toolbar-panel flat-toolbar">
         <input type="number" placeholder="Filter by year" value={year} onChange={(event) => setYear(event.target.value)} min="2020" max="2100" />
         <strong>{events.length} events</strong>
@@ -125,7 +126,7 @@ export const SportsEvents = () => {
             {events.map((sportsEvent) => (
               <tr key={sportsEvent.id}>
                 <td>{sportsEvent.eventName}</td><td>{sportsEvent.year}</td><td>{formatDate(sportsEvent.startDate)} - {formatDate(sportsEvent.endDate)}</td><td className="numeric">{formatCurrency(sportsEvent.budgetAmount)}</td><td className="numeric">{formatCurrency(sportsEvent.collectedAmount)}</td><td className="numeric">{formatCurrency(sportsEvent.totalExpense)}</td><td className="numeric">{formatCurrency(sportsEvent.balanceAmount)}</td><td><span className={`status-pill ${String(sportsEvent.status).toLowerCase()}`}>{sportsEvent.status}</span></td>
-                <td className="table-actions"><button onClick={() => navigate(`/sports/collections?eventId=${sportsEvent.id}`)}>Collections</button><button onClick={() => edit(sportsEvent)}>Edit</button>{sportsEvent.status !== 'ACTIVE' && <button onClick={() => updateStatus(sportsEvent.id, 'ACTIVE')}>Activate</button>}{sportsEvent.status !== 'CLOSED' && <button onClick={() => updateStatus(sportsEvent.id, 'CLOSED')}>Close</button>}<button className="danger" onClick={() => remove(sportsEvent.id)}>Delete</button></td>
+                <td className="table-actions"><button onClick={() => navigate(`/sports/collections?eventId=${sportsEvent.id}`)}>Collections</button>{isSportsAdmin && <><button onClick={() => edit(sportsEvent)}>Edit</button>{sportsEvent.status !== 'ACTIVE' && <button onClick={() => updateStatus(sportsEvent.id, 'ACTIVE')}>Activate</button>}{sportsEvent.status !== 'CLOSED' && <button onClick={() => updateStatus(sportsEvent.id, 'CLOSED')}>Close</button>}<button className="danger" onClick={() => remove(sportsEvent.id)}>Delete</button></>}</td>
               </tr>
             ))}
             {!loading && events.length === 0 && <tr><td colSpan="9" className="empty-state">No sports events found.</td></tr>}
