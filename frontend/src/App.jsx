@@ -12,6 +12,8 @@ import { FlatList } from './pages/society/FlatList'
 import { FlatForm } from './pages/society/FlatForm'
 import { VendorList } from './pages/society/VendorList'
 import { VendorForm } from './pages/society/VendorForm'
+import { StaffList } from './pages/society/StaffList'
+import { StaffForm } from './pages/society/StaffForm'
 import { FestivalList } from './pages/society/FestivalList'
 import { FestivalForm } from './pages/society/FestivalForm'
 import { FestivalCollectionDashboard } from './pages/society/FestivalCollectionDashboard'
@@ -64,6 +66,9 @@ function App() {
           <Route path="/society/vendors" element={<ProtectedRoute><VendorList /></ProtectedRoute>} />
           <Route path="/society/vendors/new" element={<ProtectedRoute><VendorForm /></ProtectedRoute>} />
           <Route path="/society/vendors/:vendorId/edit" element={<ProtectedRoute><VendorForm /></ProtectedRoute>} />
+          <Route path="/society/staff" element={<ProtectedRoute><StaffList /></ProtectedRoute>} />
+          <Route path="/society/staff/new" element={<ProtectedRoute><StaffForm /></ProtectedRoute>} />
+          <Route path="/society/staff/:staffId/edit" element={<ProtectedRoute><StaffForm /></ProtectedRoute>} />
           <Route path="/society/festivals" element={<ProtectedRoute><FestivalList /></ProtectedRoute>} />
           <Route path="/society/festivals/new" element={<ProtectedRoute><FestivalForm /></ProtectedRoute>} />
           <Route path="/society/festivals/:festivalEventId/edit" element={<ProtectedRoute><FestivalForm /></ProtectedRoute>} />

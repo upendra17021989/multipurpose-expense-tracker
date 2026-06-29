@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'react-toastify'
-import { attachmentAPI, expenseAPI, expenseCategoryAPI, festivalEventAPI, societyVendorAPI } from '../api/endpoints'
+import { attachmentAPI, expenseAPI, expenseCategoryAPI, festivalEventAPI, societyStaffAPI, societyVendorAPI } from '../api/endpoints'
 import { useAuthStore } from '../store/authStore'
 import { extractUtrFromImage } from '../utils/utrOcr'
 import { Shell } from './DashboardRouter'
@@ -36,6 +36,7 @@ export const ExpenseForm = () => {
   const [categories, setCategories] = useState([])
   const [festivals, setFestivals] = useState([])
   const [vendors, setVendors] = useState([])
+  const [staff, setStaff] = useState([])
   const [attachments, setAttachments] = useState([])
   const [receiptFile, setReceiptFile] = useState(null)
   const [ocrStatus, setOcrStatus] = useState('')
@@ -52,12 +53,13 @@ export const ExpenseForm = () => {
 
   useEffect(() => {
     if (currentAccount?.accountType !== 'SOCIETY') return
-    Promise.all([festivalEventAPI.getFestivals(), societyVendorAPI.getVendors()])
-      .then(([festivalResponse, vendorResponse]) => {
+    Promise.all([festivalEventAPI.getFestivals(), societyVendorAPI.getVendors(), societyStaffAPI.getStaff()])
+      .then(([festivalResponse, vendorResponse, staffResponse]) => {
         setFestivals(festivalResponse.data || [])
         setVendors(vendorResponse.data || [])
+        setStaff(staffResponse.data || [])
       })
-      .catch(() => toast.error('Unable to load festival events or vendors'))
+      .catch(() => toast.error('Unable to load festival events, vendors, or staff'))
   }, [currentAccount])
 
   useEffect(() => {
@@ -282,11 +284,12 @@ export const ExpenseForm = () => {
             </select>
           </label>
           <label>
-            Vendor
+            {currentAccount?.accountType === 'SOCIETY' ? 'Paid To' : 'Vendor'}
             {currentAccount?.accountType === 'SOCIETY' ? (
               <select value={form.vendorName} onChange={(event) => update('vendorName', event.target.value)} disabled={isApproved}>
-                <option value="">Select vendor</option>
-                {vendors.map((vendor) => <option key={vendor.id} value={vendor.supplierName}>{vendor.supplierName}</option>)}
+                <option value="">Select staff or vendor</option>
+                {staff.length > 0 && <optgroup label="Society Staff">{staff.map((member) => <option key={`staff-${member.id}`} value={member.staffName}>{member.staffName} — {member.designation}</option>)}</optgroup>}
+                {vendors.length > 0 && <optgroup label="Vendors">{vendors.map((vendor) => <option key={`vendor-${vendor.id}`} value={vendor.supplierName}>{vendor.supplierName}</option>)}</optgroup>}
               </select>
             ) : (
               <input value={form.vendorName} onChange={(event) => update('vendorName', event.target.value)} disabled={isApproved} />

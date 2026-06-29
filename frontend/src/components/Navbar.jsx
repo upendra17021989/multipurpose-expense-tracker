@@ -96,6 +96,7 @@ export const Navbar = () => {
                 {currentAccount?.accountType === 'INDIVIDUAL' && <Link to="/personal/reports" onClick={closeMenus}>Reports</Link>}
                 {currentAccount?.accountType === 'SOCIETY' && <Link to="/society/flats" onClick={closeMenus}>Flats</Link>}
                 {currentAccount?.accountType === 'SOCIETY' && <Link to="/society/vendors" onClick={closeMenus}>Vendors</Link>}
+                {currentAccount?.accountType === 'SOCIETY' && <Link to="/society/staff" onClick={closeMenus}>Staff</Link>}
                 {currentAccount?.accountType === 'SOCIETY' && <Link to="/society/festivals" onClick={closeMenus}>Festivals</Link>}
                 {currentAccount?.accountType === 'SOCIETY' && <Link to="/society/festival-collections" onClick={closeMenus}>Collections</Link>}
                 {currentAccount?.accountType === 'KIRANA_STORE' && <Link to="/kirana/products" onClick={closeMenus}>Products</Link>}
