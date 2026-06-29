@@ -45,6 +45,7 @@ export const SportsExpenses = () => {
   const [expenses, setExpenses] = useState([])
   const [form, setForm] = useState(initialForm)
   const [editingId, setEditingId] = useState(null)
+  const [isModalOpen, setIsModalOpen] = useState(false)
   const [filters, setFilters] = useState({ search: '', eventId: '', paymentMode: '' })
   const [loading, setLoading] = useState(true)
 
@@ -84,6 +85,13 @@ export const SportsExpenses = () => {
   const resetForm = () => {
     setEditingId(null)
     setForm(initialForm)
+    setIsModalOpen(false)
+  }
+
+  const addExpense = () => {
+    setEditingId(null)
+    setForm(initialForm)
+    setIsModalOpen(true)
   }
 
   const buildPayload = () => {
@@ -139,6 +147,7 @@ export const SportsExpenses = () => {
       remarks: expense.remarks || '',
       status: expense.status || 'DRAFT'
     })
+    setIsModalOpen(true)
   }
 
   const remove = async (expenseId) => {
@@ -158,32 +167,29 @@ export const SportsExpenses = () => {
   }
 
   return (
-    <Shell title="Sports Expenses" eyebrow="Sports module">
+    <Shell title="Sports Expenses" eyebrow="Sports module" actions={isSportsAdmin && <button className="primary" onClick={addExpense}>Add Expense</button>}>
       <SummaryGrid items={[[ 'Shown Total', formatCurrency(total) ], [ 'Expenses', visibleExpenses.length ]]} />
-      {isSportsAdmin && <form className="inline-form" onSubmit={submit}>
-        <select value={form.sportsEventId} onChange={(event) => updateForm('sportsEventId', event.target.value)}>
-          <option value="">No event</option>
-          {events.map((sportsEvent) => <option key={sportsEvent.id} value={sportsEvent.id}>{sportsEvent.eventName} ({sportsEvent.year})</option>)}
-        </select>
-        <input type="date" value={form.expenseDate} onChange={(event) => updateForm('expenseDate', event.target.value)} required />
-        <select value={form.category} onChange={(event) => updateForm('category', event.target.value)} required>
-          <option value="">Select category</option>
-          {sportsCategories.map((category) => <option key={category} value={category}>{category}</option>)}
-        </select>
-        {form.category === 'Other' && (
-          <input placeholder="Other category" value={form.customCategory} onChange={(event) => updateForm('customCategory', event.target.value)} required />
-        )}
-        <input placeholder="Description" value={form.description} onChange={(event) => updateForm('description', event.target.value)} />
-        <input type="number" min="0.01" step="0.01" placeholder="Amount" value={form.amount} onChange={(event) => updateForm('amount', event.target.value)} required />
-        <select value={form.paymentMode} onChange={(event) => updateForm('paymentMode', event.target.value)}>{paymentModes.map((mode) => <option key={mode}>{mode}</option>)}</select>
-        <select aria-label="Expense status" value={form.status} onChange={(event) => updateForm('status', event.target.value)}>
-          {expenseStatuses.map((status) => <option key={status} value={status}>{status}</option>)}
-        </select>
-        <input placeholder="Vendor / Paid to" value={form.vendorName} onChange={(event) => updateForm('vendorName', event.target.value)} />
-        <input placeholder="UTR" value={form.utr} onChange={(event) => updateForm('utr', event.target.value)} />
-        <button className="primary" type="submit">{editingId ? 'Update Expense' : 'Add Expense'}</button>
-        {editingId && <button type="button" onClick={resetForm}>Cancel</button>}
-      </form>}
+      {isSportsAdmin && isModalOpen && <div className="modal-backdrop" role="presentation" onMouseDown={resetForm}>
+        <section className="expense-modal" role="dialog" aria-modal="true" aria-labelledby="expense-modal-title" onMouseDown={(event) => event.stopPropagation()}>
+          <div className="expense-modal-header">
+            <h2 id="expense-modal-title">{editingId ? 'Edit Expense' : 'Add Expense'}</h2>
+            <button type="button" className="modal-close" aria-label="Close" onClick={resetForm}>×</button>
+          </div>
+          <form className="expense-modal-form" onSubmit={submit}>
+            <select aria-label="Sports event" value={form.sportsEventId} onChange={(event) => updateForm('sportsEventId', event.target.value)}><option value="">No event</option>{events.map((sportsEvent) => <option key={sportsEvent.id} value={sportsEvent.id}>{sportsEvent.eventName} ({sportsEvent.year})</option>)}</select>
+            <input aria-label="Expense date" type="date" value={form.expenseDate} onChange={(event) => updateForm('expenseDate', event.target.value)} required />
+            <select aria-label="Category" value={form.category} onChange={(event) => updateForm('category', event.target.value)} required><option value="">Select category</option>{sportsCategories.map((category) => <option key={category} value={category}>{category}</option>)}</select>
+            {form.category === 'Other' && <input placeholder="Other category" value={form.customCategory} onChange={(event) => updateForm('customCategory', event.target.value)} required />}
+            <input placeholder="Description" value={form.description} onChange={(event) => updateForm('description', event.target.value)} />
+            <input type="number" min="0.01" step="0.01" placeholder="Amount" value={form.amount} onChange={(event) => updateForm('amount', event.target.value)} required />
+            <select aria-label="Payment mode" value={form.paymentMode} onChange={(event) => updateForm('paymentMode', event.target.value)}>{paymentModes.map((mode) => <option key={mode}>{mode}</option>)}</select>
+            <select aria-label="Expense status" value={form.status} onChange={(event) => updateForm('status', event.target.value)}>{expenseStatuses.map((status) => <option key={status} value={status}>{status}</option>)}</select>
+            <input placeholder="Vendor / Paid to" value={form.vendorName} onChange={(event) => updateForm('vendorName', event.target.value)} />
+            <input placeholder="UTR" value={form.utr} onChange={(event) => updateForm('utr', event.target.value)} />
+            <div className="expense-modal-actions"><button type="button" onClick={resetForm}>Cancel</button><button className="primary" type="submit">{editingId ? 'Update Expense' : 'Add Expense'}</button></div>
+          </form>
+        </section>
+      </div>}
       <section className="toolbar-panel flat-toolbar">
         <input placeholder="Search event, category, description, vendor" value={filters.search} onChange={(event) => setFilters({ ...filters, search: event.target.value })} />
         <select value={filters.eventId} onChange={(event) => setFilters({ ...filters, eventId: event.target.value })}><option value="">All events</option>{events.map((sportsEvent) => <option key={sportsEvent.id} value={sportsEvent.id}>{sportsEvent.eventName} ({sportsEvent.year})</option>)}</select>
