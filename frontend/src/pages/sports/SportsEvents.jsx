@@ -121,15 +121,15 @@ export const SportsEvents = () => {
       </section>
       <div className="table-wrap">
         <table>
-          <thead><tr><th>Event</th><th>Year</th><th>Dates</th><th className="numeric">Budget</th><th className="numeric">Collected</th><th className="numeric">Expense</th><th className="numeric">Balance</th><th>Status</th><th>Actions</th></tr></thead>
+          <thead><tr><th>Event</th><th>Owner</th><th>Year</th><th>Dates</th><th className="numeric">Budget</th><th className="numeric">Collected</th><th className="numeric">Expense</th><th className="numeric">Balance</th><th>Status</th><th>Actions</th></tr></thead>
           <tbody>
             {events.map((sportsEvent) => (
               <tr key={sportsEvent.id}>
-                <td>{sportsEvent.eventName}</td><td>{sportsEvent.year}</td><td>{formatDate(sportsEvent.startDate)} - {formatDate(sportsEvent.endDate)}</td><td className="numeric">{formatCurrency(sportsEvent.budgetAmount)}</td><td className="numeric">{formatCurrency(sportsEvent.collectedAmount)}</td><td className="numeric">{formatCurrency(sportsEvent.totalExpense)}</td><td className="numeric">{formatCurrency(sportsEvent.balanceAmount)}</td><td><span className={`status-pill ${String(sportsEvent.status).toLowerCase()}`}>{sportsEvent.status}</span></td>
+                <td>{sportsEvent.eventName}</td><td>{sportsEvent.ownerName || '-'}</td><td>{sportsEvent.year}</td><td>{formatDate(sportsEvent.startDate)} - {formatDate(sportsEvent.endDate)}</td><td className="numeric">{formatCurrency(sportsEvent.budgetAmount)}</td><td className="numeric">{formatCurrency(sportsEvent.collectedAmount)}</td><td className="numeric">{formatCurrency(sportsEvent.totalExpense)}</td><td className="numeric">{formatCurrency(sportsEvent.balanceAmount)}</td><td><span className={`status-pill ${String(sportsEvent.status).toLowerCase()}`}>{sportsEvent.status}</span></td>
                 <td className="table-actions"><button onClick={() => navigate(`/sports/collections?eventId=${sportsEvent.id}`)}>Collections</button>{isSportsAdmin && <><button onClick={() => edit(sportsEvent)}>Edit</button>{sportsEvent.status !== 'ACTIVE' && <button onClick={() => updateStatus(sportsEvent.id, 'ACTIVE')}>Activate</button>}{sportsEvent.status !== 'CLOSED' && <button onClick={() => updateStatus(sportsEvent.id, 'CLOSED')}>Close</button>}<button className="danger" onClick={() => remove(sportsEvent.id)}>Delete</button></>}</td>
               </tr>
             ))}
-            {!loading && events.length === 0 && <tr><td colSpan="9" className="empty-state">No sports events found.</td></tr>}
+            {!loading && events.length === 0 && <tr><td colSpan="10" className="empty-state">No sports events found.</td></tr>}
           </tbody>
         </table>
       </div>

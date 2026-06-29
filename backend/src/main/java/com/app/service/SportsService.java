@@ -102,11 +102,14 @@ public class SportsService {
         return mapEvent(findEvent(accountId, eventId));
     }
 
-    public EventDto createEvent(Long accountId, EventRequest request) {
+    public EventDto createEvent(Long accountId, Long userId, EventRequest request) {
         Account account = requireSportsAccount(accountId);
+        User owner = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
         validateEvent(request);
         SportsEvent saved = eventRepository.save(SportsEvent.builder()
                 .account(account)
+                .owner(owner)
                 .eventName(request.getEventName().trim())
                 .year(request.getYear())
                 .startDate(request.getStartDate())
@@ -540,7 +543,7 @@ public class SportsService {
     }
 
     private MemberDto mapMember(SportsMember member) { return MemberDto.builder().id(member.getId()).accountId(member.getAccount().getId()).memberName(member.getMemberName()).mobile(member.getMobile()).email(member.getEmail()).role(member.getRole()).active(member.getActive()).createdAt(member.getCreatedAt()).build(); }
-    private EventDto mapEvent(SportsEvent event) { return EventDto.builder().id(event.getId()).accountId(event.getAccount().getId()).eventName(event.getEventName()).year(event.getYear()).startDate(event.getStartDate()).endDate(event.getEndDate()).budgetAmount(event.getBudgetAmount()).collectedAmount(event.getCollectedAmount()).totalExpense(event.getTotalExpense()).balanceAmount(event.getBalanceAmount()).status(event.getStatus()).createdAt(event.getCreatedAt()).build(); }
+    private EventDto mapEvent(SportsEvent event) { User owner = event.getOwner(); return EventDto.builder().id(event.getId()).accountId(event.getAccount().getId()).ownerUserId(owner != null ? owner.getId() : null).ownerName(owner != null ? owner.getName() : null).eventName(event.getEventName()).year(event.getYear()).startDate(event.getStartDate()).endDate(event.getEndDate()).budgetAmount(event.getBudgetAmount()).collectedAmount(event.getCollectedAmount()).totalExpense(event.getTotalExpense()).balanceAmount(event.getBalanceAmount()).status(event.getStatus()).createdAt(event.getCreatedAt()).build(); }
     private ExpenseDto mapExpense(SportsExpense expense) { SportsEvent event = expense.getSportsEvent(); return ExpenseDto.builder().id(expense.getId()).accountId(expense.getAccount().getId()).sportsEventId(event != null ? event.getId() : null).eventName(event != null ? event.getEventName() : null).expenseDate(expense.getExpenseDate()).category(expense.getCategory()).vendorName(expense.getVendorName()).description(expense.getDescription()).amount(expense.getAmount()).paymentMode(expense.getPaymentMode()).transactionId(expense.getTransactionId()).utr(expense.getUtr()).chequeNumber(expense.getChequeNumber()).remarks(expense.getRemarks()).status(expense.getStatus()).createdAt(expense.getCreatedAt()).build(); }
     private CollectionDto mapCollection(SportsCollection collection) { SportsMember member = collection.getSportsMember(); SportsEvent event = collection.getSportsEvent(); return CollectionDto.builder().id(collection.getId()).accountId(collection.getAccount().getId()).sportsEventId(event.getId()).eventName(event.getEventName()).sportsMemberId(member.getId()).memberName(member.getMemberName()).mobile(member.getMobile()).expectedAmount(collection.getExpectedAmount()).collectedAmount(collection.getCollectedAmount()).openingBalance(collection.getOpeningBalance()).openingDue(collection.getOpeningDue()).pendingAmount(collection.getPendingAmount()).excessAmount(collection.getExcessAmount()).carriedForwardAmount(collection.getCarriedForwardAmount()).carriedForwardPendingAmount(collection.getCarriedForwardPendingAmount()).refundedAmount(collection.getRefundedAmount()).paymentStatus(collection.getPaymentStatus()).remarks(collection.getRemarks()).createdAt(collection.getCreatedAt()).updatedAt(collection.getUpdatedAt()).build(); }
     private ReceiptDto mapReceipt(SportsCollectionReceipt receipt) { return ReceiptDto.builder().id(receipt.getId()).sportsCollectionId(receipt.getSportsCollection().getId()).paymentDate(receipt.getPaymentDate()).amountPaid(receipt.getAmountPaid()).paymentMode(receipt.getPaymentMode()).transactionId(receipt.getTransactionId()).utr(receipt.getUtr()).chequeNumber(receipt.getChequeNumber()).collectedBy(receipt.getCollectedBy()).receiptNumber(receipt.getReceiptNumber()).remarks(receipt.getRemarks()).status(receipt.getStatus()).voidReason(receipt.getVoidReason()).voidedAt(receipt.getVoidedAt()).createdAt(receipt.getCreatedAt()).build(); }

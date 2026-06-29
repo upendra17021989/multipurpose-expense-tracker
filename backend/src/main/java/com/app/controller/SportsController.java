@@ -67,7 +67,7 @@ public class SportsController {
     @PostMapping("/events")
     public ResponseEntity<EventDto> createEvent(@AuthenticationPrincipal UserPrincipal userPrincipal, @Valid @RequestBody EventRequest request) {
         sportsService.requireSportsAdmin(userPrincipal.getAccountId(), userPrincipal.getUserId());
-        return ResponseEntity.status(HttpStatus.CREATED).body(sportsService.createEvent(userPrincipal.getAccountId(), request));
+        return ResponseEntity.status(HttpStatus.CREATED).body(sportsService.createEvent(userPrincipal.getAccountId(), userPrincipal.getUserId(), request));
     }
 
     @PutMapping("/events/{eventId}")

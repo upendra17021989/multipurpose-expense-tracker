@@ -45,6 +45,8 @@ public class SportsDtos {
     public static class EventDto {
         private Long id;
         private Long accountId;
+        private Long ownerUserId;
+        private String ownerName;
         private String eventName;
         private Integer year;
         private LocalDate startDate;

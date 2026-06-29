@@ -21,6 +21,10 @@ public class SportsEvent {
     @JoinColumn(name = "account_id", nullable = false)
     private Account account;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "owner_user_id")
+    private User owner;
+
     @Column(nullable = false)
     private String eventName;
 
