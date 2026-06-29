@@ -10,6 +10,8 @@ import { BudgetSettings } from './pages/BudgetSettings'
 import { PersonalReports } from './pages/PersonalReports'
 import { FlatList } from './pages/society/FlatList'
 import { FlatForm } from './pages/society/FlatForm'
+import { VendorList } from './pages/society/VendorList'
+import { VendorForm } from './pages/society/VendorForm'
 import { FestivalList } from './pages/society/FestivalList'
 import { FestivalForm } from './pages/society/FestivalForm'
 import { FestivalCollectionDashboard } from './pages/society/FestivalCollectionDashboard'
@@ -59,6 +61,9 @@ function App() {
           <Route path="/society/flats" element={<ProtectedRoute><FlatList /></ProtectedRoute>} />
           <Route path="/society/flats/new" element={<ProtectedRoute><FlatForm /></ProtectedRoute>} />
           <Route path="/society/flats/:flatId/edit" element={<ProtectedRoute><FlatForm /></ProtectedRoute>} />
+          <Route path="/society/vendors" element={<ProtectedRoute><VendorList /></ProtectedRoute>} />
+          <Route path="/society/vendors/new" element={<ProtectedRoute><VendorForm /></ProtectedRoute>} />
+          <Route path="/society/vendors/:vendorId/edit" element={<ProtectedRoute><VendorForm /></ProtectedRoute>} />
           <Route path="/society/festivals" element={<ProtectedRoute><FestivalList /></ProtectedRoute>} />
           <Route path="/society/festivals/new" element={<ProtectedRoute><FestivalForm /></ProtectedRoute>} />
           <Route path="/society/festivals/:festivalEventId/edit" element={<ProtectedRoute><FestivalForm /></ProtectedRoute>} />

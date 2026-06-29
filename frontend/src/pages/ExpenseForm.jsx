@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'react-toastify'
-import { attachmentAPI, expenseAPI, expenseCategoryAPI, festivalEventAPI } from '../api/endpoints'
+import { attachmentAPI, expenseAPI, expenseCategoryAPI, festivalEventAPI, societyVendorAPI } from '../api/endpoints'
 import { useAuthStore } from '../store/authStore'
 import { extractUtrFromImage } from '../utils/utrOcr'
 import { Shell } from './DashboardRouter'
@@ -35,6 +35,7 @@ export const ExpenseForm = () => {
   const [form, setForm] = useState(initialForm)
   const [categories, setCategories] = useState([])
   const [festivals, setFestivals] = useState([])
+  const [vendors, setVendors] = useState([])
   const [attachments, setAttachments] = useState([])
   const [receiptFile, setReceiptFile] = useState(null)
   const [ocrStatus, setOcrStatus] = useState('')
@@ -51,9 +52,12 @@ export const ExpenseForm = () => {
 
   useEffect(() => {
     if (currentAccount?.accountType !== 'SOCIETY') return
-    festivalEventAPI.getFestivals()
-      .then((response) => setFestivals(response.data || []))
-      .catch(() => toast.error('Unable to load festival events'))
+    Promise.all([festivalEventAPI.getFestivals(), societyVendorAPI.getVendors()])
+      .then(([festivalResponse, vendorResponse]) => {
+        setFestivals(festivalResponse.data || [])
+        setVendors(vendorResponse.data || [])
+      })
+      .catch(() => toast.error('Unable to load festival events or vendors'))
   }, [currentAccount])
 
   useEffect(() => {
@@ -279,7 +283,14 @@ export const ExpenseForm = () => {
           </label>
           <label>
             Vendor
-            <input value={form.vendorName} onChange={(event) => update('vendorName', event.target.value)} disabled={isApproved} />
+            {currentAccount?.accountType === 'SOCIETY' ? (
+              <select value={form.vendorName} onChange={(event) => update('vendorName', event.target.value)} disabled={isApproved}>
+                <option value="">Select vendor</option>
+                {vendors.map((vendor) => <option key={vendor.id} value={vendor.supplierName}>{vendor.supplierName}</option>)}
+              </select>
+            ) : (
+              <input value={form.vendorName} onChange={(event) => update('vendorName', event.target.value)} disabled={isApproved} />
+            )}
           </label>
           <label>
             Transaction ID

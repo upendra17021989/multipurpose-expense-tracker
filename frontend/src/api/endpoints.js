@@ -46,6 +46,13 @@ export const societyFlatAPI = {
   deleteFlat: (flatId) => axiosInstance.delete(`/society/flats/${flatId}`)
 }
 
+export const societyVendorAPI = {
+  getVendors: () => axiosInstance.get('/society/vendors'),
+  getVendor: (vendorId) => axiosInstance.get(`/society/vendors/${vendorId}`),
+  createVendor: (data) => axiosInstance.post('/society/vendors', data),
+  updateVendor: (vendorId, data) => axiosInstance.put(`/society/vendors/${vendorId}`, data),
+  deleteVendor: (vendorId) => axiosInstance.delete(`/society/vendors/${vendorId}`)
+}
 export const kiranaProductAPI = {
   getProducts: () => axiosInstance.get('/kirana/products'),
   getLowStockProducts: () => axiosInstance.get('/kirana/products/low-stock'),
