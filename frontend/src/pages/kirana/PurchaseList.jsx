@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useEffect, useMemo, useState } from 'react'
 import { toast } from 'react-toastify'
 import { kiranaPurchaseAPI } from '../../api/endpoints'
@@ -8,6 +8,7 @@ import { formatCurrency, formatDate } from '../../utils/format'
 import { Shell, SummaryGrid } from '../DashboardRouter'
 
 export const PurchaseList = () => {
+  const navigate = useNavigate()
   const { currentAccount } = useAuthStore()
   const [purchases, setPurchases] = useState([])
   const [filters, setFilters] = useState({ search: '', paymentMode: '', startDate: '', endDate: '' })
@@ -73,6 +74,17 @@ export const PurchaseList = () => {
     ], 'kirana-purchases')
   }
 
+  const cancelPurchase = async (purchaseId) => {
+    if (!window.confirm('Cancel this purchase and reverse its stock?')) return
+    try {
+      await kiranaPurchaseAPI.cancelPurchase(purchaseId)
+      setPurchases((current) => current.filter((purchase) => purchase.id !== purchaseId))
+      toast.success('Purchase cancelled')
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Unable to cancel purchase')
+    }
+  }
+
   if (currentAccount?.accountType !== 'KIRANA_STORE') {
     return (
       <Shell title="Purchases" eyebrow="Kirana module">
@@ -123,6 +135,7 @@ export const PurchaseList = () => {
               <th className="numeric">Net</th>
               <th className="numeric">Paid</th>
               <th className="numeric">Balance</th>
+              <th>Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -138,9 +151,10 @@ export const PurchaseList = () => {
                 <td className="numeric">{formatCurrency(purchase.netAmount)}</td>
                 <td className="numeric">{formatCurrency(purchase.amountPaid)}</td>
                 <td className="numeric">{formatCurrency(purchase.balanceAmount)}</td>
+                <td className="table-actions"><button onClick={() => navigate(`/kirana/purchases/${purchase.id}/edit`)}>Edit</button><button className="danger" onClick={() => cancelPurchase(purchase.id)}>Cancel</button></td>
               </tr>
             ))}
-            {!loading && visiblePurchases.length === 0 && <tr><td colSpan="10" className="empty-state">No purchases found.</td></tr>}
+            {!loading && visiblePurchases.length === 0 && <tr><td colSpan="11" className="empty-state">No purchases found.</td></tr>}
           </tbody>
         </table>
       </div>

@@ -77,8 +77,10 @@ function App() {
           <Route path="/kirana/customers/:customerId/edit" element={<ProtectedRoute><CustomerForm /></ProtectedRoute>} />
           <Route path="/kirana/sales" element={<ProtectedRoute><SalesList /></ProtectedRoute>} />
           <Route path="/kirana/sales/new" element={<ProtectedRoute><SalesForm /></ProtectedRoute>} />
+          <Route path="/kirana/sales/:saleId/edit" element={<ProtectedRoute><SalesForm /></ProtectedRoute>} />
           <Route path="/kirana/purchases" element={<ProtectedRoute><PurchaseList /></ProtectedRoute>} />
           <Route path="/kirana/purchases/new" element={<ProtectedRoute><PurchaseForm /></ProtectedRoute>} />
+          <Route path="/kirana/purchases/:purchaseId/edit" element={<ProtectedRoute><PurchaseForm /></ProtectedRoute>} />
           <Route path="/kirana/customer-credit" element={<ProtectedRoute><CustomerCreditLedger /></ProtectedRoute>} />
           <Route path="/kirana/supplier-payments" element={<ProtectedRoute><SupplierPaymentLedger /></ProtectedRoute>} />
           <Route path="/kirana/reports" element={<ProtectedRoute><KiranaReports /></ProtectedRoute>} />

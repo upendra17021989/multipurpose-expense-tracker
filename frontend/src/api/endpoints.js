@@ -75,14 +75,18 @@ export const kiranaSalesAPI = {
   getSales: () => axiosInstance.get('/kirana/sales'),
   getSalesByDateRange: (startDate, endDate) => axiosInstance.get('/kirana/sales/range', { params: { startDate, endDate } }),
   getSale: (saleId) => axiosInstance.get(`/kirana/sales/${saleId}`),
-  createSale: (data) => axiosInstance.post('/kirana/sales', data)
+  createSale: (data) => axiosInstance.post('/kirana/sales', data),
+  updateSale: (saleId, data) => axiosInstance.put(`/kirana/sales/${saleId}`, data),
+  cancelSale: (saleId) => axiosInstance.delete(`/kirana/sales/${saleId}`)
 }
 
 export const kiranaPurchaseAPI = {
   getPurchases: () => axiosInstance.get('/kirana/purchases'),
   getPurchasesByDateRange: (startDate, endDate) => axiosInstance.get('/kirana/purchases/range', { params: { startDate, endDate } }),
   getPurchase: (purchaseId) => axiosInstance.get(`/kirana/purchases/${purchaseId}`),
-  createPurchase: (data) => axiosInstance.post('/kirana/purchases', data)
+  createPurchase: (data) => axiosInstance.post('/kirana/purchases', data),
+  updatePurchase: (purchaseId, data) => axiosInstance.put(`/kirana/purchases/${purchaseId}`, data),
+  cancelPurchase: (purchaseId) => axiosInstance.delete(`/kirana/purchases/${purchaseId}`)
 }
 
 export const kiranaLedgerAPI = {

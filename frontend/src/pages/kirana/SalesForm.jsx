@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'react-toastify'
 import { kiranaCustomerAPI, kiranaProductAPI, kiranaSalesAPI } from '../../api/endpoints'
 import { useAuthStore } from '../../store/authStore'
@@ -11,6 +11,7 @@ const newItem = () => ({ productId: '', quantity: '1', sellingPrice: '' })
 
 export const SalesForm = () => {
   const navigate = useNavigate()
+  const { saleId } = useParams()
   const { currentAccount } = useAuthStore()
   const [products, setProducts] = useState([])
   const [customers, setCustomers] = useState([])
@@ -34,6 +35,21 @@ export const SalesForm = () => {
       })
       .catch((error) => toast.error(error.response?.data?.message || 'Unable to load sale masters'))
   }, [currentAccount?.accountType])
+
+  useEffect(() => {
+    if (!saleId) return
+    kiranaSalesAPI.getSale(saleId)
+      .then(({ data }) => setForm({
+        saleDate: data.saleDate,
+        customerId: data.customerId || '',
+        paymentMode: data.paymentMode,
+        discount: data.discount ?? '0',
+        amountPaid: data.amountPaid ?? '',
+        remarks: data.remarks || '',
+        items: (data.items || []).map((item) => ({ productId: item.productId, quantity: item.quantity, sellingPrice: item.sellingPrice }))
+      }))
+      .catch((error) => toast.error(error.response?.data?.message || 'Unable to load sale'))
+  }, [saleId])
 
   const totals = useMemo(() => {
     const totalAmount = form.items.reduce((sum, item) => {
@@ -89,8 +105,9 @@ export const SalesForm = () => {
 
     setSaving(true)
     try {
-      await kiranaSalesAPI.createSale(payload)
-      toast.success('Sale saved')
+      if (saleId) await kiranaSalesAPI.updateSale(saleId, payload)
+      else await kiranaSalesAPI.createSale(payload)
+      toast.success(saleId ? 'Sale updated' : 'Sale saved')
       navigate('/kirana/sales')
     } catch (error) {
       toast.error(error.response?.data?.message || 'Unable to save sale')
@@ -101,14 +118,14 @@ export const SalesForm = () => {
 
   if (currentAccount?.accountType !== 'KIRANA_STORE') {
     return (
-      <Shell title="New Sale" eyebrow="Kirana module">
+      <Shell title={saleId ? 'Edit Sale' : 'New Sale'} eyebrow="Kirana module">
         <p className="muted">Sales are available for kirana store accounts.</p>
       </Shell>
     )
   }
 
   return (
-    <Shell title="New Sale" eyebrow="Kirana module">
+    <Shell title={saleId ? 'Edit Sale' : 'New Sale'} eyebrow="Kirana module">
       <SummaryGrid items={[
         ['Total', formatCurrency(totals.totalAmount)],
         ['Discount', formatCurrency(totals.discount)],
@@ -184,7 +201,7 @@ export const SalesForm = () => {
         <div className="form-actions">
           <button type="button" onClick={() => setForm({ ...form, items: [...form.items, newItem()] })}>Add Item</button>
           <button type="button" onClick={() => navigate('/kirana/sales')}>Cancel</button>
-          <button type="submit" className="primary" disabled={saving}>{saving ? 'Saving...' : 'Save Sale'}</button>
+          <button type="submit" className="primary" disabled={saving}>{saving ? 'Saving...' : saleId ? 'Update Sale' : 'Save Sale'}</button>
         </div>
       </form>
     </Shell>

@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useEffect, useMemo, useState } from 'react'
 import { toast } from 'react-toastify'
 import { kiranaSalesAPI } from '../../api/endpoints'
@@ -8,6 +8,7 @@ import { formatCurrency, formatDate } from '../../utils/format'
 import { Shell, SummaryGrid } from '../DashboardRouter'
 
 export const SalesList = () => {
+  const navigate = useNavigate()
   const { currentAccount } = useAuthStore()
   const [sales, setSales] = useState([])
   const [filters, setFilters] = useState({ search: '', paymentMode: '', startDate: '', endDate: '' })
@@ -73,6 +74,17 @@ export const SalesList = () => {
     ], 'kirana-sales')
   }
 
+  const cancelSale = async (saleId) => {
+    if (!window.confirm('Cancel this sale and restore its stock?')) return
+    try {
+      await kiranaSalesAPI.cancelSale(saleId)
+      setSales((current) => current.filter((sale) => sale.id !== saleId))
+      toast.success('Sale cancelled')
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Unable to cancel sale')
+    }
+  }
+
   if (currentAccount?.accountType !== 'KIRANA_STORE') {
     return (
       <Shell title="Sales" eyebrow="Kirana module">
@@ -121,6 +133,7 @@ export const SalesList = () => {
               <th className="numeric">Net</th>
               <th className="numeric">Paid</th>
               <th className="numeric">Balance</th>
+              <th>Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -135,9 +148,10 @@ export const SalesList = () => {
                 <td className="numeric">{formatCurrency(sale.netAmount)}</td>
                 <td className="numeric">{formatCurrency(sale.amountPaid)}</td>
                 <td className="numeric">{formatCurrency(sale.balanceAmount)}</td>
+                <td className="table-actions"><button onClick={() => navigate(`/kirana/sales/${sale.id}/edit`)}>Edit</button><button className="danger" onClick={() => cancelSale(sale.id)}>Cancel</button></td>
               </tr>
             ))}
-            {!loading && visibleSales.length === 0 && <tr><td colSpan="9" className="empty-state">No sales found.</td></tr>}
+            {!loading && visibleSales.length === 0 && <tr><td colSpan="10" className="empty-state">No sales found.</td></tr>}
           </tbody>
         </table>
       </div>

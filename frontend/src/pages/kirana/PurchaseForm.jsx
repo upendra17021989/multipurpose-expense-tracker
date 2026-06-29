@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'react-toastify'
 import { kiranaProductAPI, kiranaPurchaseAPI, kiranaSupplierAPI } from '../../api/endpoints'
 import { useAuthStore } from '../../store/authStore'
@@ -11,6 +11,7 @@ const newItem = () => ({ productId: '', quantity: '1', purchasePrice: '' })
 
 export const PurchaseForm = () => {
   const navigate = useNavigate()
+  const { purchaseId } = useParams()
   const { currentAccount } = useAuthStore()
   const [products, setProducts] = useState([])
   const [suppliers, setSuppliers] = useState([])
@@ -35,6 +36,22 @@ export const PurchaseForm = () => {
       })
       .catch((error) => toast.error(error.response?.data?.message || 'Unable to load purchase masters'))
   }, [currentAccount?.accountType])
+
+  useEffect(() => {
+    if (!purchaseId) return
+    kiranaPurchaseAPI.getPurchase(purchaseId)
+      .then(({ data }) => setForm({
+        purchaseDate: data.purchaseDate,
+        supplierId: data.supplierId,
+        invoiceNumber: data.invoiceNumber || '',
+        paymentMode: data.paymentMode,
+        discount: data.discount ?? '0',
+        amountPaid: data.amountPaid ?? '',
+        remarks: data.remarks || '',
+        items: (data.items || []).map((item) => ({ productId: item.productId, quantity: item.quantity, purchasePrice: item.purchasePrice }))
+      }))
+      .catch((error) => toast.error(error.response?.data?.message || 'Unable to load purchase'))
+  }, [purchaseId])
 
   const totals = useMemo(() => {
     const totalAmount = form.items.reduce((sum, item) => sum + Number(item.quantity || 0) * Number(item.purchasePrice || 0), 0)
@@ -81,8 +98,9 @@ export const PurchaseForm = () => {
     }
     setSaving(true)
     try {
-      await kiranaPurchaseAPI.createPurchase(payload)
-      toast.success('Purchase saved')
+      if (purchaseId) await kiranaPurchaseAPI.updatePurchase(purchaseId, payload)
+      else await kiranaPurchaseAPI.createPurchase(payload)
+      toast.success(purchaseId ? 'Purchase updated' : 'Purchase saved')
       navigate('/kirana/purchases')
     } catch (error) {
       toast.error(error.response?.data?.message || 'Unable to save purchase')
@@ -93,14 +111,14 @@ export const PurchaseForm = () => {
 
   if (currentAccount?.accountType !== 'KIRANA_STORE') {
     return (
-      <Shell title="New Purchase" eyebrow="Kirana module">
+      <Shell title={purchaseId ? 'Edit Purchase' : 'New Purchase'} eyebrow="Kirana module">
         <p className="muted">Purchases are available for kirana store accounts.</p>
       </Shell>
     )
   }
 
   return (
-    <Shell title="New Purchase" eyebrow="Kirana module">
+    <Shell title={purchaseId ? 'Edit Purchase' : 'New Purchase'} eyebrow="Kirana module">
       <SummaryGrid items={[
         ['Total', formatCurrency(totals.totalAmount)],
         ['Discount', formatCurrency(totals.discount)],
@@ -181,7 +199,7 @@ export const PurchaseForm = () => {
         <div className="form-actions">
           <button type="button" onClick={() => setForm({ ...form, items: [...form.items, newItem()] })}>Add Item</button>
           <button type="button" onClick={() => navigate('/kirana/purchases')}>Cancel</button>
-          <button type="submit" className="primary" disabled={saving}>{saving ? 'Saving...' : 'Save Purchase'}</button>
+          <button type="submit" className="primary" disabled={saving}>{saving ? 'Saving...' : purchaseId ? 'Update Purchase' : 'Save Purchase'}</button>
         </div>
       </form>
     </Shell>

@@ -153,6 +153,42 @@ public class SaleService {
         return mapToDto(savedSale);
     }
 
+    @Transactional
+    public SaleDto updateSale(Long accountId, Long saleId, SaleCreateRequest request) {
+        cancelSale(accountId, saleId);
+        return createSale(accountId, request);
+    }
+
+    @Transactional
+    public void cancelSale(Long accountId, Long saleId) {
+        Sale sale = findSale(accountId, saleId);
+        List<SaleItem> items = saleItemRepository.findBySaleId(saleId);
+        for (SaleItem item : items) {
+            Product product = item.getProduct();
+            product.setCurrentStock(product.getCurrentStock().add(item.getQuantity()));
+            productRepository.save(product);
+        }
+        if (sale.getCustomer() != null && nonNull(sale.getBalanceAmount()).compareTo(BigDecimal.ZERO) > 0) {
+            Customer customer = sale.getCustomer();
+            BigDecimal revisedCredit = nonNull(customer.getCurrentCredit()).subtract(sale.getBalanceAmount());
+            if (revisedCredit.compareTo(BigDecimal.ZERO) < 0) {
+                throw new ValidationException("Cannot cancel sale after payments have been applied to its credit");
+            }
+            customer.setCurrentCredit(revisedCredit);
+            customerRepository.save(customer);
+            customerCreditLedgerRepository.findByAccountIdAndReferenceIdAndTransactionType(accountId, String.valueOf(saleId), TransactionType.SALE_CREDIT)
+                    .ifPresent(customerCreditLedgerRepository::delete);
+        }
+        saleItemRepository.deleteAll(items);
+        saleRepository.delete(sale);
+    }
+
+    private Sale findSale(Long accountId, Long saleId) {
+        return saleRepository.findById(saleId)
+                .filter(item -> item.getAccount().getId().equals(accountId))
+                .orElseThrow(() -> new ResourceNotFoundException("Sale not found"));
+    }
+
     private Product findProduct(Long accountId, Long productId) {
         return productRepository.findByAccountIdAndIdAndActiveTrue(accountId, productId)
                 .orElseThrow(() -> new ResourceNotFoundException("Product not found"));

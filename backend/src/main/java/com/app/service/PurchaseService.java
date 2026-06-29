@@ -138,6 +138,47 @@ public class PurchaseService {
         return mapToDto(savedPurchase);
     }
 
+    @Transactional
+    public PurchaseDto updatePurchase(Long accountId, Long purchaseId, PurchaseCreateRequest request) {
+        cancelPurchase(accountId, purchaseId);
+        return createPurchase(accountId, request);
+    }
+
+    @Transactional
+    public void cancelPurchase(Long accountId, Long purchaseId) {
+        Purchase purchase = findPurchase(accountId, purchaseId);
+        List<PurchaseItem> items = purchaseItemRepository.findByPurchaseId(purchaseId);
+        for (PurchaseItem item : items) {
+            if (item.getProduct().getCurrentStock().compareTo(item.getQuantity()) < 0) {
+                throw new ValidationException("Cannot cancel purchase because stock for " + item.getProduct().getProductName() + " has already been used");
+            }
+        }
+        for (PurchaseItem item : items) {
+            Product product = item.getProduct();
+            product.setCurrentStock(product.getCurrentStock().subtract(item.getQuantity()));
+            productRepository.save(product);
+        }
+        if (nonNull(purchase.getBalanceAmount()).compareTo(BigDecimal.ZERO) > 0) {
+            Supplier supplier = purchase.getSupplier();
+            BigDecimal revisedDue = nonNull(supplier.getCurrentDue()).subtract(purchase.getBalanceAmount());
+            if (revisedDue.compareTo(BigDecimal.ZERO) < 0) {
+                throw new ValidationException("Cannot cancel purchase after payments have been applied to its due");
+            }
+            supplier.setCurrentDue(revisedDue);
+            supplierRepository.save(supplier);
+            supplierPaymentLedgerRepository.findByAccountIdAndReferenceIdAndTransactionType(accountId, String.valueOf(purchaseId), TransactionType.PURCHASE_CREDIT)
+                    .ifPresent(supplierPaymentLedgerRepository::delete);
+        }
+        purchaseItemRepository.deleteAll(items);
+        purchaseRepository.delete(purchase);
+    }
+
+    private Purchase findPurchase(Long accountId, Long purchaseId) {
+        return purchaseRepository.findById(purchaseId)
+                .filter(item -> item.getAccount().getId().equals(accountId))
+                .orElseThrow(() -> new ResourceNotFoundException("Purchase not found"));
+    }
+
     private PurchaseDto mapToDto(Purchase purchase) {
         List<PurchaseItemDto> items = purchaseItemRepository.findByPurchaseId(purchase.getId()).stream()
                 .map(item -> PurchaseItemDto.builder()
