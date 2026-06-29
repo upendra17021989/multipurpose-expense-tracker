@@ -7,6 +7,7 @@ import { Shell, SummaryGrid } from '../DashboardRouter'
 
 const today = new Date().toISOString().slice(0, 10)
 const paymentModes = ['CASH', 'BANK', 'UPI', 'CARD', 'NEFT', 'CHEQUE']
+const expenseStatuses = ['DRAFT', 'SUBMITTED', 'APPROVED', 'REJECTED', 'PAID']
 const sportsCategories = [
   'Equipment',
   'Ground Booking',
@@ -175,6 +176,9 @@ export const SportsExpenses = () => {
         <input placeholder="Description" value={form.description} onChange={(event) => updateForm('description', event.target.value)} />
         <input type="number" min="0.01" step="0.01" placeholder="Amount" value={form.amount} onChange={(event) => updateForm('amount', event.target.value)} required />
         <select value={form.paymentMode} onChange={(event) => updateForm('paymentMode', event.target.value)}>{paymentModes.map((mode) => <option key={mode}>{mode}</option>)}</select>
+        <select aria-label="Expense status" value={form.status} onChange={(event) => updateForm('status', event.target.value)}>
+          {expenseStatuses.map((status) => <option key={status} value={status}>{status}</option>)}
+        </select>
         <input placeholder="Vendor / Paid to" value={form.vendorName} onChange={(event) => updateForm('vendorName', event.target.value)} />
         <input placeholder="UTR" value={form.utr} onChange={(event) => updateForm('utr', event.target.value)} />
         <button className="primary" type="submit">{editingId ? 'Update Expense' : 'Add Expense'}</button>
