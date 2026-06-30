@@ -364,6 +364,79 @@ label {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+.two-column-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  align-items: start;
+}
+
+.two-column-grid > .form-panel {
+  height: 100%;
+}
+
+.two-column-grid .form-panel > form,
+.shared-expense-form {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.form-panel > .inline-form {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+}
+
+.form-panel h3 {
+  margin: 1rem 0 0.35rem;
+  color: #334155;
+  font-size: 0.95rem;
+}
+
+.participant-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 0.75rem;
+  margin: 0.5rem 0 1rem;
+}
+
+.participant-grid > label {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 0.6rem;
+  min-height: 52px;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid #d9e2ec;
+  border-radius: 7px;
+  background: #f8fafc;
+}
+
+.participant-grid > label > input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+}
+
+.participant-grid > label > input[type="number"] {
+  grid-column: 1 / -1;
+}
+
+.two-column-grid .form-panel p {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin: 0.6rem 0 0;
+  padding-top: 0.6rem;
+  border-top: 1px solid #e5edf5;
+}
+
+.two-column-grid .form-panel p button {
+  flex: 0 0 auto;
+}
+
 .inline-form,
 .toolbar-panel {
   display: grid;
@@ -636,6 +709,8 @@ th {
   .report-grid,
   .form-grid,
   .form-grid.two,
+  .two-column-grid,
+  .participant-grid,
   .line-item-row,
   .inline-form,
   .toolbar-panel {
