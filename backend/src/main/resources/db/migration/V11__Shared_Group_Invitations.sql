@@ -1,0 +1,3 @@
+CREATE TABLE shared_group_invitations (id BIGSERIAL PRIMARY KEY, group_id BIGINT NOT NULL REFERENCES shared_expense_groups(id), invited_by_user_id BIGINT NOT NULL REFERENCES users(id), invited_user_id BIGINT REFERENCES users(id), email VARCHAR(255), mobile VARCHAR(20), status VARCHAR(20) NOT NULL DEFAULT 'PENDING', created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, responded_at TIMESTAMP, CHECK (email IS NOT NULL OR mobile IS NOT NULL));
+CREATE INDEX idx_shared_invitation_user_status ON shared_group_invitations(invited_user_id, status);
+CREATE UNIQUE INDEX uq_shared_pending_invitation ON shared_group_invitations(group_id, invited_user_id) WHERE status = 'PENDING' AND invited_user_id IS NOT NULL;

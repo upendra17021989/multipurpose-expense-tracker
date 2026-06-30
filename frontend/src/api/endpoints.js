@@ -49,6 +49,10 @@ export const sharedExpenseAPI = {
   addSettlement: (groupId, data) => axiosInstance.post(`/personal/shared-expenses/groups/${groupId}/settlements`, data),
   reverseExpense: (expenseId) => axiosInstance.delete(`/personal/shared-expenses/expenses/${expenseId}`),
   reverseSettlement: (settlementId) => axiosInstance.delete(`/personal/shared-expenses/settlements/${settlementId}`)
+  ,getInvitations: () => axiosInstance.get('/personal/shared-expenses/invitations')
+  ,inviteUser: (groupId, data) => axiosInstance.post(`/personal/shared-expenses/invitations/groups/${groupId}`, data)
+  ,acceptInvitation: (invitationId) => axiosInstance.post(`/personal/shared-expenses/invitations/${invitationId}/accept`)
+  ,declineInvitation: (invitationId) => axiosInstance.post(`/personal/shared-expenses/invitations/${invitationId}/decline`)
 }
 
 export const societyFlatAPI = {

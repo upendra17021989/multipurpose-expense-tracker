@@ -1,2 +1,2 @@
 package com.app.repository; import com.app.entity.SharedGroupMember; import org.springframework.data.jpa.repository.JpaRepository; import java.util.*;
-public interface SharedGroupMemberRepository extends JpaRepository<SharedGroupMember,Long>{ List<SharedGroupMember> findByGroupIdOrderByMemberName(Long groupId); Optional<SharedGroupMember> findByIdAndGroupId(Long id,Long groupId); }
+public interface SharedGroupMemberRepository extends JpaRepository<SharedGroupMember,Long>{ List<SharedGroupMember> findByGroupIdOrderByMemberName(Long groupId); Optional<SharedGroupMember> findByIdAndGroupId(Long id,Long groupId); Optional<SharedGroupMember> findByGroupIdAndUserId(Long groupId,Long userId); }

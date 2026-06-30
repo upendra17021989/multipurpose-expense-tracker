@@ -1,0 +1,2 @@
+package com.app.repository; import com.app.entity.*; import org.springframework.data.jpa.repository.JpaRepository; import java.util.*;
+public interface SharedGroupInvitationRepository extends JpaRepository<SharedGroupInvitation,Long>{ List<SharedGroupInvitation> findByInvitedUserIdAndStatusOrderByCreatedAtDesc(Long userId,SharedInvitationStatus status); Optional<SharedGroupInvitation> findByIdAndInvitedUserIdAndStatus(Long id,Long userId,SharedInvitationStatus status); boolean existsByGroupIdAndInvitedUserIdAndStatus(Long groupId,Long userId,SharedInvitationStatus status); }
