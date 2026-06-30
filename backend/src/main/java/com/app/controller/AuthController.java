@@ -3,6 +3,7 @@ package com.app.controller;
 import com.app.dto.LoginRequest;
 import com.app.dto.LoginResponse;
 import com.app.dto.RegisterRequest;
+import com.app.dto.ResetPasswordRequest;
 import com.app.dto.UserDto;
 import com.app.security.UserPrincipal;
 import com.app.service.AuthService;
@@ -37,6 +38,12 @@ public class AuthController {
         return ResponseEntity.ok(response);
     }
 
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<Void> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
+        authService.resetPassword(request);
+        return ResponseEntity.noContent().build();
+    }
     @PostMapping("/login/{accountId}")
     public ResponseEntity<LoginResponse> loginWithAccount(@Valid @RequestBody LoginRequest request, @PathVariable Long accountId) {
         log.info("Login request for mobile: {} with accountId: {}", request.getMobile(), accountId);

@@ -4,6 +4,7 @@ import com.app.dto.AccountDto;
 import com.app.dto.LoginRequest;
 import com.app.dto.LoginResponse;
 import com.app.dto.RegisterRequest;
+import com.app.dto.ResetPasswordRequest;
 import com.app.dto.UserDto;
 import com.app.entity.Account;
 import com.app.entity.AccountType;
@@ -63,11 +64,10 @@ public class AuthService {
     }
 
     public LoginResponse login(LoginRequest request) {
-        User user = userRepository.findByMobileAndActive(request.getMobile(), true)
-                .orElseThrow(() -> new UnauthorizedException("Invalid mobile or password"));
+        User user = findLoginUser(request.getMobile());
 
         if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
-            throw new UnauthorizedException("Invalid mobile or password");
+            throw new UnauthorizedException("Incorrect password. Please try again or reset your password.");
         }
 
         List<AccountDto> accounts = getAccessibleAccountDtos(user.getId());
@@ -81,16 +81,40 @@ public class AuthService {
     }
 
     public LoginResponse loginWithAccount(LoginRequest request, Long accountId) {
-        User user = userRepository.findByMobileAndActive(request.getMobile(), true)
-                .orElseThrow(() -> new UnauthorizedException("Invalid mobile or password"));
+        User user = findLoginUser(request.getMobile());
 
         if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
-            throw new UnauthorizedException("Invalid mobile or password");
+            throw new UnauthorizedException("Incorrect password. Please try again or reset your password.");
         }
 
         return buildAccountLoginResponse(user, accountId);
     }
 
+
+    @Transactional
+    public void resetPassword(ResetPasswordRequest request) {
+        User user = userRepository.findByMobile(request.getMobile())
+                .orElseThrow(() -> new ValidationException("No account is registered with this mobile number."));
+        if (!Boolean.TRUE.equals(user.getActive())) {
+            throw new ValidationException("This account is inactive. Please contact support.");
+        }
+        if (user.getEmail() == null || !user.getEmail().equalsIgnoreCase(request.getEmail().trim())) {
+            throw new ValidationException("The email does not match the email registered with this mobile number.");
+        }
+        if (!request.getNewPassword().equals(request.getConfirmPassword())) {
+            throw new ValidationException("New password and confirm password do not match.");
+        }
+        user.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
+        user.setUpdatedAt(java.time.LocalDateTime.now());
+        userRepository.save(user);
+    }
+
+    private User findLoginUser(String mobile) {
+        User user = userRepository.findByMobile(mobile)
+                .orElseThrow(() -> new UnauthorizedException("No account is registered with this mobile number."));
+        if (!Boolean.TRUE.equals(user.getActive())) throw new UnauthorizedException("This account is inactive. Please contact support.");
+        return user;
+    }
     public LoginResponse switchAccount(Long userId, Long accountId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new UnauthorizedException("User not found"));

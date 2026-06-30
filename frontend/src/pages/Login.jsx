@@ -88,6 +88,7 @@ export const Login = () => {
           </div>
         )}
 
+        {!pendingSession && <p style={styles.bottomText}><Link to="/reset-password" style={styles.link}>Forgot password?</Link></p>}
         <p style={styles.bottomText}>Don't have an account? <Link to="/register" style={styles.link}>Register here</Link></p>
       </div>
     </div>

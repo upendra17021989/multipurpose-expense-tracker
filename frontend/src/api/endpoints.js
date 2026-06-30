@@ -4,6 +4,7 @@ export const authAPI = {
   register: (data) => axiosInstance.post('/auth/register', data),
   login: (data) => axiosInstance.post('/auth/login', data),
   loginWithAccount: (data, accountId) => axiosInstance.post(`/auth/login/${accountId}`, data),
+  resetPassword: (data) => axiosInstance.post('/auth/reset-password', data),
   switchAccount: (accountId) => axiosInstance.post(`/auth/switch-account/${accountId}`),
   validateToken: () => axiosInstance.get('/auth/validate')
 }

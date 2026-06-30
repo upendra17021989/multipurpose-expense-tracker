@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { ToastContainer } from 'react-toastify'
 import { Login } from './pages/Login'
 import { Register } from './pages/Register'
+import { ResetPassword } from './pages/ResetPassword'
 import { DashboardRouter } from './pages/DashboardRouter'
 import { ExpenseList } from './pages/ExpenseList'
 import { ExpenseForm } from './pages/ExpenseForm'
@@ -55,6 +56,7 @@ function App() {
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/home" element={<ProtectedRoute><DashboardRouter /></ProtectedRoute>} />
           <Route path="/dashboard" element={<ProtectedRoute><DashboardRouter /></ProtectedRoute>} />
           <Route path="/expenses" element={<ProtectedRoute><ExpenseList /></ProtectedRoute>} />
