@@ -38,6 +38,19 @@ export const personalBudgetAPI = {
   deleteBudget: (budgetId) => axiosInstance.delete(`/personal-budgets/${budgetId}`)
 }
 
+export const sharedExpenseAPI = {
+  getGroups: () => axiosInstance.get('/personal/shared-expenses/groups'),
+  createGroup: (data) => axiosInstance.post('/personal/shared-expenses/groups', data),
+  getGroup: (groupId) => axiosInstance.get(`/personal/shared-expenses/groups/${groupId}`),
+  updateGroup: (groupId, data) => axiosInstance.put(`/personal/shared-expenses/groups/${groupId}`, data),
+  addMember: (groupId, data) => axiosInstance.post(`/personal/shared-expenses/groups/${groupId}/members`, data),
+  updateMember: (groupId, memberId, data) => axiosInstance.put(`/personal/shared-expenses/groups/${groupId}/members/${memberId}`, data),
+  addExpense: (groupId, data) => axiosInstance.post(`/personal/shared-expenses/groups/${groupId}/expenses`, data),
+  addSettlement: (groupId, data) => axiosInstance.post(`/personal/shared-expenses/groups/${groupId}/settlements`, data),
+  reverseExpense: (expenseId) => axiosInstance.delete(`/personal/shared-expenses/expenses/${expenseId}`),
+  reverseSettlement: (settlementId) => axiosInstance.delete(`/personal/shared-expenses/settlements/${settlementId}`)
+}
+
 export const societyFlatAPI = {
   getFlats: (blockName) => axiosInstance.get('/society/flats', { params: blockName ? { blockName } : {} }),
   getFlat: (flatId) => axiosInstance.get(`/society/flats/${flatId}`),

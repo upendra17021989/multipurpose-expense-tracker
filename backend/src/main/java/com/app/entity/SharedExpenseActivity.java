@@ -1,0 +1,4 @@
+package com.app.entity;
+import jakarta.persistence.*; import lombok.*; import java.time.LocalDateTime;
+@Entity @Table(name="shared_expense_activities") @Data @NoArgsConstructor @AllArgsConstructor @Builder
+public class SharedExpenseActivity { @Id @GeneratedValue(strategy=GenerationType.IDENTITY) private Long id; @ManyToOne(fetch=FetchType.LAZY) @JoinColumn(name="group_id",nullable=false) private SharedExpenseGroup group; @ManyToOne(fetch=FetchType.LAZY) @JoinColumn(name="actor_user_id",nullable=false) private User actor; @Enumerated(EnumType.STRING) @Column(nullable=false) private SharedActivityType activityType; private String referenceType; private Long referenceId; @Column(nullable=false,length=500) private String message; @Builder.Default @Column(nullable=false,updatable=false) private LocalDateTime createdAt=LocalDateTime.now(); }

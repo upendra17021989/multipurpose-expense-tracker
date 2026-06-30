@@ -8,6 +8,8 @@ import { ExpenseForm } from './pages/ExpenseForm'
 import { CategoryList } from './pages/CategoryList'
 import { BudgetSettings } from './pages/BudgetSettings'
 import { PersonalReports } from './pages/PersonalReports'
+import { SharedExpenseGroups } from './pages/personal/SharedExpenseGroups'
+import { SharedExpenseGroup } from './pages/personal/SharedExpenseGroup'
 import { FlatList } from './pages/society/FlatList'
 import { FlatForm } from './pages/society/FlatForm'
 import { VendorList } from './pages/society/VendorList'
@@ -60,6 +62,8 @@ function App() {
           <Route path="/categories" element={<ProtectedRoute><CategoryList /></ProtectedRoute>} />
           <Route path="/budget" element={<ProtectedRoute><BudgetSettings /></ProtectedRoute>} />
           <Route path="/personal/reports" element={<ProtectedRoute><PersonalReports /></ProtectedRoute>} />
+          <Route path="/personal/shared-expenses" element={<ProtectedRoute><SharedExpenseGroups /></ProtectedRoute>} />
+          <Route path="/personal/shared-expenses/:groupId" element={<ProtectedRoute><SharedExpenseGroup /></ProtectedRoute>} />
           <Route path="/society/flats" element={<ProtectedRoute><FlatList /></ProtectedRoute>} />
           <Route path="/society/flats/new" element={<ProtectedRoute><FlatForm /></ProtectedRoute>} />
           <Route path="/society/flats/:flatId/edit" element={<ProtectedRoute><FlatForm /></ProtectedRoute>} />

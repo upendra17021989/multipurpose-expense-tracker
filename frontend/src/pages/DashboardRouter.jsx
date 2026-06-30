@@ -86,6 +86,7 @@ const PersonalDashboard = () => {
           ['Categories', '/categories'],
           ['Budget', '/budget'],
           ['Reports', '/personal/reports']
+          ,['Shared Expenses', '/personal/shared-expenses']
         ]}
       />
       {loading && <p className="muted">Loading dashboard...</p>}

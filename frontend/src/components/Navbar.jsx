@@ -94,6 +94,7 @@ export const Navbar = () => {
               <div className="nav-dropdown-panel">
                 {currentAccount?.accountType === 'INDIVIDUAL' && <Link to="/budget" onClick={closeMenus}>Budget</Link>}
                 {currentAccount?.accountType === 'INDIVIDUAL' && <Link to="/personal/reports" onClick={closeMenus}>Reports</Link>}
+                {currentAccount?.accountType === 'INDIVIDUAL' && <Link to="/personal/shared-expenses" onClick={closeMenus}>Shared Expenses</Link>}
                 {currentAccount?.accountType === 'SOCIETY' && <Link to="/society/flats" onClick={closeMenus}>Flats</Link>}
                 {currentAccount?.accountType === 'SOCIETY' && <Link to="/society/vendors" onClick={closeMenus}>Vendors</Link>}
                 {currentAccount?.accountType === 'SOCIETY' && <Link to="/society/staff" onClick={closeMenus}>Staff</Link>}

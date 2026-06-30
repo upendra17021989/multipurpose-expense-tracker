@@ -1,0 +1,2 @@
+package com.app.repository; import com.app.entity.SharedExpenseGroup; import org.springframework.data.jpa.repository.JpaRepository; import java.util.*;
+public interface SharedExpenseGroupRepository extends JpaRepository<SharedExpenseGroup,Long>{ List<SharedExpenseGroup> findByAccountIdAndActiveTrueOrderByName(Long accountId); Optional<SharedExpenseGroup> findByIdAndAccountId(Long id,Long accountId); }
