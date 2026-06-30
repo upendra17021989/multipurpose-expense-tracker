@@ -10,6 +10,7 @@ public final class SharedExpenseDtos { private SharedExpenseDtos() {}
  @Data public static class SettlementRequest { @NotNull private Long paidByMemberId; @NotNull private Long paidToMemberId; @NotNull @DecimalMin("0.01") private BigDecimal amount; @NotNull private LocalDate settlementDate; private String paymentMode; private String notes; }
  @Data public static class InvitationRequest { @Email private String email; private String mobile; }
  @Value @Builder public static class InvitationDto { Long id; Long groupId; String groupName; String invitedBy; String email; String mobile; String status; LocalDateTime createdAt; }
+ @Value @Builder public static class FriendBalanceDto { Long userId; String name; String email; String mobile; Integer sharedGroups; BigDecimal balance; }
  @Value @Builder public static class MemberDto { Long id; Long userId; String memberName; String email; String mobile; Boolean active; }
  @Value @Builder public static class BalanceDto { Long memberId; String memberName; BigDecimal balance; }
  @Value @Builder public static class ExpenseDto { Long id; String description; String category; LocalDate expenseDate; BigDecimal totalAmount; SharedSplitType splitType; String paidBy; Boolean reversed; }

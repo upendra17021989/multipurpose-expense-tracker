@@ -40,6 +40,7 @@ export const personalBudgetAPI = {
 
 export const sharedExpenseAPI = {
   getGroups: () => axiosInstance.get('/personal/shared-expenses/groups'),
+  getFriends: () => axiosInstance.get('/personal/shared-expenses/friends'),
   createGroup: (data) => axiosInstance.post('/personal/shared-expenses/groups', data),
   getGroup: (groupId) => axiosInstance.get(`/personal/shared-expenses/groups/${groupId}`),
   updateGroup: (groupId, data) => axiosInstance.put(`/personal/shared-expenses/groups/${groupId}`, data),

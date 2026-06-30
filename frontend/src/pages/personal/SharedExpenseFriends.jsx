@@ -1,0 +1,7 @@
+import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
+import { toast } from 'react-toastify'
+import { sharedExpenseAPI } from '../../api/endpoints'
+import { formatCurrency } from '../../utils/format'
+import { Shell } from '../DashboardRouter'
+export const SharedExpenseFriends=()=>{const[friends,setFriends]=useState([]);const[loading,setLoading]=useState(true);useEffect(()=>{sharedExpenseAPI.getFriends().then(r=>setFriends(r.data||[])).catch(e=>toast.error(e.response?.data?.message||'Unable to load friends')).finally(()=>setLoading(false))},[]);return <Shell title="Friends" eyebrow="Shared expenses" actions={<Link className="button-link" to="/personal/shared-expenses">Groups</Link>}><section className="report-panel"><h2>Registered friends</h2><div className="table-wrap"><table><thead><tr><th>Name</th><th>Contact</th><th>Shared groups</th><th>Net across shared groups</th></tr></thead><tbody>{friends.map(x=><tr key={x.userId}><td>{x.name}</td><td>{x.email||x.mobile||'-'}</td><td>{x.sharedGroups}</td><td className="numeric">{x.balance>0?`Gets ${formatCurrency(x.balance)}`:x.balance<0?`Owes ${formatCurrency(-x.balance)}`:'Settled'}</td></tr>)}{!loading&&!friends.length&&<tr><td colSpan="4" className="empty-state">Accepted group invitations will appear here.</td></tr>}</tbody></table></div>{loading&&<p className="muted">Loading friends...</p>}</section></Shell>}

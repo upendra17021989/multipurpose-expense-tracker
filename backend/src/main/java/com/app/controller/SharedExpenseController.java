@@ -3,6 +3,7 @@ import com.app.dto.SharedExpenseDtos.*; import com.app.security.UserPrincipal; i
 @RestController @RequestMapping("/personal/shared-expenses") @RequiredArgsConstructor
 public class SharedExpenseController { private final SharedExpenseService service;
  @GetMapping("/groups") public List<GroupDto> list(@AuthenticationPrincipal UserPrincipal p){return service.list(p.getAccountId(),p.getUserId());}
+ @GetMapping("/friends") public List<FriendBalanceDto> friends(@AuthenticationPrincipal UserPrincipal p){return service.friends(p.getAccountId(),p.getUserId());}
  @PostMapping("/groups") public ResponseEntity<GroupDto> create(@AuthenticationPrincipal UserPrincipal p,@Valid @RequestBody GroupRequest r){return ResponseEntity.status(HttpStatus.CREATED).body(service.createGroup(p.getAccountId(),p.getUserId(),r));}
  @GetMapping("/groups/{id}") public GroupDto get(@AuthenticationPrincipal UserPrincipal p,@PathVariable Long id){return service.get(p.getAccountId(),p.getUserId(),id);}
  @PutMapping("/groups/{id}") public GroupDto update(@AuthenticationPrincipal UserPrincipal p,@PathVariable Long id,@Valid @RequestBody GroupUpdateRequest r){return service.updateGroup(p.getAccountId(),p.getUserId(),id,r);}
