@@ -196,11 +196,11 @@ export const SportsExpenses = () => {
         <select value={filters.paymentMode} onChange={(event) => setFilters({ ...filters, paymentMode: event.target.value })}><option value="">All modes</option>{paymentModes.map((mode) => <option key={mode}>{mode}</option>)}</select>
         <strong>{formatCurrency(total)}</strong>
       </section>
-      <div className="table-wrap">
-        <table>
+      <div className="table-wrap sports-expense-table-wrap">
+        <table className="sports-expense-table">
           <thead><tr><th>Date</th><th>Event</th><th>Category</th><th>Description</th><th>Vendor</th><th>Payment</th><th>Status</th><th className="numeric">Amount</th>{isSportsAdmin && <th>Actions</th>}</tr></thead>
           <tbody>
-            {visibleExpenses.map((expense) => <tr key={expense.id}><td>{formatDate(expense.expenseDate)}</td><td>{expense.eventName || '-'}</td><td>{expense.category}</td><td>{expense.description || '-'}</td><td>{expense.vendorName || '-'}</td><td>{expense.paymentMode}</td><td>{expense.status}</td><td className="numeric">{formatCurrency(expense.amount)}</td>{isSportsAdmin && <td className="table-actions"><button onClick={() => edit(expense)}>Edit</button><button className="danger" onClick={() => remove(expense.id)}>Delete</button></td>}</tr>)}
+            {visibleExpenses.map((expense) => <tr key={expense.id}><td>{formatDate(expense.expenseDate)}</td><td>{expense.eventName || '-'}</td><td>{expense.category}</td><td className="description-cell">{expense.description || '-'}</td><td>{expense.vendorName || '-'}</td><td>{expense.paymentMode}</td><td>{expense.status}</td><td className="numeric">{formatCurrency(expense.amount)}</td>{isSportsAdmin && <td className="table-actions"><button onClick={() => edit(expense)}>Edit</button><button className="danger" onClick={() => remove(expense.id)}>Delete</button></td>}</tr>)}
             {!loading && visibleExpenses.length === 0 && <tr><td colSpan={isSportsAdmin ? 9 : 8} className="empty-state">No sports expenses found.</td></tr>}
           </tbody>
         </table>

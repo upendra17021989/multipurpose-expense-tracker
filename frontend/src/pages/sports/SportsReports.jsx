@@ -38,7 +38,12 @@ export const SportsReports = () => {
 
   const report = useMemo(() => {
     const selected = new Set(selectedEventIds)
-    const eventExpenses = expenses.filter((expense) => selected.has(String(expense.sportsEventId || '')))
+    const eventExpenses = expenses
+      .filter((expense) => selected.has(String(expense.sportsEventId || '')))
+      .sort((a, b) => {
+        const byDate = String(a.expenseDate || '').localeCompare(String(b.expenseDate || ''))
+        return byDate !== 0 ? byDate : Number(a.id || 0) - Number(b.id || 0)
+      })
     const eventOrder = new Map(events.map((event) => [String(event.id), `${event.startDate || ''}-${String(event.id).padStart(12, '0')}`]))
     const memberMap = new Map()
     collections.forEach((row) => {
@@ -74,6 +79,15 @@ export const SportsReports = () => {
   const allSelected = events.length > 0 && selectedEventIds.length === events.length
   const reportTitle = allSelected ? 'All Events' : `${selectedEventIds.length} Selected Events`
   const fileName = `sports-report-${allSelected ? 'all-events' : `${selectedEventIds.length}-events`}`
+  const sortedCollections = useMemo(() => {
+    const eventDates = new Map(events.map((event) => [String(event.id), event.startDate || '']))
+    return [...collections].sort((a, b) => {
+      const byDate = (eventDates.get(String(a.sportsEventId)) || '').localeCompare(eventDates.get(String(b.sportsEventId)) || '')
+      if (byDate !== 0) return byDate
+      const byEvent = String(a.eventName || '').localeCompare(String(b.eventName || ''))
+      return byEvent !== 0 ? byEvent : String(a.memberName || '').localeCompare(String(b.memberName || ''))
+    })
+  }, [collections, events])
 
   const toggleEvent = (eventId) => setSelectedEventIds((current) => current.includes(eventId) ? current.filter((id) => id !== eventId) : [...current, eventId])
 
@@ -84,7 +98,7 @@ export const SportsReports = () => {
       { Metric: 'Event Expenses', Amount: report.expenseTotal }, { Metric: 'Balance', Amount: report.collected - report.expenseTotal }
     ] },
     { name: 'Member Totals', rows: report.memberTotals.map(memberTotalRow) },
-    { name: 'Collections', rows: collections.map((row) => ({ Event: row.eventName, ...collectionRow(row) })) },
+    { name: 'Collections', rows: sortedCollections.map((row) => ({ Event: row.eventName, ...collectionRow(row) })) },
     { name: 'Pending Members', rows: report.pendingMembers.map(memberTotalRow) },
     { name: 'Event Expenses', rows: report.eventExpenses.map((expense) => ({
       Date: expense.expenseDate, Category: expense.category, Description: expense.description || '',
@@ -104,9 +118,9 @@ export const SportsReports = () => {
       {!!selectedEventIds.length && <h2 className="report-print-title">{reportTitle}</h2>}
       <SummaryGrid items={[[ 'Expected', formatCurrency(report.expected) ], [ 'Collected', formatCurrency(report.collected) ], [ 'Closing Due', formatCurrency(report.pending) ], [ 'Closing Credit', formatCurrency(report.excess) ], [ 'Event Expenses', formatCurrency(report.expenseTotal) ], [ 'Balance', formatCurrency(report.collected - report.expenseTotal) ], [ 'Members Pending', report.pendingMembers.length ]]} />
       <ReportTable title="Total Collections by Member" columns={['Member', 'Mobile', 'Events', 'Expected', 'Opening Credit', 'Opening Due', 'Collected', 'Closing Due', 'Closing Credit']} rows={report.memberTotals.map((row) => [row.memberName, row.mobile || '-', row.eventCount, formatCurrency(row.expectedAmount), formatCurrency(row.openingBalance), formatCurrency(row.openingDue), formatCurrency(row.collectedAmount), formatCurrency(row.pendingAmount), formatCurrency(row.excessAmount)])} />
-      <ReportTable title="Event-wise Collection Detail" columns={['Event', 'Member', 'Expected', 'Opening Credit', 'Opening Due', 'Collected', 'Pending', 'Status']} rows={collections.map((row) => [row.eventName, row.memberName, formatCurrency(row.expectedAmount), formatCurrency(row.openingBalance), formatCurrency(row.openingDue), formatCurrency(row.collectedAmount), formatCurrency(row.pendingAmount), row.paymentStatus])} />
+      <ReportTable title="Event-wise Collection Detail" columns={['Event', 'Member', 'Expected', 'Opening Credit', 'Opening Due', 'Collected', 'Pending', 'Status']} rows={sortedCollections.map((row) => [row.eventName, row.memberName, formatCurrency(row.expectedAmount), formatCurrency(row.openingBalance), formatCurrency(row.openingDue), formatCurrency(row.collectedAmount), formatCurrency(row.pendingAmount), row.paymentStatus])} />
       <ReportTable title="Pending-member Report" columns={['Member', 'Mobile', 'Expected', 'Collected', 'Closing Due']} rows={report.pendingMembers.map((row) => [row.memberName, row.mobile || '-', formatCurrency(row.expectedAmount), formatCurrency(row.collectedAmount), formatCurrency(row.pendingAmount)])} />
-      <ReportTable title="Event Expense Report" columns={['Date', 'Category', 'Description', 'Vendor', 'Payment', 'Amount']} rows={report.eventExpenses.map((row) => [formatDate(row.expenseDate), row.category, row.description || '-', row.vendorName || '-', row.paymentMode, formatCurrency(row.amount)])} />
+      <ReportTable title="Event Expense Report" columns={['Date', 'Category', 'Description', 'Vendor', 'Payment', 'Amount']} descriptionColumn={2} rows={report.eventExpenses.map((row) => [formatDate(row.expenseDate), row.category, row.description || '-', row.vendorName || '-', row.paymentMode, formatCurrency(row.amount)])} />
       {!selectedEventIds.length && !loading && <p className="empty-state">Select one or more events to generate reports.</p>}
       {loading && <p className="muted">Loading reports...</p>}
     </Shell>
@@ -117,4 +131,4 @@ const collectionRow = (row) => ({ Member: row.memberName, Mobile: row.mobile || 
 
 const memberTotalRow = (row) => ({ Member: row.memberName, Mobile: row.mobile || '', Events: row.eventCount, Expected: row.expectedAmount, OpeningCredit: row.openingBalance, OpeningDue: row.openingDue, Collected: row.collectedAmount, ClosingDue: row.pendingAmount, ClosingCredit: row.excessAmount, Refunded: row.refundedAmount })
 
-const ReportTable = ({ title, columns, rows }) => <section className="report-panel sports-report-section"><h2>{title}</h2><div className="table-wrap"><table><thead><tr>{columns.map((column) => <th key={column}>{column}</th>)}</tr></thead><tbody>{rows.map((row, index) => <tr key={index}>{row.map((value, cell) => <td key={cell}>{value}</td>)}</tr>)}{rows.length === 0 && <tr><td colSpan={columns.length} className="empty-state">No data available.</td></tr>}</tbody></table></div></section>
+const ReportTable = ({ title, columns, rows, descriptionColumn = -1 }) => <section className="report-panel sports-report-section"><h2>{title}</h2><div className="table-wrap"><table><thead><tr>{columns.map((column) => <th key={column}>{column}</th>)}</tr></thead><tbody>{rows.map((row, index) => <tr key={index}>{row.map((value, cell) => <td className={cell === descriptionColumn ? 'description-cell' : undefined} key={cell}>{value}</td>)}</tr>)}{rows.length === 0 && <tr><td colSpan={columns.length} className="empty-state">No data available.</td></tr>}</tbody></table></div></section>

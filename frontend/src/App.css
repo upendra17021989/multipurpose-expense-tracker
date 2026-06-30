@@ -417,6 +417,27 @@ label {
   background: #fff;
 }
 
+.sports-expense-table,
+.sports-report-section table {
+  width: max-content;
+  min-width: 100%;
+}
+
+.sports-expense-table th,
+.sports-expense-table td,
+.sports-report-section th,
+.sports-report-section td {
+  white-space: nowrap;
+}
+
+.sports-expense-table .description-cell,
+.sports-report-section .description-cell {
+  min-width: 220px;
+  max-width: 420px;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
 table {
   width: 100%;
   border-collapse: collapse;
