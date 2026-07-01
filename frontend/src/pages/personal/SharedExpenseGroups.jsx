@@ -11,6 +11,7 @@ export const SharedExpenseGroups = () => {
   const [invitations, setInvitations] = useState([])
   const [name, setName] = useState('')
   const [loading, setLoading] = useState(true)
+  const [activeView, setActiveView] = useState('groups')
   const load = () =>
     Promise.all([
       sharedExpenseAPI.getGroups(),
@@ -52,12 +53,6 @@ export const SharedExpenseGroups = () => {
       toast.error(e.response?.data?.message || 'Unable to respond')
     }
   }
-  const scrollToSection = (label) => {
-    const heading = [...document.querySelectorAll('.page-shell h2')].find(
-      (node) => node.textContent.trim() === label
-    )
-    heading?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-  }
   const activeGroups = groups.filter((group) => group.active)
   const archivedGroups = groups.filter((group) => !group.active)
   const restore = async (group) => {
@@ -86,20 +81,38 @@ export const SharedExpenseGroups = () => {
         aria-label="Shared expenses navigation"
       >
         <button
-          className="active"
+          className={activeView === 'groups' ? 'active' : ''}
           type="button"
-          onClick={() => scrollToSection('Your groups')}
+          onClick={() => setActiveView('groups')}
         >
           Groups
         </button>
+        <button
+          className={activeView === 'create' ? 'active' : ''}
+          type="button"
+          onClick={() => setActiveView('create')}
+        >
+          Create Group
+        </button>
         <Link to="/personal/friends">Friends</Link>
-        {!!invitations.length && (
-          <button type="button" onClick={() => scrollToSection('Invitations')}>
-            Invitations <span>{invitations.length}</span>
-          </button>
-        )}
+        <button
+          className={activeView === 'invitations' ? 'active' : ''}
+          type="button"
+          onClick={() => setActiveView('invitations')}
+        >
+          Invitations
+          {!!invitations.length && <span>{invitations.length}</span>}
+        </button>
+        <button
+          className={activeView === 'archived' ? 'active' : ''}
+          type="button"
+          onClick={() => setActiveView('archived')}
+        >
+          Archived
+          {!!archivedGroups.length && <span>{archivedGroups.length}</span>}
+        </button>
       </nav>
-      {!!invitations.length && (
+      {activeView === 'invitations' && (
         <section className="report-panel">
           <h2>Invitations</h2>
           {invitations.map((item) => (
@@ -117,67 +130,74 @@ export const SharedExpenseGroups = () => {
               <button onClick={() => respond(item.id, false)}>Decline</button>
             </div>
           ))}
+          {!invitations.length && (
+            <p className="empty-state">No pending invitations.</p>
+          )}
         </section>
       )}
-      <section className="form-panel">
-        <h2>Create group</h2>
-        <form className="inline-form" onSubmit={create}>
-          <input
-            placeholder="Trip, Home, Friends..."
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            maxLength="150"
-            required
-          />
-          <button className="primary">Create</button>
-        </form>
-      </section>
-      <section className="report-panel groups-panel">
-        <div className="groups-panel-header">
-          <div>
-            <h2>Your groups</h2>
-            <p>Open a group to manage members, expenses, and settlements.</p>
+      {activeView === 'create' && (
+        <section className="form-panel">
+          <h2>Create group</h2>
+          <form className="inline-form" onSubmit={create}>
+            <input
+              placeholder="Trip, Home, Friends..."
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              maxLength="150"
+              required
+            />
+            <button className="primary">Create</button>
+          </form>
+        </section>
+      )}
+      {activeView === 'groups' && (
+        <section className="report-panel groups-panel">
+          <div className="groups-panel-header">
+            <div>
+              <h2>Your groups</h2>
+              <p>Open a group to manage members, expenses, and settlements.</p>
+            </div>
+            <span className="group-count">{activeGroups.length}</span>
           </div>
-          <span className="group-count">{activeGroups.length}</span>
-        </div>
-        <div className="action-grid group-card-grid">
-          {activeGroups.map((g) => (
-            <Link
-              className="action-card group-card"
-              key={g.id}
-              to={`/personal/shared-expenses/${g.id}`}
-            >
-              <span className="group-card-icon" aria-hidden="true">
-                {g.name.charAt(0).toUpperCase()}
-              </span>
-              <span className="group-card-copy">
-                <strong>{g.name}</strong>
-                <small>
-                  {g.members.length} member{g.members.length === 1 ? '' : 's'}
-                </small>
-              </span>
-              <span className="group-card-arrow" aria-hidden="true">
-                &gt;
-              </span>
-            </Link>
-          ))}
-        </div>
-        {!loading && !activeGroups.length && (
-          <div className="groups-empty">
-            <span aria-hidden="true">+</span>
-            <strong>No active groups</strong>
-            <p>Create a new group above or restore one below.</p>
+          <div className="action-grid group-card-grid">
+            {activeGroups.map((g) => (
+              <Link
+                className="action-card group-card"
+                key={g.id}
+                to={`/personal/shared-expenses/${g.id}`}
+              >
+                <span className="group-card-icon" aria-hidden="true">
+                  {g.name.charAt(0).toUpperCase()}
+                </span>
+                <span className="group-card-copy">
+                  <strong>{g.name}</strong>
+                  <small>
+                    {g.members.length} member{g.members.length === 1 ? '' : 's'}
+                  </small>
+                </span>
+                <span className="group-card-arrow" aria-hidden="true">
+                  &gt;
+                </span>
+              </Link>
+            ))}
           </div>
-        )}
-        {loading && (
-          <div className="groups-loading">
-            <span></span>
-            <span></span>
-            <span></span>
-          </div>
-        )}
-      </section>
-      {!!archivedGroups.length && (
+          {!loading && !activeGroups.length && (
+            <div className="groups-empty">
+              <span aria-hidden="true">+</span>
+              <strong>No active groups</strong>
+              <p>Create a new group above or restore one below.</p>
+            </div>
+          )}
+          {loading && (
+            <div className="groups-loading">
+              <span></span>
+              <span></span>
+              <span></span>
+            </div>
+          )}
+        </section>
+      )}
+      {activeView === 'archived' && (
         <section className="report-panel archived-groups-panel">
           <div className="groups-panel-header">
             <div>
@@ -204,6 +224,9 @@ export const SharedExpenseGroups = () => {
               </div>
             ))}
           </div>
+          {!archivedGroups.length && (
+            <p className="empty-state">No archived groups.</p>
+          )}
         </section>
       )}
     </Shell>
