@@ -6,6 +6,7 @@ import com.app.dto.LoginResponse;
 import com.app.dto.RegisterRequest;
 import com.app.dto.ResetPasswordRequest;
 import com.app.dto.UserDto;
+import com.app.dto.UpdateProfileRequest;
 import com.app.entity.Account;
 import com.app.entity.AccountType;
 import com.app.entity.User;
@@ -119,6 +120,29 @@ public class AuthService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new UnauthorizedException("User not found"));
         return buildAccountLoginResponse(user, accountId);
+    }
+
+    @Transactional
+    public UserDto updateProfile(Long userId, UpdateProfileRequest request) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UnauthorizedException("User not found"));
+        String name = request.getName().trim();
+        String mobile = request.getMobile().trim();
+        String email = request.getEmail() == null || request.getEmail().isBlank()
+                ? null : request.getEmail().trim().toLowerCase();
+
+        if (userRepository.existsByMobileAndIdNot(mobile, userId)) {
+            throw new ValidationException("Mobile number is already registered");
+        }
+        if (email != null && userRepository.existsByEmailIgnoreCaseAndIdNot(email, userId)) {
+            throw new ValidationException("Email is already registered");
+        }
+
+        user.setName(name);
+        user.setMobile(mobile);
+        user.setEmail(email);
+        user.setUpdatedAt(java.time.LocalDateTime.now());
+        return mapToUserDto(userRepository.save(user));
     }
 
     private LoginResponse buildAccountLoginResponse(User user, Long accountId) {

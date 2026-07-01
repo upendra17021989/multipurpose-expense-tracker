@@ -5,6 +5,7 @@ import com.app.dto.LoginResponse;
 import com.app.dto.RegisterRequest;
 import com.app.dto.ResetPasswordRequest;
 import com.app.dto.UserDto;
+import com.app.dto.UpdateProfileRequest;
 import com.app.security.UserPrincipal;
 import com.app.service.AuthService;
 import jakarta.validation.Valid;
@@ -61,5 +62,12 @@ public class AuthController {
     @GetMapping("/validate")
     public ResponseEntity<String> validateToken() {
         return ResponseEntity.ok("Token is valid");
+    }
+
+    @PutMapping("/profile")
+    public ResponseEntity<UserDto> updateProfile(
+            @AuthenticationPrincipal UserPrincipal userPrincipal,
+            @Valid @RequestBody UpdateProfileRequest request) {
+        return ResponseEntity.ok(authService.updateProfile(userPrincipal.getUserId(), request));
     }
 }

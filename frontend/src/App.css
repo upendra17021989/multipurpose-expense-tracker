@@ -73,6 +73,10 @@
   position: relative;
 }
 
+.nav-account.open {
+  z-index: 100;
+}
+
 .nav-dropdown-trigger,
 .nav-account-trigger {
   min-height: 38px;
@@ -159,6 +163,7 @@
 .nav-account-panel {
   gap: 0.65rem;
   padding: 0.75rem;
+  z-index: 100;
 }
 
 .nav-account-panel label {

@@ -8,6 +8,7 @@ import { ToastContainer } from 'react-toastify'
 import { Login } from './pages/Login'
 import { Register } from './pages/Register'
 import { ResetPassword } from './pages/ResetPassword'
+import { ProfileSettings } from './pages/ProfileSettings'
 import { DashboardRouter } from './pages/DashboardRouter'
 import { ExpenseList } from './pages/ExpenseList'
 import { ExpenseForm } from './pages/ExpenseForm'
@@ -64,6 +65,14 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/reset-password" element={<ResetPassword />} />
+          <Route
+            path="/profile"
+            element={
+              <ProtectedRoute>
+                <ProfileSettings />
+              </ProtectedRoute>
+            }
+          />
           <Route
             path="/home"
             element={

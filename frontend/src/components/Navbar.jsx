@@ -277,6 +277,9 @@ export const Navbar = () => {
                     {currentAccount.accountName}
                   </p>
                 )}
+                <Link to="/profile" onClick={closeMenus}>
+                  Edit account details
+                </Link>
                 <button onClick={handleLogout} className="logout-btn">
                   Logout
                 </button>
