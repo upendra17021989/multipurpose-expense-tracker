@@ -205,6 +205,23 @@ public class SharedExpenseService {
     return map(s.getGroup(), true);
   }
 
+  public void deleteGroup(Long accountId, Long userId, Long groupId) {
+    // “Delete” is a soft hide: do not remove referenced rows permanently.
+    SharedExpenseGroup g = group(accountId, userId, groupId);
+    if (Boolean.TRUE.equals(g.getActive()))
+      throw new ValidationException("Only archived groups can be deleted");
+
+    // Soft-hide by keeping group inactive and clearing its visibility.
+    // We currently model visibility using `active` only, so keep it false.
+    // If you want a separate `deleted` flag later, we can add it.
+    g.setActive(false);
+    g.setUpdatedAt(java.time.LocalDateTime.now());
+    groups.save(g);
+
+    log(g, userId, SharedActivityType.GROUP_UPDATED, "GROUP", g.getId(), "deleted (hidden) group");
+  }
+
+
   public GroupDto addExpense(Long accountId, Long userId, Long groupId, ExpenseRequest r) {
     SharedExpenseGroup g = group(accountId, userId, groupId);
     BigDecimal total = money(r.getTotalAmount());

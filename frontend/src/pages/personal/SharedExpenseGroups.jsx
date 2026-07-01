@@ -218,11 +218,30 @@ export const SharedExpenseGroups = () => {
                     {group.members.length === 1 ? '' : 's'}
                   </small>
                 </div>
-                <button type="button" onClick={() => restore(group)}>
-                  Restore
-                </button>
+                <div className="archived-group-actions">
+                  <button type="button" onClick={() => restore(group)}>
+                    Restore
+                  </button>
+                  <button
+                    type="button"
+                    className="danger"
+                    onClick={async () => {
+                      if (!window.confirm(`Delete ${group.name}? This removes the group history permanently.`)) return
+                      try {
+                        await sharedExpenseAPI.deleteGroup(group.id)
+                        toast.success('Group deleted')
+                        load()
+                      } catch (e) {
+                        toast.error(e.response?.data?.message || 'Unable to delete group')
+                      }
+                    }}
+                  >
+                    Delete
+                  </button>
+                </div>
               </div>
             ))}
+
           </div>
           {!archivedGroups.length && (
             <p className="empty-state">No archived groups.</p>

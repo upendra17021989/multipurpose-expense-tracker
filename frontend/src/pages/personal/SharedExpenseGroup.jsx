@@ -233,18 +233,18 @@ export const SharedExpenseGroup = () => {
           Balances
         </button>
         <button
-          className={activeSection === 'members' ? 'active' : ''}
-          type="button"
-          onClick={() => setActiveSection('members')}
-        >
-          Members
-        </button>
-        <button
           className={activeSection === 'expense' ? 'active' : ''}
           type="button"
           onClick={() => setActiveSection('expense')}
         >
           Add expense
+        </button>
+        <button
+          className={activeSection === 'members' ? 'active' : ''}
+          type="button"
+          onClick={() => setActiveSection('members')}
+        >
+          Members
         </button>
         <button
           className={activeSection === 'history' ? 'active' : ''}

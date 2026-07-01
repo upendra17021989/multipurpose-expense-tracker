@@ -13,4 +13,8 @@ public class SharedExpenseController { private final SharedExpenseService servic
  @PostMapping("/groups/{id}/settlements") public GroupDto settle(@AuthenticationPrincipal UserPrincipal p,@PathVariable Long id,@Valid @RequestBody SettlementRequest r){return service.settle(p.getAccountId(),p.getUserId(),id,r);}
  @DeleteMapping("/expenses/{id}") public GroupDto reverseExpense(@AuthenticationPrincipal UserPrincipal p,@PathVariable Long id){return service.reverseExpense(p.getAccountId(),p.getUserId(),id);}
  @DeleteMapping("/settlements/{id}") public GroupDto reverseSettlement(@AuthenticationPrincipal UserPrincipal p,@PathVariable Long id){return service.reverseSettlement(p.getAccountId(),p.getUserId(),id);}
+ @DeleteMapping("/groups/{id}") public ResponseEntity<Void> deleteGroup(@AuthenticationPrincipal UserPrincipal p,@PathVariable Long id){
+   service.deleteGroup(p.getAccountId(),p.getUserId(),id);
+   return ResponseEntity.noContent().build();
+ }
 }
