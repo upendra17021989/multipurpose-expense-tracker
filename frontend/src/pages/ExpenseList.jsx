@@ -52,6 +52,9 @@ export const ExpenseList = () => {
       const matchesMinAmount = !filters.minAmount || amount >= Number(filters.minAmount)
       const matchesMaxAmount = !filters.maxAmount || amount <= Number(filters.maxAmount)
       return matchesSearch && matchesStatus && matchesPayment && matchesCategory && matchesStartDate && matchesEndDate && matchesMinAmount && matchesMaxAmount
+    }).sort((a, b) => {
+      const byDate = String(b.expenseDate || '').localeCompare(String(a.expenseDate || ''))
+      return byDate || Number(b.id || 0) - Number(a.id || 0)
     })
   }, [expenses, filters])
 
