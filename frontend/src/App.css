@@ -1267,3 +1267,85 @@ textarea:disabled {
   .archived-group-row { align-items: stretch; flex-direction: column; }
   .archived-group-row button { width: 100%; }
 }
+
+.section-heading-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.section-heading-row h3 {
+  margin: 0;
+}
+
+.shared-expense-submenu {
+  position: sticky;
+  top: 72px;
+  z-index: 20;
+  display: flex;
+  gap: 0.45rem;
+  margin-bottom: 1rem;
+  padding: 0.55rem;
+  overflow-x: auto;
+  border: 1px solid #d9e2ec;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.06);
+  scrollbar-width: thin;
+}
+
+.shared-expense-submenu a,
+.shared-expense-submenu button {
+  flex: 0 0 auto;
+  padding: 0.55rem 0.75rem;
+  border-radius: 6px;
+  color: #334155;
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+  min-height: 0;
+  border: 0;
+  background: transparent;
+}
+
+.shared-expense-submenu a:hover,
+.shared-expense-submenu a:focus-visible,
+.shared-expense-submenu a.active {
+  background: #e6fffb;
+  color: #0f766e;
+}
+
+.shared-expense-submenu button.active {
+  background: #e6fffb;
+  color: #0f766e;
+}
+
+.shared-expense-submenu button:hover,
+.shared-expense-submenu button:focus-visible {
+  background: #e6fffb;
+  color: #0f766e;
+}
+
+.shared-expense-submenu a span,
+.shared-expense-submenu button span {
+  display: inline-flex;
+  min-width: 20px;
+  height: 20px;
+  align-items: center;
+  justify-content: center;
+  margin-left: 0.25rem;
+  border-radius: 999px;
+  background: #0f766e;
+  color: #fff;
+  font-size: 0.75rem;
+}
+
+.scroll-section {
+  scroll-margin-top: 145px;
+}
+
+.shared-tab-hidden {
+  display: none !important;
+}

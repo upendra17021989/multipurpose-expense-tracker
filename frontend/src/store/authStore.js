@@ -5,6 +5,7 @@ const saveSession = (token, user, accounts, currentAccount) => {
   localStorage.setItem('user', JSON.stringify(user))
   localStorage.setItem('accounts', JSON.stringify(accounts))
   localStorage.setItem('currentAccount', JSON.stringify(currentAccount))
+  localStorage.setItem('lastActivityAt', String(Date.now()))
 }
 
 export const useAuthStore = create((set) => ({
@@ -41,6 +42,7 @@ export const useAuthStore = create((set) => ({
     localStorage.removeItem('user')
     localStorage.removeItem('accounts')
     localStorage.removeItem('currentAccount')
+    localStorage.removeItem('lastActivityAt')
     set({
       isAuthenticated: false,
       token: null,
