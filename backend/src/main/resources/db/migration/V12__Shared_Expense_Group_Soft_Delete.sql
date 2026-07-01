@@ -1,0 +1,2 @@
+ALTER TABLE shared_expense_groups
+    ADD COLUMN deleted BOOLEAN NOT NULL DEFAULT FALSE;

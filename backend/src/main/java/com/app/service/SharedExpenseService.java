@@ -214,7 +214,7 @@ public class SharedExpenseService {
     // Soft-hide by keeping group inactive and clearing its visibility.
     // We currently model visibility using `active` only, so keep it false.
     // If you want a separate `deleted` flag later, we can add it.
-    g.setActive(false);
+    g.setDeleted(true);
     g.setUpdatedAt(java.time.LocalDateTime.now());
     groups.save(g);
 
