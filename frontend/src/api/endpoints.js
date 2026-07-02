@@ -28,7 +28,13 @@ export const expenseAPI = {
   updateExpense: (expenseId, data) => axiosInstance.put(`/expenses/${expenseId}`, data),
   deleteExpense: (expenseId) => axiosInstance.delete(`/expenses/${expenseId}`),
   approveExpense: (expenseId) => axiosInstance.post(`/expenses/${expenseId}/approve`),
-  rejectExpense: (expenseId) => axiosInstance.post(`/expenses/${expenseId}/reject`)
+  rejectExpense: (expenseId) => axiosInstance.post(`/expenses/${expenseId}/reject`),
+  previewImport: (file) => {
+    const formData = new FormData()
+    formData.append('file', file)
+    return axiosInstance.post('/expenses/import/preview', formData, { headers: { 'Content-Type': 'multipart/form-data' } })
+  },
+  confirmImport: (rows) => axiosInstance.post('/expenses/import', { rows })
 }
 
 export const personalBudgetAPI = {

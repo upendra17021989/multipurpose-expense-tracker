@@ -2,8 +2,10 @@ package com.app.controller;
 
 import com.app.dto.ExpenseCreateRequest;
 import com.app.dto.ExpenseDto;
+import com.app.dto.ExpenseImportDtos;
 import com.app.security.UserPrincipal;
 import com.app.service.ExpenseService;
+import com.app.service.ExpenseImportService;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -11,6 +13,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -21,9 +24,26 @@ import java.util.List;
 public class ExpenseController {
 
     private final ExpenseService expenseService;
+    private final ExpenseImportService expenseImportService;
 
-    public ExpenseController(ExpenseService expenseService) {
+    public ExpenseController(ExpenseService expenseService, ExpenseImportService expenseImportService) {
         this.expenseService = expenseService;
+        this.expenseImportService = expenseImportService;
+    }
+
+    @PostMapping(value = "/import/preview", consumes = "multipart/form-data")
+    public ResponseEntity<ExpenseImportDtos.Preview> previewImport(
+            @AuthenticationPrincipal UserPrincipal userPrincipal,
+            @RequestPart("file") MultipartFile file) {
+        return ResponseEntity.ok(expenseImportService.preview(userPrincipal.getAccountId(), file));
+    }
+
+    @PostMapping("/import")
+    public ResponseEntity<ExpenseImportDtos.Result> confirmImport(
+            @AuthenticationPrincipal UserPrincipal userPrincipal,
+            @Valid @RequestBody ExpenseImportDtos.ConfirmRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(expenseImportService.confirm(
+                userPrincipal.getAccountId(), userPrincipal.getUserId(), request));
     }
 
     @GetMapping

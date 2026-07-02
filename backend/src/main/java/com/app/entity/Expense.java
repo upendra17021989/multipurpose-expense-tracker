@@ -70,6 +70,10 @@ public class Expense {
 
     private String remarks;
 
+    private String sourceReference;
+
+    private String importBatchId;
+
     @Builder.Default
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
