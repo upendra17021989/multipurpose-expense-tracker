@@ -1,11 +1,22 @@
 package com.app.controller;
-import com.app.dto.SharedExpenseDtos.*; import com.app.security.UserPrincipal; import com.app.service.SharedExpenseService; import jakarta.validation.Valid; import lombok.RequiredArgsConstructor; import org.springframework.http.*; import org.springframework.security.core.annotation.AuthenticationPrincipal; import org.springframework.web.bind.annotation.*; import java.util.*;
+import com.app.dto.SharedExpenseDtos.*; import com.app.security.UserPrincipal; import com.app.service.SharedExpenseService; import com.app.service.SharedExpenseExportService; import com.app.service.SharedExpensePdfExportService; import jakarta.validation.Valid; import lombok.RequiredArgsConstructor; import org.springframework.http.*; import org.springframework.security.core.annotation.AuthenticationPrincipal; import org.springframework.web.bind.annotation.*; import java.util.*;
 @RestController @RequestMapping("/personal/shared-expenses") @RequiredArgsConstructor
-public class SharedExpenseController { private final SharedExpenseService service;
+public class SharedExpenseController { private final SharedExpenseService service; private final SharedExpenseExportService exportService; private final SharedExpensePdfExportService pdfExportService;
  @GetMapping("/groups") public List<GroupDto> list(@AuthenticationPrincipal UserPrincipal p){return service.list(p.getAccountId(),p.getUserId());}
  @GetMapping("/friends") public List<FriendBalanceDto> friends(@AuthenticationPrincipal UserPrincipal p){return service.friends(p.getAccountId(),p.getUserId());}
  @PostMapping("/groups") public ResponseEntity<GroupDto> create(@AuthenticationPrincipal UserPrincipal p,@Valid @RequestBody GroupRequest r){return ResponseEntity.status(HttpStatus.CREATED).body(service.createGroup(p.getAccountId(),p.getUserId(),r));}
  @GetMapping("/groups/{id}") public GroupDto get(@AuthenticationPrincipal UserPrincipal p,@PathVariable Long id){return service.get(p.getAccountId(),p.getUserId(),id);}
+ @GetMapping("/groups/{id}/export") public ResponseEntity<byte[]> export(@AuthenticationPrincipal UserPrincipal p,@PathVariable Long id){
+   var result=exportService.export(p.getAccountId(),p.getUserId(),id);
+   return ResponseEntity.ok().header(HttpHeaders.CONTENT_DISPOSITION,"attachment; filename=\""+result.fileName()+"\"")
+     .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+     .contentLength(result.content().length).body(result.content());
+ }
+ @GetMapping("/groups/{id}/export-pdf") public ResponseEntity<byte[]> exportPdf(@AuthenticationPrincipal UserPrincipal p,@PathVariable Long id){
+   var result=pdfExportService.export(p.getAccountId(),p.getUserId(),id);
+   return ResponseEntity.ok().header(HttpHeaders.CONTENT_DISPOSITION,"attachment; filename=\""+result.fileName()+"\"")
+     .contentType(MediaType.APPLICATION_PDF).contentLength(result.content().length).body(result.content());
+ }
  @PutMapping("/groups/{id}") public GroupDto update(@AuthenticationPrincipal UserPrincipal p,@PathVariable Long id,@Valid @RequestBody GroupUpdateRequest r){return service.updateGroup(p.getAccountId(),p.getUserId(),id,r);}
  @PostMapping("/groups/{id}/members") public GroupDto member(@AuthenticationPrincipal UserPrincipal p,@PathVariable Long id,@Valid @RequestBody MemberRequest r){return service.addMember(p.getAccountId(),p.getUserId(),id,r);}
  @PutMapping("/groups/{id}/members/{memberId}") public GroupDto updateMember(@AuthenticationPrincipal UserPrincipal p,@PathVariable Long id,@PathVariable Long memberId,@Valid @RequestBody MemberUpdateRequest r){return service.updateMember(p.getAccountId(),p.getUserId(),id,memberId,r);}

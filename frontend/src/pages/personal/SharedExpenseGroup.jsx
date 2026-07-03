@@ -11,6 +11,8 @@ export const SharedExpenseGroup = () => {
   const [group, setGroup] = useState(null)
   const submittingRef = useRef(false)
   const [submitting, setSubmitting] = useState(null)
+  const [exporting, setExporting] = useState(false)
+  const [exportingPdf, setExportingPdf] = useState(false)
   const [member, setMember] = useState({
     memberName: '',
     email: '',
@@ -177,6 +179,52 @@ export const SharedExpenseGroup = () => {
       toast.error(e.response?.data?.message || 'Unable to update member')
     }
   }
+  const exportGroup = async () => {
+    setExporting(true)
+    try {
+      const response = await sharedExpenseAPI.exportGroup(groupId)
+      const disposition = response.headers['content-disposition'] || ''
+      const fileName =
+        disposition.match(/filename="?([^";]+)"?/i)?.[1] ||
+        'shared-expenses.xlsx'
+      const url = URL.createObjectURL(response.data)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = fileName
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+      URL.revokeObjectURL(url)
+      toast.success('Excel export downloaded')
+    } catch (e) {
+      toast.error(e.response?.data?.message || 'Unable to export group')
+    } finally {
+      setExporting(false)
+    }
+  }
+  const exportGroupPdf = async () => {
+    setExportingPdf(true)
+    try {
+      const response = await sharedExpenseAPI.exportGroupPdf(groupId)
+      const disposition = response.headers['content-disposition'] || ''
+      const fileName =
+        disposition.match(/filename="?([^";]+)"?/i)?.[1] ||
+        'shared-expenses.pdf'
+      const url = URL.createObjectURL(response.data)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = fileName
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+      URL.revokeObjectURL(url)
+      toast.success('PDF export downloaded')
+    } catch (e) {
+      toast.error(e.response?.data?.message || 'Unable to export PDF')
+    } finally {
+      setExportingPdf(false)
+    }
+  }
   const archiveGroup = async () => {
     if (
       !window.confirm(
@@ -237,9 +285,17 @@ export const SharedExpenseGroup = () => {
       title={group.name}
       eyebrow="Shared expenses"
       actions={
-        <Link className="button-link" to="/personal/shared-expenses">
-          All groups
-        </Link>
+        <>
+          <button type="button" className="button-link" disabled={exporting} onClick={exportGroup}>
+            {exporting ? 'Exporting...' : 'Export Excel'}
+          </button>
+          <button type="button" className="button-link" disabled={exportingPdf} onClick={exportGroupPdf}>
+            {exportingPdf ? 'Exporting...' : 'Export PDF'}
+          </button>
+          <Link className="button-link" to="/personal/shared-expenses">
+            All groups
+          </Link>
+        </>
       }
     >
       <nav className="shared-expense-submenu" aria-label="Group navigation">
