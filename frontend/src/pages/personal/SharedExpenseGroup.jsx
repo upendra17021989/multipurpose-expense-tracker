@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { toast } from 'react-toastify'
 import { sharedExpenseAPI } from '../../api/endpoints'
@@ -9,6 +9,8 @@ export const SharedExpenseGroup = () => {
   const [activeSection, setActiveSection] = useState('balances')
   const { groupId } = useParams()
   const [group, setGroup] = useState(null)
+  const submittingRef = useRef(false)
+  const [submitting, setSubmitting] = useState(null)
   const [member, setMember] = useState({
     memberName: '',
     email: '',
@@ -47,29 +49,43 @@ export const SharedExpenseGroup = () => {
     () => group?.members?.filter((x) => x.active) || [],
     [group]
   )
-  const submit = async (api, data, success) => {
+  const submit = async (action, api, data, success) => {
+    if (submittingRef.current) return false
+    submittingRef.current = true
+    setSubmitting(action)
     try {
       const r = await api(groupId, data)
       setGroup(r.data)
       toast.success(success)
+      return true
     } catch (e) {
       toast.error(e.response?.data?.message || 'Unable to save')
+      return false
+    } finally {
+      submittingRef.current = false
+      setSubmitting(null)
     }
   }
   const addMember = (e) => {
     e.preventDefault()
-    submit(sharedExpenseAPI.addMember, member, 'Member added').then(() =>
-      setMember({ memberName: '', email: '', mobile: '' })
+    submit('member', sharedExpenseAPI.addMember, member, 'Member added').then(
+      (saved) => saved && setMember({ memberName: '', email: '', mobile: '' })
     )
   }
   const inviteUser = async (e) => {
     e.preventDefault()
+    if (submittingRef.current) return
+    submittingRef.current = true
+    setSubmitting('invite')
     try {
       await sharedExpenseAPI.inviteUser(groupId, invite)
       setInvite({ email: '', mobile: '' })
       toast.success('Invitation sent')
     } catch (error) {
       toast.error(error.response?.data?.message || 'Unable to send invitation')
+    } finally {
+      submittingRef.current = false
+      setSubmitting(null)
     }
   }
   const toggle = (id) =>
@@ -105,11 +121,12 @@ export const SharedExpenseGroup = () => {
         amount: Number(amount)
       }))
     submit(
+      'expense',
       sharedExpenseAPI.addExpense,
       { ...expense, totalAmount: Number(expense.totalAmount), payers, shares },
       'Expense added'
-    ).then(() =>
-      setExpense({
+    ).then((saved) =>
+      saved && setExpense({
         description: '',
         category: '',
         expenseDate: today,
@@ -124,6 +141,7 @@ export const SharedExpenseGroup = () => {
   const addSettlement = (e) => {
     e.preventDefault()
     submit(
+      'settlement',
       sharedExpenseAPI.addSettlement,
       {
         ...settle,
@@ -132,7 +150,7 @@ export const SharedExpenseGroup = () => {
         amount: Number(settle.amount)
       },
       'Settlement recorded'
-    ).then(() => setSettle({ ...settle, amount: '', notes: '' }))
+    ).then((saved) => saved && setSettle({ ...settle, amount: '', notes: '' }))
   }
   const reverseExpense = async (id) => {
     if (!window.confirm('Reverse this expense? Its balances will be removed.'))
@@ -292,7 +310,9 @@ export const SharedExpenseGroup = () => {
             value={invite.mobile}
             onChange={(e) => setInvite({ mobile: e.target.value, email: '' })}
           />
-          <button className="primary">Send invitation</button>
+          <button className="primary" disabled={submitting !== null}>
+            {submitting === 'invite' ? 'Sending...' : 'Send invitation'}
+          </button>
         </form>
       </section>
       <div className="two-column-grid">
@@ -318,7 +338,9 @@ export const SharedExpenseGroup = () => {
               value={member.mobile}
               onChange={(e) => setMember({ ...member, mobile: e.target.value })}
             />
-            <button className="primary">Add member</button>
+            <button className="primary" disabled={submitting !== null}>
+              {submitting === 'member' ? 'Adding...' : 'Add member'}
+            </button>
           </form>
           <div>
             {active.map((x) => (
@@ -385,7 +407,9 @@ export const SharedExpenseGroup = () => {
                 setSettle({ ...settle, settlementDate: e.target.value })
               }
             />
-            <button className="primary">Record settlement</button>
+            <button className="primary" disabled={submitting !== null}>
+              {submitting === 'settlement' ? 'Recording...' : 'Record settlement'}
+            </button>
           </form>
         </section>
       </div>
@@ -492,7 +516,9 @@ export const SharedExpenseGroup = () => {
               </label>
             ))}
           </div>
-          <button className="primary">Add expense</button>
+          <button className="primary" disabled={submitting !== null}>
+            {submitting === 'expense' ? 'Adding...' : 'Add expense'}
+          </button>
         </form>
       </section>
       <section className="report-panel">

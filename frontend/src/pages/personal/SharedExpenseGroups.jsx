@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { toast } from 'react-toastify'
 import { sharedExpenseAPI } from '../../api/endpoints'
@@ -12,6 +12,8 @@ export const SharedExpenseGroups = () => {
   const [name, setName] = useState('')
   const [loading, setLoading] = useState(true)
   const [activeView, setActiveView] = useState('groups')
+  const actionRef = useRef(false)
+  const [action, setAction] = useState(null)
   const load = () =>
     Promise.all([
       sharedExpenseAPI.getGroups(),
@@ -33,6 +35,9 @@ export const SharedExpenseGroups = () => {
   const create = async (event) => {
     event.preventDefault()
     if (!name.trim()) return
+    if (actionRef.current) return
+    actionRef.current = true
+    setAction('create')
     try {
       await sharedExpenseAPI.createGroup({ name: name.trim() })
       setName('')
@@ -40,9 +45,15 @@ export const SharedExpenseGroups = () => {
       toast.success('Group created')
     } catch (e) {
       toast.error(e.response?.data?.message || 'Unable to create group')
+    } finally {
+      actionRef.current = false
+      setAction(null)
     }
   }
   const respond = async (id, accept) => {
+    if (actionRef.current) return
+    actionRef.current = true
+    setAction(`${accept ? 'accept' : 'decline'}-${id}`)
     try {
       await (accept
         ? sharedExpenseAPI.acceptInvitation(id)
@@ -51,6 +62,9 @@ export const SharedExpenseGroups = () => {
       load()
     } catch (e) {
       toast.error(e.response?.data?.message || 'Unable to respond')
+    } finally {
+      actionRef.current = false
+      setAction(null)
     }
   }
   const activeGroups = groups.filter((group) => group.active)
@@ -123,11 +137,14 @@ export const SharedExpenseGroups = () => {
               </span>
               <button
                 className="primary"
+                disabled={action !== null}
                 onClick={() => respond(item.id, true)}
               >
-                Accept
+                {action === `accept-${item.id}` ? 'Accepting...' : 'Accept'}
               </button>
-              <button onClick={() => respond(item.id, false)}>Decline</button>
+              <button disabled={action !== null} onClick={() => respond(item.id, false)}>
+                {action === `decline-${item.id}` ? 'Declining...' : 'Decline'}
+              </button>
             </div>
           ))}
           {!invitations.length && (
@@ -146,7 +163,9 @@ export const SharedExpenseGroups = () => {
               maxLength="150"
               required
             />
-            <button className="primary">Create</button>
+            <button className="primary" disabled={action !== null}>
+              {action === 'create' ? 'Creating...' : 'Create'}
+            </button>
           </form>
         </section>
       )}
