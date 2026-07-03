@@ -40,6 +40,16 @@ public class SharedInvitationService {
     return map(invitation);
   }
 
+  public void inviteForMember(SharedExpenseGroup group, Long invitedByUserId, SharedGroupMember member) {
+    String mobile = normalize(member.getMobile());
+    if (mobile == null) return;
+    if (invitations.existsByGroupIdAndMobileAndStatus(group.getId(), mobile, SharedInvitationStatus.PENDING)) return;
+    User target = users.findByMobile(mobile).orElse(null);
+    invitations.save(SharedGroupInvitation.builder()
+        .group(group).invitedBy(users.findById(invitedByUserId).orElseThrow())
+        .invitedUser(target).member(member).email(member.getEmail()).mobile(mobile).build());
+  }
+
   public List<InvitationDto> inbox(Long userId) {
     claimPendingInvitations(users.findById(userId).orElseThrow(() -> new ResourceNotFoundException("User not found")));
     expireOldInvitations(userId);
@@ -64,7 +74,19 @@ public class SharedInvitationService {
     }
     invitation.setStatus(accept ? SharedInvitationStatus.ACCEPTED : SharedInvitationStatus.DECLINED);
     invitation.setRespondedAt(LocalDateTime.now());
-    if (accept && members.findByGroupIdAndUserId(invitation.getGroup().getId(), userId).isEmpty()) {
+    if (accept && invitation.getMember() != null) {
+      SharedGroupMember member = invitation.getMember();
+      if (member.getUser() != null && !member.getUser().getId().equals(userId))
+        throw new ValidationException("This group member is already linked to another user");
+      if (members.findByGroupIdAndUserId(invitation.getGroup().getId(), userId).isPresent())
+        throw new ValidationException("You are already a group member");
+      User user = invitation.getInvitedUser();
+      member.setUser(user);
+      member.setEmail(user.getEmail());
+      member.setMobile(user.getMobile());
+      member.setActive(true);
+      members.save(member);
+    } else if (accept && members.findByGroupIdAndUserId(invitation.getGroup().getId(), userId).isEmpty()) {
       User user = invitation.getInvitedUser();
       members.save(SharedGroupMember.builder().group(invitation.getGroup()).user(user)
           .memberName(user.getName()).email(user.getEmail()).mobile(user.getMobile()).build());

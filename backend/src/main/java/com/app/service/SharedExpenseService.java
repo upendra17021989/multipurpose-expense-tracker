@@ -25,6 +25,7 @@ public class SharedExpenseService {
   private final SharedExpenseActivityRepository activities;
   private final AccountRepository accounts;
   private final UserRepository users;
+  private final SharedInvitationService invitationService;
 
   public List<GroupDto> list(Long accountId, Long userId) {
     return groups.findAccessibleIncludingArchived(accountId, userId).stream()
@@ -116,6 +117,7 @@ public class SharedExpenseService {
                 .email(r.getEmail())
                 .mobile(r.getMobile())
                 .build());
+    invitationService.inviteForMember(g, userId, m);
     log(
         g,
         userId,
