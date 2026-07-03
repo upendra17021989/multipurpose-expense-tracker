@@ -37,17 +37,20 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider tokenProvider;
     private final ExpenseCategoryService expenseCategoryService;
+    private final SharedInvitationService sharedInvitationService;
 
     public AuthService(UserRepository userRepository, AccountRepository accountRepository,
                        AccountUserMembershipRepository membershipRepository,
                        PasswordEncoder passwordEncoder, JwtTokenProvider tokenProvider,
-                       ExpenseCategoryService expenseCategoryService) {
+                       ExpenseCategoryService expenseCategoryService,
+                       SharedInvitationService sharedInvitationService) {
         this.userRepository = userRepository;
         this.accountRepository = accountRepository;
         this.membershipRepository = membershipRepository;
         this.passwordEncoder = passwordEncoder;
         this.tokenProvider = tokenProvider;
         this.expenseCategoryService = expenseCategoryService;
+        this.sharedInvitationService = sharedInvitationService;
     }
 
     @Transactional
@@ -59,6 +62,7 @@ public class AuthService {
         Account account = buildInitialAccount(request, user);
         Account savedAccount = accountRepository.save(account);
         expenseCategoryService.seedDefaultCategories(savedAccount);
+        sharedInvitationService.claimPendingInvitations(user);
         log.info("Account {} created for user ID: {}", savedAccount.getId(), user.getId());
 
         return mapToUserDto(user);

@@ -1,8 +1,83 @@
 package com.app.service;
-import com.app.dto.SharedExpenseDtos.*; import com.app.entity.*; import com.app.exception.*; import com.app.repository.*; import lombok.RequiredArgsConstructor; import org.springframework.stereotype.Service; import org.springframework.transaction.annotation.Transactional; import java.time.LocalDateTime; import java.util.*;
+
+import com.app.dto.SharedExpenseDtos.*;
+import com.app.entity.*;
+import com.app.exception.*;
+import com.app.repository.*;
+import java.time.LocalDateTime;
+import java.util.List;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 @Service @RequiredArgsConstructor @Transactional
-public class SharedInvitationService { private final SharedGroupInvitationRepository invitations; private final SharedExpenseGroupRepository groups; private final SharedGroupMemberRepository members; private final UserRepository users;
- public InvitationDto invite(Long accountId,Long userId,Long groupId,InvitationRequest r){if((r.getEmail()==null||r.getEmail().isBlank())&&(r.getMobile()==null||r.getMobile().isBlank()))throw new ValidationException("Email or mobile is required");SharedExpenseGroup g=groups.findAccessibleById(groupId,accountId,userId).orElseThrow(()->new ResourceNotFoundException("Shared expense group not found"));User target=r.getEmail()!=null&&!r.getEmail().isBlank()?users.findByEmail(r.getEmail().trim()).orElseThrow(()->new ResourceNotFoundException("No registered user found with this email")):users.findByMobile(r.getMobile().trim()).orElseThrow(()->new ResourceNotFoundException("No registered user found with this mobile"));if(target.getId().equals(userId))throw new ValidationException("You are already in this group");if(members.findByGroupIdAndUserId(groupId,target.getId()).isPresent())throw new ValidationException("User is already a group member");if(invitations.existsByGroupIdAndInvitedUserIdAndStatus(groupId,target.getId(),SharedInvitationStatus.PENDING))throw new ValidationException("An invitation is already pending");SharedGroupInvitation i=invitations.save(SharedGroupInvitation.builder().group(g).invitedBy(users.findById(userId).orElseThrow()).invitedUser(target).email(target.getEmail()).mobile(target.getMobile()).build());return map(i);}
- public List<InvitationDto> inbox(Long userId){return invitations.findByInvitedUserIdAndStatusOrderByCreatedAtDesc(userId,SharedInvitationStatus.PENDING).stream().map(this::map).toList();}
- public InvitationDto respond(Long userId,Long invitationId,boolean accept){SharedGroupInvitation i=invitations.findByIdAndInvitedUserIdAndStatus(invitationId,userId,SharedInvitationStatus.PENDING).orElseThrow(()->new ResourceNotFoundException("Pending invitation not found"));i.setStatus(accept?SharedInvitationStatus.ACCEPTED:SharedInvitationStatus.DECLINED);i.setRespondedAt(LocalDateTime.now());invitations.save(i);if(accept&&members.findByGroupIdAndUserId(i.getGroup().getId(),userId).isEmpty()){User u=i.getInvitedUser();members.save(SharedGroupMember.builder().group(i.getGroup()).user(u).memberName(u.getName()).email(u.getEmail()).mobile(u.getMobile()).build());}return map(i);}
- private InvitationDto map(SharedGroupInvitation i){return InvitationDto.builder().id(i.getId()).groupId(i.getGroup().getId()).groupName(i.getGroup().getName()).invitedBy(i.getInvitedBy().getName()).email(i.getEmail()).mobile(i.getMobile()).status(i.getStatus().name()).createdAt(i.getCreatedAt()).build();}}
+public class SharedInvitationService {
+  private final SharedGroupInvitationRepository invitations;
+  private final SharedExpenseGroupRepository groups;
+  private final SharedGroupMemberRepository members;
+  private final UserRepository users;
+
+  public InvitationDto invite(Long accountId, Long userId, Long groupId, InvitationRequest request) {
+    String mobile = normalize(request.getMobile());
+    String email = normalizeEmail(request.getEmail());
+    if (mobile == null && email == null) throw new ValidationException("Email or mobile is required");
+
+    SharedExpenseGroup group = groups.findAccessibleById(groupId, accountId, userId)
+        .orElseThrow(() -> new ResourceNotFoundException("Shared expense group not found"));
+    User target = mobile != null ? users.findByMobile(mobile).orElse(null) : users.findByEmail(email).orElse(null);
+    if (target != null && target.getId().equals(userId)) throw new ValidationException("You are already in this group");
+    if (target != null && members.findByGroupIdAndUserId(groupId, target.getId()).isPresent())
+      throw new ValidationException("User is already a group member");
+    if (target != null && invitations.existsByGroupIdAndInvitedUserIdAndStatus(groupId, target.getId(), SharedInvitationStatus.PENDING))
+      throw new ValidationException("An invitation is already pending");
+    if (mobile != null && invitations.existsByGroupIdAndMobileAndStatus(groupId, mobile, SharedInvitationStatus.PENDING))
+      throw new ValidationException("An invitation is already pending for this mobile number");
+
+    SharedGroupInvitation invitation = invitations.save(SharedGroupInvitation.builder()
+        .group(group).invitedBy(users.findById(userId).orElseThrow()).invitedUser(target)
+        .email(target != null ? target.getEmail() : email)
+        .mobile(target != null ? target.getMobile() : mobile).build());
+    return map(invitation);
+  }
+
+  public List<InvitationDto> inbox(Long userId) {
+    claimPendingInvitations(users.findById(userId).orElseThrow(() -> new ResourceNotFoundException("User not found")));
+    expireOldInvitations(userId);
+    return invitations.findByInvitedUserIdAndStatusOrderByCreatedAtDesc(userId, SharedInvitationStatus.PENDING)
+        .stream().map(this::map).toList();
+  }
+
+  public void claimPendingInvitations(User user) {
+    String mobile = normalize(user.getMobile());
+    if (mobile == null) return;
+    invitations.findByMobileAndStatus(mobile, SharedInvitationStatus.PENDING).stream()
+        .filter(i -> i.getInvitedUser() == null && i.getExpiresAt().isAfter(LocalDateTime.now()))
+        .forEach(i -> i.setInvitedUser(user));
+  }
+
+  public InvitationDto respond(Long userId, Long invitationId, boolean accept) {
+    SharedGroupInvitation invitation = invitations.findByIdAndInvitedUserIdAndStatus(invitationId, userId, SharedInvitationStatus.PENDING)
+        .orElseThrow(() -> new ResourceNotFoundException("Pending invitation not found"));
+    if (!invitation.getExpiresAt().isAfter(LocalDateTime.now())) {
+      invitation.setStatus(SharedInvitationStatus.EXPIRED);
+      throw new ValidationException("Invitation has expired");
+    }
+    invitation.setStatus(accept ? SharedInvitationStatus.ACCEPTED : SharedInvitationStatus.DECLINED);
+    invitation.setRespondedAt(LocalDateTime.now());
+    if (accept && members.findByGroupIdAndUserId(invitation.getGroup().getId(), userId).isEmpty()) {
+      User user = invitation.getInvitedUser();
+      members.save(SharedGroupMember.builder().group(invitation.getGroup()).user(user)
+          .memberName(user.getName()).email(user.getEmail()).mobile(user.getMobile()).build());
+    }
+    return map(invitation);
+  }
+
+  private void expireOldInvitations(Long userId) {
+    invitations.findByInvitedUserIdAndStatusOrderByCreatedAtDesc(userId, SharedInvitationStatus.PENDING).stream()
+        .filter(i -> !i.getExpiresAt().isAfter(LocalDateTime.now()))
+        .forEach(i -> i.setStatus(SharedInvitationStatus.EXPIRED));
+  }
+  private String normalize(String value) { return value == null || value.isBlank() ? null : value.trim(); }
+  private String normalizeEmail(String value) { String v = normalize(value); return v == null ? null : v.toLowerCase(); }
+  private InvitationDto map(SharedGroupInvitation i) { return InvitationDto.builder().id(i.getId()).groupId(i.getGroup().getId()).groupName(i.getGroup().getName()).invitedBy(i.getInvitedBy().getName()).email(i.getEmail()).mobile(i.getMobile()).status(i.getStatus().name()).createdAt(i.getCreatedAt()).expiresAt(i.getExpiresAt()).build(); }
+}
