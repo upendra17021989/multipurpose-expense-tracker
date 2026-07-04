@@ -101,7 +101,8 @@ export const Navbar = () => {
                 Expenses
               </Link>
             )}
-            {currentAccount?.accountType !== 'SPORTS' && (
+            {currentAccount?.accountType !== 'SPORTS' &&
+              currentAccount?.accountType !== 'INDIVIDUAL' && (
               <Link to="/categories" onClick={closeMenus}>
                 Categories
               </Link>
@@ -120,6 +121,11 @@ export const Navbar = () => {
                 {moduleLabel}
               </button>
               <div className="nav-dropdown-panel">
+                {currentAccount?.accountType === 'INDIVIDUAL' && (
+                  <Link to="/categories" onClick={closeMenus}>
+                    Categories
+                  </Link>
+                )}
                 {currentAccount?.accountType === 'INDIVIDUAL' && (
                   <Link to="/budget" onClick={closeMenus}>
                     Budget

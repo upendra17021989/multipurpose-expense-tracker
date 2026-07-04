@@ -5,6 +5,25 @@ import { sharedExpenseAPI } from '../../api/endpoints'
 import { formatCurrency, formatDate } from '../../utils/format'
 import { Shell, SummaryGrid } from '../DashboardRouter'
 const today = new Date().toISOString().slice(0, 10)
+const sharedExpenseCategories = [
+  'Food & Dining',
+  'Groceries',
+  'Sports & Recreation',
+  'Travel',
+  'Transportation',
+  'Rent',
+  'Utilities',
+  'Household',
+  'Entertainment',
+  'Shopping',
+  'Healthcare',
+  'Accommodation',
+  'Events & Parties',
+  'Subscriptions',
+  'Education',
+  'Gifts',
+  'Miscellaneous'
+]
 export const SharedExpenseGroup = () => {
   const [activeSection, setActiveSection] = useState('balances')
   const { groupId } = useParams()
@@ -13,6 +32,9 @@ export const SharedExpenseGroup = () => {
   const [submitting, setSubmitting] = useState(null)
   const [exporting, setExporting] = useState(false)
   const [exportingPdf, setExportingPdf] = useState(false)
+  const [expensePage, setExpensePage] = useState(1)
+  const [selectedExpenseIds, setSelectedExpenseIds] = useState([])
+  const [reversingExpenses, setReversingExpenses] = useState(false)
   const [member, setMember] = useState({
     memberName: '',
     email: '',
@@ -47,6 +69,9 @@ export const SharedExpenseGroup = () => {
   useEffect(() => {
     load()
   }, [groupId])
+  useEffect(() => {
+    setExpensePage(1)
+  }, [groupId, group?.expenses?.length])
   const active = useMemo(
     () => group?.members?.filter((x) => x.active) || [],
     [group]
@@ -154,15 +179,20 @@ export const SharedExpenseGroup = () => {
       'Settlement recorded'
     ).then((saved) => saved && setSettle({ ...settle, amount: '', notes: '' }))
   }
-  const reverseExpense = async (id) => {
-    if (!window.confirm('Reverse this expense? Its balances will be removed.'))
-      return
+  const reverseSelectedExpenses = async () => {
+    if (!selectedExpenseIds.length || reversingExpenses) return
+    if (!window.confirm(`Reverse ${selectedExpenseIds.length} selected expense(s)? Their balances will be removed.`)) return
+    setReversingExpenses(true)
     try {
-      const r = await sharedExpenseAPI.reverseExpense(id)
-      setGroup(r.data)
-      toast.success('Expense reversed')
+      await Promise.all(selectedExpenseIds.map((id) => sharedExpenseAPI.reverseExpense(id)))
+      setSelectedExpenseIds([])
+      await load()
+      toast.success(`${selectedExpenseIds.length} expense(s) reversed`)
     } catch (e) {
-      toast.error(e.response?.data?.message || 'Unable to reverse expense')
+      await load()
+      toast.error(e.response?.data?.message || 'Unable to reverse all selected expenses')
+    } finally {
+      setReversingExpenses(false)
     }
   }
   const deactivateMember = async (x) => {
@@ -280,6 +310,26 @@ export const SharedExpenseGroup = () => {
         <p className="muted">Loading group...</p>
       </Shell>
     )
+  const expensePageSize = 10
+  const expensePageCount = Math.max(
+    1,
+    Math.ceil((group.expenses?.length || 0) / expensePageSize)
+  )
+  const currentExpensePage = Math.min(expensePage, expensePageCount)
+  const visibleExpenses = (group.expenses || []).slice(
+    (currentExpensePage - 1) * expensePageSize,
+    currentExpensePage * expensePageSize
+  )
+  const selectableVisibleIds = visibleExpenses.filter((x) => !x.reversed).map((x) => x.id)
+  const allVisibleSelected = selectableVisibleIds.length > 0 && selectableVisibleIds.every((id) => selectedExpenseIds.includes(id))
+  const toggleVisibleExpenses = () => setSelectedExpenseIds((selected) =>
+    allVisibleSelected
+      ? selected.filter((id) => !selectableVisibleIds.includes(id))
+      : [...new Set([...selected, ...selectableVisibleIds])]
+  )
+  const toggleExpenseSelection = (id) => setSelectedExpenseIds((selected) =>
+    selected.includes(id) ? selected.filter((value) => value !== id) : [...selected, id]
+  )
   return (
     <Shell
       title={group.name}
@@ -481,13 +531,19 @@ export const SharedExpenseGroup = () => {
                 setExpense({ ...expense, description: e.target.value })
               }
             />
-            <input
-              placeholder="Category"
+            <select
+              required
+              aria-label="Category"
               value={expense.category}
               onChange={(e) =>
                 setExpense({ ...expense, category: e.target.value })
               }
-            />
+            >
+              <option value="">Select category</option>
+              {sharedExpenseCategories.map((category) => (
+                <option key={category} value={category}>{category}</option>
+              ))}
+            </select>
             <input
               required
               type="date"
@@ -578,46 +634,52 @@ export const SharedExpenseGroup = () => {
         </form>
       </section>
       <section className="report-panel">
-        <h2>Expense history</h2>
-        <div className="table-wrap">
-          <table>
+        <div className="section-heading-row expense-history-heading">
+          <h2>Expense history</h2>
+          <button type="button" className="danger" disabled={!selectedExpenseIds.length || reversingExpenses} onClick={reverseSelectedExpenses}>
+            {reversingExpenses ? 'Reversing...' : `Reverse selected${selectedExpenseIds.length ? ` (${selectedExpenseIds.length})` : ''}`}
+          </button>
+        </div>
+        <div className="table-wrap shared-expense-history-wrap">
+          <table className="shared-expense-history">
             <thead>
               <tr>
+                <th className="selection-cell"><input type="checkbox" aria-label="Select all expenses on this page" checked={allVisibleSelected} disabled={!selectableVisibleIds.length} onChange={toggleVisibleExpenses} /></th>
                 <th>Date</th>
                 <th>Description</th>
                 <th>Category</th>
                 <th>Paid by</th>
                 <th>Split</th>
                 <th>Amount</th>
-                <th>Action</th>
               </tr>
             </thead>
             <tbody>
-              {group.expenses.map((x) => (
+              {visibleExpenses.map((x) => (
                 <tr key={x.id}>
-                  <td>{formatDate(x.expenseDate)}</td>
-                  <td>{x.description}</td>
-                  <td>{x.category || '-'}</td>
-                  <td>{x.paidBy}</td>
-                  <td>{x.splitType}</td>
-                  <td>{formatCurrency(x.totalAmount)}</td>
-                  <td>
-                    {x.reversed ? (
-                      <span className="muted">Reversed</span>
-                    ) : (
-                      <button
-                        className="danger"
-                        onClick={() => reverseExpense(x.id)}
-                      >
-                        Reverse
-                      </button>
-                    )}
+                  <td data-label="Select" className="selection-cell">
+                    {x.reversed ? <span className="reversed-badge">Reversed</span> : <input type="checkbox" aria-label={`Select ${x.description}`} checked={selectedExpenseIds.includes(x.id)} onChange={() => toggleExpenseSelection(x.id)} />}
                   </td>
+                  <td data-label="Date">{formatDate(x.expenseDate)}</td>
+                  <td data-label="Description">{x.description}</td>
+                  <td data-label="Category">{x.category || '-'}</td>
+                  <td data-label="Paid by">{x.paidBy}</td>
+                  <td data-label="Split">{x.splitType}</td>
+                  <td data-label="Amount">{formatCurrency(x.totalAmount)}</td>
                 </tr>
               ))}
+              {!group.expenses?.length && (
+                <tr><td colSpan="7" className="empty-state">No expenses yet.</td></tr>
+              )}
             </tbody>
           </table>
         </div>
+        {expensePageCount > 1 && (
+          <nav className="table-pagination" aria-label="Expense history pages">
+            <button type="button" disabled={currentExpensePage === 1} onClick={() => setExpensePage((page) => Math.max(1, page - 1))}>Previous</button>
+            <span>Page {currentExpensePage} of {expensePageCount}</span>
+            <button type="button" disabled={currentExpensePage === expensePageCount} onClick={() => setExpensePage((page) => Math.min(expensePageCount, page + 1))}>Next</button>
+          </nav>
+        )}
       </section>
       <section className="report-panel">
         <h2>Activity</h2>

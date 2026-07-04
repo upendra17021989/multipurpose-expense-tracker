@@ -189,8 +189,8 @@ export const ExpenseList = () => {
         <strong>{formatCurrency(total)}</strong>
       </section>
 
-      <div className="table-wrap">
-        <table>
+      <div className={`table-wrap ${currentAccount?.accountType === 'INDIVIDUAL' ? 'personal-expense-table-wrap' : ''}`}>
+        <table className={currentAccount?.accountType === 'INDIVIDUAL' ? 'personal-expense-table' : undefined}>
           <thead>
             <tr>
               <th>Date</th>
@@ -206,14 +206,14 @@ export const ExpenseList = () => {
           <tbody>
             {visibleExpenses.map((expense) => (
               <tr key={expense.id}>
-                <td>{formatDate(expense.expenseDate)}</td>
-                <td>{expense.categoryName || '-'}</td>
-                <td>{expense.expenseType}</td>
-                <td>{expense.vendorName || '-'}</td>
-                <td>{expense.paymentMode}</td>
-                <td><span className={`status-pill ${String(expense.status).toLowerCase()}`}>{expense.status}</span></td>
-                <td className="numeric">{formatCurrency(expense.amount)}</td>
-                <td className="table-actions">
+                <td data-label="Date">{formatDate(expense.expenseDate)}</td>
+                <td data-label="Category">{expense.categoryName || '-'}</td>
+                <td data-label="Type">{expense.expenseType}</td>
+                <td data-label="Vendor">{expense.vendorName || '-'}</td>
+                <td data-label="Payment">{expense.paymentMode}</td>
+                <td data-label="Status"><span className={`status-pill ${String(expense.status).toLowerCase()}`}>{expense.status}</span></td>
+                <td data-label="Amount" className="numeric">{formatCurrency(expense.amount)}</td>
+                <td data-label="Actions" className="table-actions">
                   <button onClick={() => handleEdit(expense)}>Edit</button>
                   {expense.status === 'SUBMITTED' && <button onClick={() => handleApprove(expense.id)}>Approve</button>}
                   {expense.status === 'SUBMITTED' && <button onClick={() => handleReject(expense.id)}>Reject</button>}
