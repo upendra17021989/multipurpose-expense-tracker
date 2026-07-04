@@ -103,9 +103,20 @@ export const Navbar = () => {
               </Link>
             )}
             {currentAccount?.accountType !== 'SPORTS' &&
-              currentAccount?.accountType !== 'INDIVIDUAL' && (
+              currentAccount?.accountType !== 'INDIVIDUAL' &&
+              currentAccount?.accountType !== 'SOCIETY' && (
               <Link to="/categories" onClick={closeMenus}>
                 Categories
+              </Link>
+            )}
+            {currentAccount?.accountType === 'SOCIETY' && (
+              <Link to="/society/annual-finance" onClick={closeMenus}>
+                Annual Finance
+              </Link>
+            )}
+            {currentAccount?.accountType === 'SOCIETY' && (
+              <Link to="/society/festivals" onClick={closeMenus}>
+                Festivals
               </Link>
             )}
             {currentAccount?.accountType === 'INDIVIDUAL' && (
@@ -143,6 +154,11 @@ export const Navbar = () => {
                   </Link>
                 )}
                 {currentAccount?.accountType === 'SOCIETY' && (
+                  <Link to="/categories" onClick={closeMenus}>
+                    Categories
+                  </Link>
+                )}
+                {currentAccount?.accountType === 'SOCIETY' && (
                   <Link to="/society/flats" onClick={closeMenus}>
                     Flats
                   </Link>
@@ -158,18 +174,8 @@ export const Navbar = () => {
                   </Link>
                 )}
                 {currentAccount?.accountType === 'SOCIETY' && (
-                  <Link to="/society/festivals" onClick={closeMenus}>
-                    Festivals
-                  </Link>
-                )}
-                {currentAccount?.accountType === 'SOCIETY' && (
                   <Link to="/society/festival-collections" onClick={closeMenus}>
                     Collections
-                  </Link>
-                )}
-                {currentAccount?.accountType === 'SOCIETY' && (
-                  <Link to="/society/annual-finance" onClick={closeMenus}>
-                    Annual Finance
                   </Link>
                 )}
                 {currentAccount?.accountType === 'KIRANA_STORE' && (
