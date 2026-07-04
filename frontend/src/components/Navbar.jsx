@@ -96,7 +96,8 @@ export const Navbar = () => {
             <Link to="/home" onClick={closeMenus}>
               Dashboard
             </Link>
-            {currentAccount?.accountType !== 'SPORTS' && (
+            {currentAccount?.accountType !== 'SPORTS' &&
+              currentAccount?.accountType !== 'SOCIETY' && (
               <Link to="/expenses" onClick={closeMenus}>
                 Expenses
               </Link>
@@ -164,6 +165,11 @@ export const Navbar = () => {
                 {currentAccount?.accountType === 'SOCIETY' && (
                   <Link to="/society/festival-collections" onClick={closeMenus}>
                     Collections
+                  </Link>
+                )}
+                {currentAccount?.accountType === 'SOCIETY' && (
+                  <Link to="/society/annual-finance" onClick={closeMenus}>
+                    Annual Finance
                   </Link>
                 )}
                 {currentAccount?.accountType === 'KIRANA_STORE' && (

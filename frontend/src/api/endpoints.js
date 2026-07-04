@@ -77,6 +77,14 @@ export const societyFlatAPI = {
   deleteFlat: (flatId) => axiosInstance.delete(`/society/flats/${flatId}`)
 }
 
+export const societyAnnualCollectionAPI = {
+  list: (financialYear) => axiosInstance.get('/society/annual-collections', { params: { financialYear } }),
+  summary: (financialYear) => axiosInstance.get('/society/annual-collections/summary', { params: { financialYear } }),
+  create: (data) => axiosInstance.post('/society/annual-collections', data),
+  update: (id, data) => axiosInstance.put(`/society/annual-collections/${id}`, data),
+  delete: (id) => axiosInstance.delete(`/society/annual-collections/${id}`)
+}
+
 export const societyStaffAPI = {
   getStaff: () => axiosInstance.get('/society/staff'),
   getStaffMember: (staffId) => axiosInstance.get(`/society/staff/${staffId}`),

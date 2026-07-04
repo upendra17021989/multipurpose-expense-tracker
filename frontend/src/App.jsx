@@ -31,6 +31,7 @@ import { FestivalCollectionDashboard } from './pages/society/FestivalCollectionD
 import { FestivalCollectionList } from './pages/society/FestivalCollectionList'
 import { FestivalCollectionForm } from './pages/society/FestivalCollectionForm'
 import { FestivalCollectionReceipt } from './pages/society/FestivalCollectionReceipt'
+import { AnnualFinance } from './pages/society/annual-finance/AnnualFinance'
 import { ProductList } from './pages/kirana/ProductList'
 import { ProductForm } from './pages/kirana/ProductForm'
 import { SupplierList } from './pages/kirana/SupplierList'
@@ -274,6 +275,8 @@ function App() {
               </ProtectedRoute>
             }
           />
+          <Route path="/society/annual-finance" element={<ProtectedRoute><AnnualFinance /></ProtectedRoute>} />
+          <Route path="/society/annual-collections" element={<Navigate to="/society/annual-finance" replace />} />
           <Route
             path="/society/festival-collections/:festivalEventId"
             element={
