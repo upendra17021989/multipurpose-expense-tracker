@@ -7,6 +7,7 @@ import com.app.dto.RegisterRequest;
 import com.app.dto.ResetPasswordRequest;
 import com.app.dto.UserDto;
 import com.app.dto.UpdateProfileRequest;
+import com.app.dto.ChangePasswordRequest;
 import com.app.entity.Account;
 import com.app.entity.AccountType;
 import com.app.entity.User;
@@ -147,6 +148,24 @@ public class AuthService {
         user.setEmail(email);
         user.setUpdatedAt(java.time.LocalDateTime.now());
         return mapToUserDto(userRepository.save(user));
+    }
+
+    @Transactional
+    public void changePassword(Long userId, ChangePasswordRequest request) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UnauthorizedException("User not found"));
+        if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPasswordHash())) {
+            throw new UnauthorizedException("Current password is incorrect");
+        }
+        if (!request.getNewPassword().equals(request.getConfirmPassword())) {
+            throw new ValidationException("New password and confirm password do not match");
+        }
+        if (passwordEncoder.matches(request.getNewPassword(), user.getPasswordHash())) {
+            throw new ValidationException("New password must be different from the current password");
+        }
+        user.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
+        user.setUpdatedAt(java.time.LocalDateTime.now());
+        userRepository.save(user);
     }
 
     private LoginResponse buildAccountLoginResponse(User user, Long accountId) {

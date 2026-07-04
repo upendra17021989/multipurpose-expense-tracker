@@ -9,6 +9,7 @@ import { Login } from './pages/Login'
 import { Register } from './pages/Register'
 import { ResetPassword } from './pages/ResetPassword'
 import { ProfileSettings } from './pages/ProfileSettings'
+import { ChangePassword } from './pages/ChangePassword'
 import { DashboardRouter } from './pages/DashboardRouter'
 import { ExpenseList } from './pages/ExpenseList'
 import { ExpenseForm } from './pages/ExpenseForm'
@@ -70,6 +71,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <ProfileSettings />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/change-password"
+            element={
+              <ProtectedRoute>
+                <ChangePassword />
               </ProtectedRoute>
             }
           />

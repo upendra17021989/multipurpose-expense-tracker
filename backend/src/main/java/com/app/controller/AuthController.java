@@ -6,6 +6,7 @@ import com.app.dto.RegisterRequest;
 import com.app.dto.ResetPasswordRequest;
 import com.app.dto.UserDto;
 import com.app.dto.UpdateProfileRequest;
+import com.app.dto.ChangePasswordRequest;
 import com.app.security.UserPrincipal;
 import com.app.service.AuthService;
 import jakarta.validation.Valid;
@@ -69,5 +70,13 @@ public class AuthController {
             @AuthenticationPrincipal UserPrincipal userPrincipal,
             @Valid @RequestBody UpdateProfileRequest request) {
         return ResponseEntity.ok(authService.updateProfile(userPrincipal.getUserId(), request));
+    }
+
+    @PutMapping("/change-password")
+    public ResponseEntity<Void> changePassword(
+            @AuthenticationPrincipal UserPrincipal userPrincipal,
+            @Valid @RequestBody ChangePasswordRequest request) {
+        authService.changePassword(userPrincipal.getUserId(), request);
+        return ResponseEntity.noContent().build();
     }
 }

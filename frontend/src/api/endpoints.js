@@ -7,6 +7,7 @@ export const authAPI = {
   resetPassword: (data) => axiosInstance.post('/auth/reset-password', data),
   switchAccount: (accountId) => axiosInstance.post(`/auth/switch-account/${accountId}`),
   updateProfile: (data) => axiosInstance.put('/auth/profile', data),
+  changePassword: (data) => axiosInstance.put('/auth/change-password', data),
   validateToken: () => axiosInstance.get('/auth/validate')
 }
 

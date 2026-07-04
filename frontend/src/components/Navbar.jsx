@@ -286,6 +286,9 @@ export const Navbar = () => {
                 <Link to="/profile" onClick={closeMenus}>
                   Edit account details
                 </Link>
+                <Link to="/change-password" onClick={closeMenus}>
+                  Change password
+                </Link>
                 <button onClick={handleLogout} className="logout-btn">
                   Logout
                 </button>
