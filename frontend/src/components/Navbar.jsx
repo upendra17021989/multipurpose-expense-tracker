@@ -149,6 +149,11 @@ export const Navbar = () => {
                   </Link>
                 )}
                 {currentAccount?.accountType === 'INDIVIDUAL' && (
+                  <Link to="/personal/documents" onClick={closeMenus}>
+                    My Documents
+                  </Link>
+                )}
+                {currentAccount?.accountType === 'INDIVIDUAL' && (
                   <Link to="/personal/friends" onClick={closeMenus}>
                     Friends
                   </Link>

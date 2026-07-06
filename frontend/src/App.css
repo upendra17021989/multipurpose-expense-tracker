@@ -1559,3 +1559,40 @@ textarea:disabled {
 .shared-tab-hidden {
   display: none !important;
 }
+
+.document-form { margin-bottom: 1rem; }
+.document-wide { grid-column: 1 / -1; }
+.document-filters { display: grid; grid-template-columns: 2fr repeat(3, 1fr) auto auto; gap: .6rem; margin: 1rem 0; }
+.document-state { padding: 2rem; text-align: center; }
+.document-list { display: grid; gap: .8rem; }
+.document-card { padding: 1rem; border: 1px solid #d9e2ec; border-radius: 10px; background: #fff; }
+.document-card-main, .document-actions, .document-pagination { display: flex; align-items: center; justify-content: space-between; gap: .75rem; }
+.document-card h3, .document-card p { margin: 0; }
+.document-card-main p { color: #64748b; font-size: .9rem; }
+.document-card dl { display: grid; grid-template-columns: repeat(4, 1fr); gap: .8rem; margin: 1rem 0; }
+.document-card dl div { min-width: 0; }
+.document-card dt { color: #64748b; font-size: .78rem; text-transform: uppercase; }
+.document-card dd { margin: .2rem 0 0; overflow-wrap: anywhere; }
+.document-status { padding: .3rem .6rem; border-radius: 999px; font-size: .78rem; font-weight: 700; white-space: nowrap; }
+.document-status.success { color: #166534; background: #dcfce7; }
+.document-status.warning { color: #92400e; background: #fef3c7; }
+.document-status.danger { color: #991b1b; background: #fee2e2; }
+.document-status.neutral { color: #475569; background: #e2e8f0; }
+.document-tags { color: #0f766e; font-size: .85rem; }
+.document-actions { justify-content: flex-end; margin-top: .8rem; }
+.document-actions .danger { color: #b91c1c; border-color: #fecaca; }
+.document-pagination { justify-content: center; margin-top: 1rem; }
+
+@media (max-width: 900px) {
+  .document-filters { grid-template-columns: 1fr 1fr; }
+  .document-filters input { grid-column: 1 / -1; }
+  .document-card dl { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 560px) {
+  .document-filters, .document-card dl { grid-template-columns: 1fr; }
+  .document-filters input { grid-column: auto; }
+  .document-card-main { align-items: flex-start; }
+  .document-actions { display: grid; grid-template-columns: repeat(3, 1fr); }
+  .document-actions button { width: 100%; }
+  .section-heading-row { align-items: stretch; flex-direction: column; }
+}

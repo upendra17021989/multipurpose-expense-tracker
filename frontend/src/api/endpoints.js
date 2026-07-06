@@ -47,6 +47,21 @@ export const personalBudgetAPI = {
   deleteBudget: (budgetId) => axiosInstance.delete(`/personal-budgets/${budgetId}`)
 }
 
+export const personalDocumentAPI = {
+  list: (params = {}) => axiosInstance.get('/personal/documents', { params }),
+  get: (documentId) => axiosInstance.get(`/personal/documents/${documentId}`),
+  summary: () => axiosInstance.get('/personal/documents/summary'),
+  create: (metadata, file) => {
+    const formData = new FormData()
+    formData.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }))
+    formData.append('file', file)
+    return axiosInstance.post('/personal/documents', formData, { headers: { 'Content-Type': 'multipart/form-data' } })
+  },
+  update: (documentId, metadata) => axiosInstance.put(`/personal/documents/${documentId}`, metadata),
+  download: (documentId) => axiosInstance.get(`/personal/documents/${documentId}/download`, { responseType: 'blob' }),
+  delete: (documentId) => axiosInstance.delete(`/personal/documents/${documentId}`)
+}
+
 export const sharedExpenseAPI = {
   getGroups: () => axiosInstance.get('/personal/shared-expenses/groups'),
   getFriends: () => axiosInstance.get('/personal/shared-expenses/friends'),
