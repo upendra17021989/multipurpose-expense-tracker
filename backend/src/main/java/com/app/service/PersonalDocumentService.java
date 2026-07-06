@@ -21,6 +21,8 @@ import java.util.*;
 @Service
 public class PersonalDocumentService {
     private static final Set<String> EXTENSIONS = Set.of("jpg", "jpeg", "jfif", "png", "pdf");
+    private static final Set<String> IMAGE_TYPES = Set.of("image/jpeg", "image/jfif", "image/png");
+    private static final Set<String> PDF_TYPES = Set.of("application/pdf");
     private final PersonalDocumentRepository repository;
     private final AccountRepository accountRepository;
     private final Path uploadRoot;
@@ -162,7 +164,12 @@ public class PersonalDocumentService {
     private void validateFile(MultipartFile file) {
         if (file == null || file.isEmpty()) throw new ValidationException("Upload file is required");
         if (file.getSize() > maxFileSize) throw new ValidationException("Upload file is too large");
-        if (!EXTENSIONS.contains(extension(file.getOriginalFilename()))) throw new ValidationException("Only JPG, JPEG, JFIF, PNG, and PDF uploads are allowed");
+        String ext = extension(file.getOriginalFilename());
+        if (!EXTENSIONS.contains(ext)) throw new ValidationException("Only JPG, JPEG, JFIF, PNG, and PDF uploads are allowed");
+        String contentType = Objects.requireNonNullElse(file.getContentType(), "").toLowerCase();
+        boolean validPdf = ext.equals("pdf") && PDF_TYPES.contains(contentType);
+        boolean validImage = !ext.equals("pdf") && IMAGE_TYPES.contains(contentType);
+        if (!validPdf && !validImage) throw new ValidationException("File content type does not match its extension");
     }
     private String extension(String name) {
         String clean = StringUtils.cleanPath(Objects.requireNonNullElse(name, "")); int dot = clean.lastIndexOf('.');

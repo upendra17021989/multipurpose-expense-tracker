@@ -15,6 +15,11 @@ const statusFor = (date) => {
   return expiry <= soon ? ['Expiring soon', 'warning'] : ['Active', 'success']
 }
 const blankFilters = { query: '', category: '', status: '', sort: 'createdAt', direction: 'DESC' }
+const maskReference = (value) => {
+  if (!value) return '-'
+  if (value.length <= 4) return '*'.repeat(value.length)
+  return `${'*'.repeat(Math.min(8, value.length - 4))}${value.slice(-4)}`
+}
 
 export const MyDocumentsFull = () => {
   const { currentAccount } = useAuthStore()
@@ -57,6 +62,15 @@ export const MyDocumentsFull = () => {
       link.href = url; link.download = document.originalFileName; link.click(); setTimeout(() => URL.revokeObjectURL(url), 1000)
     } catch (error) { toast.error(error.response?.data?.message || 'Unable to download document') }
   }
+  const preview = async (document) => {
+    try {
+      const response = await personalDocumentAPI.download(document.id)
+      const url = URL.createObjectURL(new Blob([response.data], { type: document.contentType }))
+      const previewWindow = window.open(url, '_blank', 'noopener,noreferrer')
+      if (!previewWindow) toast.info('Allow pop-ups to preview this document.')
+      setTimeout(() => URL.revokeObjectURL(url), 60000)
+    } catch (error) { toast.error(error.response?.data?.message || 'Unable to preview document') }
+  }
   const remove = async (document) => {
     if (!window.confirm(`Delete "${document.title}"? This cannot be undone.`)) return
     try { await personalDocumentAPI.delete(document.id); toast.success('Document deleted'); await load() }
@@ -83,8 +97,8 @@ export const MyDocumentsFull = () => {
       {loading ? <p className="muted document-state">Loading documents...</p> : documents.length === 0 ? <p className="muted document-state">No documents match your filters.</p> : <div className="document-list">{documents.map((document) => {
         const [status, tone] = statusFor(document.expiryDate)
         return <article className="document-card" key={document.id}><div className="document-card-main"><div><h3>{document.title}</h3><p>{labels[document.category]} · {document.originalFileName}</p></div><span className={`document-status ${tone}`}>{status}</span></div>
-          <dl><div><dt>Issuer</dt><dd>{document.issuer || '-'}</dd></div><div><dt>Reference</dt><dd>{document.documentNumber || '-'}</dd></div><div><dt>Issue date</dt><dd>{document.issueDate || '-'}</dd></div><div><dt>Expiry date</dt><dd>{document.expiryDate || 'No expiry'}</dd></div></dl>
-          {document.tags && <p className="document-tags">{document.tags}</p>}<div className="document-actions"><button onClick={() => download(document)}>Download</button><button onClick={() => { setEditing(document); setFormOpen(true); window.scrollTo({ top: 0, behavior: 'smooth' }) }}>Edit</button><button className="danger" onClick={() => remove(document)}>Delete</button></div></article>
+          <dl><div><dt>Issuer</dt><dd>{document.issuer || '-'}</dd></div><div><dt>Reference</dt><dd title="Sensitive number masked">{maskReference(document.documentNumber)}</dd></div><div><dt>Issue date</dt><dd>{document.issueDate || '-'}</dd></div><div><dt>Expiry date</dt><dd>{document.expiryDate || 'No expiry'}</dd></div></dl>
+          {document.tags && <p className="document-tags">{document.tags}</p>}<div className="document-actions"><button onClick={() => preview(document)}>View</button><button onClick={() => download(document)}>Download</button><button onClick={() => { setEditing(document); setFormOpen(true); window.scrollTo({ top: 0, behavior: 'smooth' }) }}>Edit</button><button className="danger" onClick={() => remove(document)}>Delete</button></div></article>
       })}</div>}
       {totalPages > 1 && <div className="document-pagination"><button disabled={!page} onClick={() => setPage(page - 1)}>Previous</button><span>Page {page + 1} of {totalPages}</span><button disabled={page + 1 >= totalPages} onClick={() => setPage(page + 1)}>Next</button></div>}
     </section>
