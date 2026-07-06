@@ -25,7 +25,6 @@ yarn-error.log*
 pnpm-debug.log*
 
 # Capacitor / mobile build outputs
-frontend/android/
 frontend/ios/
 
 # Local environment files

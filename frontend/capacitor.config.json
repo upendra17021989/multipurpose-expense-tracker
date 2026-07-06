@@ -1,0 +1,9 @@
+{
+  "appId": "com.expensetracker.app",
+  "appName": "Expense Tracker",
+  "webDir": "dist",
+  "server": {
+    "url": "https://multipurpose-expense-tracker.vercel.app",
+    "cleartext": false
+  }
+}
