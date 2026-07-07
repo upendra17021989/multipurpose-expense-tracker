@@ -56,6 +56,7 @@ import { SportsReports } from './pages/sports/SportsReports'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import { AppErrorBoundary } from './components/AppErrorBoundary'
 import { SessionActivityMonitor } from './components/SessionActivityMonitor'
+import { AppLockOverlay } from './components/AppLockOverlay'
 import 'react-toastify/dist/ReactToastify.css'
 import './App.css'
 
@@ -63,7 +64,7 @@ function App() {
   return (
     <AppErrorBoundary>
       <Router>
-        <SessionActivityMonitor />
+        <SessionActivityMonitor />`r`n        <AppLockOverlay />
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />

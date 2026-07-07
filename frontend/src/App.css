@@ -1596,3 +1596,57 @@ textarea:disabled {
   .document-actions button { width: 100%; }
   .section-heading-row { align-items: stretch; flex-direction: column; }
 }
+
+.app-lock-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.92), rgba(15, 118, 110, 0.78));
+  backdrop-filter: blur(8px);
+}
+
+.app-lock-card {
+  width: min(420px, 100%);
+  padding: 2rem;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 28px 80px rgba(15, 23, 42, 0.35);
+  text-align: center;
+}
+
+.app-lock-icon {
+  width: 64px;
+  height: 64px;
+  display: grid;
+  place-items: center;
+  margin: 0 auto 1rem;
+  border-radius: 50%;
+  background: #e6fffb;
+  color: #0f766e;
+  font-size: 2rem;
+}
+
+.app-lock-card h1 {
+  margin: 0 0 0.5rem;
+  color: #17202a;
+}
+
+.app-lock-card p:not(.eyebrow) {
+  margin: 0 0 1.25rem;
+  color: #64748b;
+}
+
+.app-lock-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+@media (max-width: 420px) {
+  .app-lock-card { padding: 1.5rem; }
+  .app-lock-actions { grid-template-columns: 1fr; }
+}

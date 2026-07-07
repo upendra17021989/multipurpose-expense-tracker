@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+﻿import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'react-toastify'
 import { useAuthStore } from '../store/authStore'
@@ -18,17 +18,47 @@ const activityEvents = [
   'touchstart'
 ]
 
+const isMobileAppExperience = () => {
+  if (typeof window === 'undefined') return false
+  const userAgent = window.navigator.userAgent || ''
+  const isAndroid = /Android/i.test(userAgent)
+  const isCapacitor = Boolean(window.Capacitor)
+  const isStandalone = window.matchMedia?.('(display-mode: standalone)').matches
+  const isSmallTouchScreen = window.matchMedia?.('(max-width: 820px) and (pointer: coarse)').matches
+  return isAndroid || isCapacitor || isStandalone || isSmallTouchScreen
+}
+
 export const SessionActivityMonitor = () => {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated)
+  const isAppLocked = useAuthStore((state) => state.isAppLocked)
   const logout = useAuthStore((state) => state.logout)
+  const lockApp = useAuthStore((state) => state.lockApp)
+  const unlockApp = useAuthStore((state) => state.unlockApp)
   const navigate = useNavigate()
 
   useEffect(() => {
-    if (!isAuthenticated) return undefined
+    const handleStorage = (event) => {
+      if (event.key === 'token' && !event.newValue) logout()
+      if (event.key === 'appLocked' && event.newValue === 'true') lockApp()
+      if (event.key === 'appLocked' && !event.newValue) unlockApp()
+    }
+
+    window.addEventListener('storage', handleStorage)
+    return () => window.removeEventListener('storage', handleStorage)
+  }, [lockApp, logout, unlockApp])
+
+  useEffect(() => {
+    if (!isAuthenticated || isAppLocked) return undefined
 
     let timeoutId
 
     const expireSession = () => {
+      if (isMobileAppExperience()) {
+        lockApp()
+        toast.info('App locked due to inactivity. Unlock to continue.')
+        return
+      }
+
       logout()
       toast.info('Your session expired due to inactivity. Please log in again.')
       navigate('/login', { replace: true })
@@ -73,7 +103,7 @@ export const SessionActivityMonitor = () => {
       )
       window.removeEventListener('storage', handleStorage)
     }
-  }, [isAuthenticated, logout, navigate])
+  }, [isAuthenticated, isAppLocked, lockApp, logout, navigate])
 
   return null
 }
