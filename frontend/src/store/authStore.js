@@ -43,6 +43,19 @@ export const useAuthStore = create((set) => ({
     set({ user })
   },
 
+  lockApp: () => {
+    localStorage.setItem('appLocked', 'true')
+    localStorage.setItem('appLockedAt', String(Date.now()))
+    set({ isAppLocked: true })
+  },
+
+  unlockApp: () => {
+    localStorage.removeItem('appLocked')
+    localStorage.removeItem('appLockedAt')
+    localStorage.setItem('lastActivityAt', String(Date.now()))
+    set({ isAppLocked: false })
+  },
+
   logout: () => {
     localStorage.removeItem('token')
     localStorage.removeItem('user')
