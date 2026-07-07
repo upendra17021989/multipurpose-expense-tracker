@@ -10,6 +10,7 @@ const saveSession = (token, user, accounts, currentAccount) => {
 
 export const useAuthStore = create((set) => ({
   isAuthenticated: !!localStorage.getItem('token'),
+  isAppLocked: localStorage.getItem('appLocked') === 'true',
   user: JSON.parse(localStorage.getItem('user') || 'null'),
   accounts: JSON.parse(localStorage.getItem('accounts') || '[]'),
   currentAccount: JSON.parse(localStorage.getItem('currentAccount') || 'null'),
@@ -48,12 +49,15 @@ export const useAuthStore = create((set) => ({
     localStorage.removeItem('accounts')
     localStorage.removeItem('currentAccount')
     localStorage.removeItem('lastActivityAt')
+    localStorage.removeItem('appLocked')
+    localStorage.removeItem('appLockedAt')
     set({
       isAuthenticated: false,
       token: null,
       user: null,
       accounts: [],
-      currentAccount: null
+      currentAccount: null,
+      isAppLocked: false
     })
   }
 }))

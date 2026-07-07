@@ -64,7 +64,8 @@ function App() {
   return (
     <AppErrorBoundary>
       <Router>
-        <SessionActivityMonitor />`r`n        <AppLockOverlay />
+        <SessionActivityMonitor />
+        <AppLockOverlay />
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
