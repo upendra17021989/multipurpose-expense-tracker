@@ -4,6 +4,7 @@ import com.app.dto.*;
 import com.app.entity.*;
 import com.app.exception.*;
 import com.app.repository.*;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.*;
 import org.springframework.data.domain.*;
@@ -12,8 +13,16 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
+import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
+import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
+import software.amazon.awssdk.core.ResponseInputStream;
+import software.amazon.awssdk.core.sync.RequestBody;
+import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.*;
 
 import java.io.IOException;
+import java.net.URI;
 import java.nio.file.*;
 import java.time.LocalDate;
 import java.util.*;
@@ -23,18 +32,47 @@ public class PersonalDocumentService {
     private static final Set<String> EXTENSIONS = Set.of("jpg", "jpeg", "jfif", "png", "pdf");
     private static final Set<String> IMAGE_TYPES = Set.of("image/jpeg", "image/jfif", "image/png");
     private static final Set<String> PDF_TYPES = Set.of("application/pdf");
+
     private final PersonalDocumentRepository repository;
     private final AccountRepository accountRepository;
     private final Path uploadRoot;
     private final long maxFileSize;
+    private final S3Client s3Client;
+    private final String s3Bucket;
+    private final boolean s3Enabled;
 
+    @Autowired
     public PersonalDocumentService(PersonalDocumentRepository repository, AccountRepository accountRepository,
             @Value("${app.file.upload.dir:./uploads}") String uploadDir,
-            @Value("${app.file.max-size:5242880}") long maxFileSize) {
+            @Value("${app.file.max-size:5242880}") long maxFileSize,
+            @Value("${app.storage.provider:local}") String storageProvider,
+            @Value("${app.supabase.s3.endpoint:}") String s3Endpoint,
+            @Value("${app.supabase.s3.access-key:}") String s3AccessKey,
+            @Value("${app.supabase.s3.secret-key:}") String s3SecretKey,
+            @Value("${app.supabase.s3.region:ap-south-1}") String s3Region,
+            @Value("${app.supabase.storage.bucket:}") String s3Bucket) {
         this.repository = repository;
         this.accountRepository = accountRepository;
         this.uploadRoot = Paths.get(uploadDir).toAbsolutePath().normalize();
         this.maxFileSize = maxFileSize;
+        this.s3Bucket = clean(s3Bucket);
+        this.s3Enabled = "supabase-s3".equalsIgnoreCase(clean(storageProvider))
+                && StringUtils.hasText(s3Endpoint)
+                && StringUtils.hasText(s3AccessKey)
+                && StringUtils.hasText(s3SecretKey)
+                && StringUtils.hasText(this.s3Bucket);
+        this.s3Client = s3Enabled ? S3Client.builder()
+                .endpointOverride(URI.create(s3Endpoint.trim()))
+                .credentialsProvider(StaticCredentialsProvider.create(
+                        AwsBasicCredentials.create(s3AccessKey.trim(), s3SecretKey.trim())))
+                .region(Region.of(StringUtils.hasText(s3Region) ? s3Region.trim() : "ap-south-1"))
+                .forcePathStyle(true)
+                .build() : null;
+    }
+
+    PersonalDocumentService(PersonalDocumentRepository repository, AccountRepository accountRepository,
+            String uploadDir, long maxFileSize) {
+        this(repository, accountRepository, uploadDir, maxFileSize, "local", "", "", "", "ap-south-1", "");
     }
 
     @Transactional(readOnly = true)
@@ -71,25 +109,21 @@ public class PersonalDocumentService {
         Account account = requireIndividualAccount(accountId);
         validateMetadata(request);
         validateFile(file);
-        Path directory = uploadRoot.resolve("documents").resolve(String.valueOf(accountId)).normalize();
-        ensureUnderRoot(directory);
         String original = StringUtils.cleanPath(Objects.requireNonNullElse(file.getOriginalFilename(), "document"));
         String stored = UUID.randomUUID() + "." + extension(original);
-        Path target = directory.resolve(stored).normalize();
-        ensureUnderRoot(target);
+        String storedFileName = "documents/" + accountId + "/" + stored;
         try {
-            Files.createDirectories(directory);
-            Files.copy(file.getInputStream(), target, StandardCopyOption.REPLACE_EXISTING);
+            storeFile(accountId, stored, storedFileName, file);
             PersonalDocument entity = PersonalDocument.builder().account(account).title(request.getTitle().trim())
                     .category(request.getCategory()).issuer(clean(request.getIssuer()))
                     .documentNumber(clean(request.getDocumentNumber())).issueDate(request.getIssueDate())
                     .expiryDate(request.getExpiryDate()).tags(clean(request.getTags())).notes(clean(request.getNotes()))
-                    .originalFileName(original).storedFileName("documents/" + accountId + "/" + stored)
+                    .originalFileName(original).storedFileName(storedFileName)
                     .contentType(Objects.requireNonNullElse(file.getContentType(), "application/octet-stream"))
                     .fileSize(file.getSize()).uploadedBy(userId).build();
             try { return toDto(repository.save(entity)); }
-            catch (RuntimeException ex) { Files.deleteIfExists(target); throw ex; }
-        } catch (IOException ex) {
+            catch (RuntimeException ex) { deleteStoredFile(storedFileName); throw ex; }
+        } catch (IOException | S3Exception ex) {
             throw new ValidationException("Unable to store uploaded file", ex);
         }
     }
@@ -110,6 +144,7 @@ public class PersonalDocumentService {
     public Resource load(Long accountId, Long id) {
         requireIndividualAccount(accountId);
         PersonalDocument entity = find(accountId, id);
+        if (s3Enabled) return loadFromS3(entity.getStoredFileName());
         try {
             Path path = uploadRoot.resolve(entity.getStoredFileName()).normalize();
             ensureUnderRoot(path);
@@ -124,9 +159,7 @@ public class PersonalDocumentService {
         requireIndividualAccount(accountId);
         PersonalDocument entity = find(accountId, id);
         repository.delete(entity);
-        try {
-            Path path = uploadRoot.resolve(entity.getStoredFileName()).normalize(); ensureUnderRoot(path); Files.deleteIfExists(path);
-        } catch (IOException ignored) { }
+        deleteStoredFile(entity.getStoredFileName());
     }
 
     @Transactional(readOnly = true)
@@ -170,6 +203,40 @@ public class PersonalDocumentService {
         boolean validPdf = ext.equals("pdf") && PDF_TYPES.contains(contentType);
         boolean validImage = !ext.equals("pdf") && IMAGE_TYPES.contains(contentType);
         if (!validPdf && !validImage) throw new ValidationException("File content type does not match its extension");
+    }
+    private void storeFile(Long accountId, String stored, String storedFileName, MultipartFile file) throws IOException {
+        if (s3Enabled) {
+            s3Client.putObject(PutObjectRequest.builder().bucket(s3Bucket).key(storedFileName)
+                            .contentType(Objects.requireNonNullElse(file.getContentType(), "application/octet-stream"))
+                            .contentLength(file.getSize()).build(),
+                    RequestBody.fromInputStream(file.getInputStream(), file.getSize()));
+            return;
+        }
+        Path directory = uploadRoot.resolve("documents").resolve(String.valueOf(accountId)).normalize();
+        ensureUnderRoot(directory);
+        Path target = directory.resolve(stored).normalize();
+        ensureUnderRoot(target);
+        Files.createDirectories(directory);
+        Files.copy(file.getInputStream(), target, StandardCopyOption.REPLACE_EXISTING);
+    }
+    private Resource loadFromS3(String storedFileName) {
+        try {
+            ResponseInputStream<GetObjectResponse> stream = s3Client.getObject(GetObjectRequest.builder()
+                    .bucket(s3Bucket).key(storedFileName).build());
+            return new InputStreamResource(stream);
+        } catch (S3Exception ex) {
+            throw new ResourceNotFoundException("Document file not found");
+        }
+    }
+    private void deleteStoredFile(String storedFileName) {
+        if (s3Enabled) {
+            try { s3Client.deleteObject(DeleteObjectRequest.builder().bucket(s3Bucket).key(storedFileName).build()); }
+            catch (S3Exception ignored) { }
+            return;
+        }
+        try {
+            Path path = uploadRoot.resolve(storedFileName).normalize(); ensureUnderRoot(path); Files.deleteIfExists(path);
+        } catch (IOException ignored) { }
     }
     private String extension(String name) {
         String clean = StringUtils.cleanPath(Objects.requireNonNullElse(name, "")); int dot = clean.lastIndexOf('.');
