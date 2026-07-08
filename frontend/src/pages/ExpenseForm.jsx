@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'react-toastify'
 import { attachmentAPI, expenseAPI, expenseCategoryAPI, festivalEventAPI, societyStaffAPI, societyVendorAPI } from '../api/endpoints'
@@ -28,6 +28,90 @@ const expenseTypesByAccount = {
   KIRANA_STORE: ['STORE_EXPENSE']
 }
 
+const speechRecognitionConstructor = () => {
+  if (typeof window === 'undefined') return null
+  return window.SpeechRecognition || window.webkitSpeechRecognition || null
+}
+
+const formatDate = (date) => date.toISOString().slice(0, 10)
+
+const extractDate = (text) => {
+  const today = new Date()
+  const normalized = text.toLowerCase()
+  if (/\byesterday\b/.test(normalized)) {
+    const date = new Date(today)
+    date.setDate(today.getDate() - 1)
+    return formatDate(date)
+  }
+  if (/\btomorrow\b/.test(normalized)) {
+    const date = new Date(today)
+    date.setDate(today.getDate() + 1)
+    return formatDate(date)
+  }
+  if (/\btoday\b/.test(normalized)) return formatDate(today)
+
+  const dateMatch = normalized.match(/\b(\d{1,2})[/-](\d{1,2})(?:[/-](\d{2,4}))?\b/)
+  if (!dateMatch) return ''
+
+  const day = Number(dateMatch[1])
+  const month = Number(dateMatch[2])
+  const year = dateMatch[3] ? Number(dateMatch[3].length === 2 ? `20${dateMatch[3]}` : dateMatch[3]) : today.getFullYear()
+  const date = new Date(year, month - 1, day)
+  return Number.isNaN(date.getTime()) ? '' : formatDate(date)
+}
+
+const parseVoiceExpense = (transcript, categories) => {
+  const normalized = transcript.toLowerCase()
+  const updates = {}
+
+  const amountMatch = normalized.match(/(?:rs\.?|rupees?|inr|amount|expense|spent|paid|of)?\s*(\d+(?:,\d{3})*(?:\.\d{1,2})?)/)
+  if (amountMatch) updates.amount = amountMatch[1].replace(/,/g, '')
+
+  const date = extractDate(normalized)
+  if (date) updates.expenseDate = date
+
+  const paymentAliases = [
+    ['UPI', /\b(upi|gpay|google pay|phonepe|paytm)\b/],
+    ['CASH', /\bcash\b/],
+    ['CARD', /\b(card|credit card|debit card)\b/],
+    ['NEFT', /\b(neft|bank transfer|transfer)\b/],
+    ['CHEQUE', /\b(cheque|check)\b/],
+    ['BANK', /\bbank\b/]
+  ]
+  const payment = paymentAliases.find(([, pattern]) => pattern.test(normalized))
+  if (payment) updates.paymentMode = payment[0]
+
+  const utrMatch = transcript.match(/\b(?:utr|transaction id|transaction|txn|txnid)\s*(?:number|id)?\s*([a-z0-9-]{6,})\b/i)
+  if (utrMatch) {
+    updates.transactionId = utrMatch[1].toUpperCase()
+    if (updates.paymentMode === 'UPI' || updates.paymentMode === 'NEFT') {
+      updates.utr = utrMatch[1].toUpperCase()
+    }
+  }
+
+  const chequeMatch = transcript.match(/\b(?:cheque|check)\s*(?:number|no)?\s*([a-z0-9-]{4,})\b/i)
+  if (chequeMatch) updates.chequeNumber = chequeMatch[1].toUpperCase()
+
+  const vendorMatch = transcript.match(/\b(?:paid to|vendor|shop|from|to)\s+([^,.;]+?)(?:\s+(?:for|on|by|via|using|today|yesterday|tomorrow)\b|$)/i)
+  if (vendorMatch) updates.vendorName = vendorMatch[1].trim()
+
+  const category = categories.find((item) => {
+    const categoryName = (item.categoryName || '').toLowerCase()
+    return categoryName && normalized.includes(categoryName)
+  })
+  if (category) updates.categoryId = String(category.id)
+
+  const descriptionMatch = transcript.match(/\b(?:for|note|description|remark)\s+(.+)$/i)
+  if (descriptionMatch) {
+    updates.description = descriptionMatch[1]
+      .replace(/\b(?:paid by|by|via|using)\s+(cash|upi|gpay|google pay|phonepe|paytm|card|credit card|debit card|bank|bank transfer|neft|cheque|check)\b/ig, '')
+      .trim()
+  } else if (transcript.trim()) {
+    updates.description = transcript.trim()
+  }
+
+  return updates
+}
 export const ExpenseForm = () => {
   const { expenseId } = useParams()
   const navigate = useNavigate()
@@ -40,12 +124,17 @@ export const ExpenseForm = () => {
   const [attachments, setAttachments] = useState([])
   const [receiptFile, setReceiptFile] = useState(null)
   const [ocrStatus, setOcrStatus] = useState('')
+  const [voiceStatus, setVoiceStatus] = useState('')
+  const [voiceTranscript, setVoiceTranscript] = useState('')
+  const [listening, setListening] = useState(false)
   const [saving, setSaving] = useState(false)
+  const recognitionRef = useRef(null)
   const isEdit = Boolean(expenseId)
   const isApproved = isEdit && form.status === 'APPROVED'
   const showFestivalEvent = currentAccount?.accountType === 'SOCIETY' && (form.expenseType === 'FESTIVAL' || form.expenseType === 'SPORTS')
 
   const availableTypes = useMemo(() => expenseTypesByAccount[currentAccount?.accountType] || ['PERSONAL'], [currentAccount])
+  const canUseVoice = Boolean(speechRecognitionConstructor())
 
   useEffect(() => {
     expenseCategoryAPI.getCategories().then((response) => setCategories(response.data || []))
@@ -102,6 +191,10 @@ export const ExpenseForm = () => {
 
   useEffect(loadAttachments, [expenseId, isEdit])
 
+  useEffect(() => () => {
+    recognitionRef.current?.abort()
+  }, [])
+
   const update = (field, value) => {
     setForm((current) => ({
       ...current,
@@ -143,6 +236,53 @@ export const ExpenseForm = () => {
     } catch (error) {
       setOcrStatus('Could not read this screenshot. Please enter UTR manually.')
     }
+  }
+
+  const applyVoiceTranscript = (transcript) => {
+    const updates = parseVoiceExpense(transcript, categories)
+    setVoiceTranscript(transcript)
+    if (Object.keys(updates).length === 0) {
+      setVoiceStatus('Could not detect expense fields. Please try a little more detail.')
+      return
+    }
+    setForm((current) => ({ ...current, ...updates }))
+    setVoiceStatus('Voice details filled. Please review before saving.')
+  }
+
+  const startVoiceInput = () => {
+    if (isApproved) return
+    const Recognition = speechRecognitionConstructor()
+    if (!Recognition) {
+      setVoiceStatus('Voice input is not supported in this browser. Try Chrome or Edge.')
+      return
+    }
+
+    const recognition = new Recognition()
+    recognition.lang = 'en-IN'
+    recognition.interimResults = false
+    recognition.maxAlternatives = 1
+    recognitionRef.current = recognition
+
+    recognition.onstart = () => {
+      setListening(true)
+      setVoiceStatus('Listening...')
+    }
+    recognition.onerror = () => {
+      setListening(false)
+      setVoiceStatus('Could not hear clearly. Please try again.')
+    }
+    recognition.onend = () => setListening(false)
+    recognition.onresult = (event) => {
+      const transcript = event.results?.[0]?.[0]?.transcript || ''
+      applyVoiceTranscript(transcript)
+    }
+
+    recognition.start()
+  }
+
+  const stopVoiceInput = () => {
+    recognitionRef.current?.stop()
+    setListening(false)
   }
 
   const uploadReceipt = async (targetExpenseId) => {
@@ -229,6 +369,27 @@ export const ExpenseForm = () => {
         </section>
       )}
       <form className="form-panel" onSubmit={handleSubmit}>
+        <section className="alert-panel">
+          <div className="table-actions" style={{ justifyContent: 'space-between', gap: '0.75rem', flexWrap: 'wrap' }}>
+            <div>
+              <strong>Voice fill</strong>
+              <p className="muted" style={{ margin: '0.25rem 0 0' }}>
+                Try: "Grocery expense 850 rupees paid by UPI yesterday for monthly vegetables".
+              </p>
+            </div>
+            <button
+              type="button"
+              className={listening ? 'danger' : 'primary'}
+              onClick={listening ? stopVoiceInput : startVoiceInput}
+              disabled={isApproved || !canUseVoice}
+            >
+              {listening ? 'Stop Listening' : 'Use Voice'}
+            </button>
+          </div>
+          {!canUseVoice && <p className="muted">Voice input is available in browsers that support Speech Recognition, such as Chrome or Edge.</p>}
+          {voiceStatus && <p className="muted">{voiceStatus}</p>}
+          {voiceTranscript && <p className="muted">Heard: {voiceTranscript}</p>}
+        </section>
         <div className="form-grid">
           <label>
             Date
@@ -354,5 +515,7 @@ export const ExpenseForm = () => {
     </Shell>
   )
 }
+
+
 
 
