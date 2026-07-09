@@ -33,9 +33,9 @@ class PersonalDocumentHardeningTest {
         verify(repository, never()).save(any());
     }
 
-    @Test void knownIdFromAnotherAccountIsNotAccessible() {
-        when(repository.findByIdAndAccountId(99L, 1L)).thenReturn(Optional.empty());
-        assertThrows(ResourceNotFoundException.class, () -> service.get(1L, 99L));
+    @Test void knownIdFromAnotherUserIsNotAccessible() {
+        when(repository.findByIdAndUploadedBy(99L, 2L)).thenReturn(Optional.empty());
+        assertThrows(ResourceNotFoundException.class, () -> service.get(1L, 2L, 99L));
     }
 
     private PersonalDocumentMetadataRequest request() {

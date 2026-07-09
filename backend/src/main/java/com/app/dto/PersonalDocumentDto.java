@@ -19,6 +19,7 @@ public class PersonalDocumentDto {
     private String contentType;
     private Long fileSize;
     private Long uploadedBy;
+    private Boolean sharedWithMe;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

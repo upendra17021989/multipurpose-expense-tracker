@@ -58,6 +58,7 @@ export const personalDocumentAPI = {
     return axiosInstance.post('/personal/documents', formData, { headers: { 'Content-Type': 'multipart/form-data' } })
   },
   update: (documentId, metadata) => axiosInstance.put(`/personal/documents/${documentId}`, metadata),
+  share: (documentId, recipient) => axiosInstance.post(`/personal/documents/${documentId}/share`, { recipient }),
   download: (documentId) => axiosInstance.get(`/personal/documents/${documentId}/download`, { responseType: 'blob' }),
   delete: (documentId) => axiosInstance.delete(`/personal/documents/${documentId}`)
 }

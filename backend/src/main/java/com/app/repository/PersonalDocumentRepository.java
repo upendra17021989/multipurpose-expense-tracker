@@ -7,5 +7,5 @@ import java.util.Optional;
 
 @Repository
 public interface PersonalDocumentRepository extends JpaRepository<PersonalDocument, Long>, JpaSpecificationExecutor<PersonalDocument> {
-    Optional<PersonalDocument> findByIdAndAccountId(Long id, Long accountId);
+    Optional<PersonalDocument> findByIdAndUploadedBy(Long id, Long uploadedBy);
 }

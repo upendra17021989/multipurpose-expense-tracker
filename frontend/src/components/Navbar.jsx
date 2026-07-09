@@ -124,6 +124,11 @@ export const Navbar = () => {
                 Shared Expenses
               </Link>
             )}
+            {currentAccount?.accountType === 'INDIVIDUAL' && (
+              <Link to="/personal/documents" onClick={closeMenus}>
+                My Documents
+              </Link>
+            )}
             <div className={`nav-dropdown ${moduleOpen ? 'open' : ''}`}>
               <button
                 type="button"
@@ -146,11 +151,6 @@ export const Navbar = () => {
                 {currentAccount?.accountType === 'INDIVIDUAL' && (
                   <Link to="/personal/reports" onClick={closeMenus}>
                     Reports
-                  </Link>
-                )}
-                {currentAccount?.accountType === 'INDIVIDUAL' && (
-                  <Link to="/personal/documents" onClick={closeMenus}>
-                    My Documents
                   </Link>
                 )}
                 {currentAccount?.accountType === 'INDIVIDUAL' && (

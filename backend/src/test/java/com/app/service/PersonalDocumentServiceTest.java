@@ -33,7 +33,7 @@ class PersonalDocumentServiceTest {
     void rejectsNonIndividualAccount() {
         Account account = Account.builder().id(4L).accountType(AccountType.SOCIETY).active(true).build();
         when(accountRepository.findById(4L)).thenReturn(Optional.of(account));
-        assertThrows(UnauthorizedException.class, () -> service.get(4L, 1L));
+        assertThrows(UnauthorizedException.class, () -> service.get(4L, 2L, 1L));
         verifyNoInteractions(repository);
     }
 
@@ -58,7 +58,7 @@ class PersonalDocumentServiceTest {
     }
 
     @Test
-    void createsAccountScopedDocument() {
+    void createsUserOwnedDocument() {
         Account account = allowIndividual();
         when(repository.save(any(PersonalDocument.class))).thenAnswer(invocation -> {
             PersonalDocument document = invocation.getArgument(0); document.setId(9L); return document;

@@ -27,17 +27,17 @@ public class PersonalDocumentController {
             @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "20") int size,
             @RequestParam(defaultValue = "createdAt") String sort,
             @RequestParam(defaultValue = "DESC") Sort.Direction direction) {
-        return service.list(principal.getAccountId(), query, category, status, page, size, sort, direction);
+        return service.list(principal.getAccountId(), principal.getUserId(), query, category, status, page, size, sort, direction);
     }
 
     @GetMapping("/summary")
     public PersonalDocumentSummaryDto summary(@AuthenticationPrincipal UserPrincipal principal) {
-        return service.summary(principal.getAccountId());
+        return service.summary(principal.getAccountId(), principal.getUserId());
     }
 
     @GetMapping("/{id}")
     public PersonalDocumentDto get(@AuthenticationPrincipal UserPrincipal principal, @PathVariable Long id) {
-        return service.get(principal.getAccountId(), id);
+        return service.get(principal.getAccountId(), principal.getUserId(), id);
     }
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -51,13 +51,13 @@ public class PersonalDocumentController {
     @PutMapping("/{id}")
     public PersonalDocumentDto update(@AuthenticationPrincipal UserPrincipal principal, @PathVariable Long id,
             @Valid @RequestBody PersonalDocumentMetadataRequest metadata) {
-        return service.update(principal.getAccountId(), id, metadata);
+        return service.update(principal.getAccountId(), principal.getUserId(), id, metadata);
     }
 
     @GetMapping("/{id}/download")
     public ResponseEntity<Resource> download(@AuthenticationPrincipal UserPrincipal principal, @PathVariable Long id) {
-        PersonalDocumentDto document = service.get(principal.getAccountId(), id);
-        Resource resource = service.load(principal.getAccountId(), id);
+        PersonalDocumentDto document = service.get(principal.getAccountId(), principal.getUserId(), id);
+        Resource resource = service.load(principal.getAccountId(), principal.getUserId(), id);
         ContentDisposition disposition = ContentDisposition.inline().filename(document.getOriginalFileName()).build();
         MediaType type;
         try { type = MediaType.parseMediaType(document.getContentType()); }
@@ -68,6 +68,13 @@ public class PersonalDocumentController {
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void delete(@AuthenticationPrincipal UserPrincipal principal, @PathVariable Long id) {
-        service.delete(principal.getAccountId(), id);
+        service.delete(principal.getAccountId(), principal.getUserId(), id);
+    }
+
+    @PostMapping("/{id}/share")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void share(@AuthenticationPrincipal UserPrincipal principal, @PathVariable Long id,
+            @Valid @RequestBody PersonalDocumentShareRequest request) {
+        service.share(principal.getAccountId(), principal.getUserId(), id, request);
     }
 }

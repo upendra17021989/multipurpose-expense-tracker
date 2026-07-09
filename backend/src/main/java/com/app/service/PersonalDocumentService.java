@@ -35,6 +35,8 @@ public class PersonalDocumentService {
 
     private final PersonalDocumentRepository repository;
     private final AccountRepository accountRepository;
+    private final PersonalDocumentShareRepository shareRepository;
+    private final UserRepository userRepository;
     private final Path uploadRoot;
     private final long maxFileSize;
     private final S3Client s3Client;
@@ -43,6 +45,7 @@ public class PersonalDocumentService {
 
     @Autowired
     public PersonalDocumentService(PersonalDocumentRepository repository, AccountRepository accountRepository,
+            PersonalDocumentShareRepository shareRepository, UserRepository userRepository,
             @Value("${app.file.upload.dir:./uploads}") String uploadDir,
             @Value("${app.file.max-size:5242880}") long maxFileSize,
             @Value("${app.storage.provider:local}") String storageProvider,
@@ -53,6 +56,8 @@ public class PersonalDocumentService {
             @Value("${app.supabase.storage.bucket:}") String s3Bucket) {
         this.repository = repository;
         this.accountRepository = accountRepository;
+        this.shareRepository = shareRepository;
+        this.userRepository = userRepository;
         this.uploadRoot = Paths.get(uploadDir).toAbsolutePath().normalize();
         this.maxFileSize = maxFileSize;
         this.s3Bucket = clean(s3Bucket);
@@ -72,17 +77,21 @@ public class PersonalDocumentService {
 
     PersonalDocumentService(PersonalDocumentRepository repository, AccountRepository accountRepository,
             String uploadDir, long maxFileSize) {
-        this(repository, accountRepository, uploadDir, maxFileSize, "local", "", "", "", "ap-south-1", "");
+        this(repository, accountRepository, null, null, uploadDir, maxFileSize,
+                "local", "", "", "", "ap-south-1", "");
     }
 
     @Transactional(readOnly = true)
-    public Page<PersonalDocumentDto> list(Long accountId, String query, PersonalDocumentCategory category,
+    public Page<PersonalDocumentDto> list(Long accountId, Long userId, String query, PersonalDocumentCategory category,
             String status, int page, int size, String sort, Sort.Direction direction) {
         requireIndividualAccount(accountId);
         if (page < 0 || size < 1 || size > 100) throw new ValidationException("Invalid page or size");
         Set<String> allowedSorts = Set.of("createdAt", "title", "expiryDate");
         String sortField = allowedSorts.contains(sort) ? sort : "createdAt";
-        Specification<PersonalDocument> spec = (root, ignored, cb) -> cb.equal(root.get("account").get("id"), accountId);
+        List<Long> sharedIds = shareRepository.findBySharedWithUserId(userId).stream()
+                .map(s -> s.getDocument().getId()).toList();
+        Specification<PersonalDocument> spec = (root, ignored, cb) -> cb.or(
+                cb.equal(root.get("uploadedBy"), userId), root.get("id").in(sharedIds));
         if (StringUtils.hasText(query)) {
             String value = "%" + query.trim().toLowerCase() + "%";
             spec = spec.and((root, ignored, cb) -> cb.or(
@@ -95,13 +104,13 @@ public class PersonalDocumentService {
         if (category != null) spec = spec.and((root, ignored, cb) -> cb.equal(root.get("category"), category));
         spec = applyStatus(spec, status, LocalDate.now());
         Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortField));
-        return repository.findAll(spec, pageable).map(this::toDto);
+        return repository.findAll(spec, pageable).map(d -> toDto(d, userId));
     }
 
     @Transactional(readOnly = true)
-    public PersonalDocumentDto get(Long accountId, Long id) {
+    public PersonalDocumentDto get(Long accountId, Long userId, Long id) {
         requireIndividualAccount(accountId);
-        return toDto(find(accountId, id));
+        return toDto(findAccessible(userId, id), userId);
     }
 
     @Transactional
@@ -129,10 +138,10 @@ public class PersonalDocumentService {
     }
 
     @Transactional
-    public PersonalDocumentDto update(Long accountId, Long id, PersonalDocumentMetadataRequest request) {
+    public PersonalDocumentDto update(Long accountId, Long userId, Long id, PersonalDocumentMetadataRequest request) {
         requireIndividualAccount(accountId);
         validateMetadata(request);
-        PersonalDocument entity = find(accountId, id);
+        PersonalDocument entity = findOwned(userId, id);
         entity.setTitle(request.getTitle().trim()); entity.setCategory(request.getCategory());
         entity.setIssuer(clean(request.getIssuer())); entity.setDocumentNumber(clean(request.getDocumentNumber()));
         entity.setIssueDate(request.getIssueDate()); entity.setExpiryDate(request.getExpiryDate());
@@ -141,9 +150,9 @@ public class PersonalDocumentService {
     }
 
     @Transactional(readOnly = true)
-    public Resource load(Long accountId, Long id) {
+    public Resource load(Long accountId, Long userId, Long id) {
         requireIndividualAccount(accountId);
-        PersonalDocument entity = find(accountId, id);
+        PersonalDocument entity = findAccessible(userId, id);
         if (s3Enabled) return loadFromS3(entity.getStoredFileName());
         try {
             Path path = uploadRoot.resolve(entity.getStoredFileName()).normalize();
@@ -155,24 +164,26 @@ public class PersonalDocumentService {
     }
 
     @Transactional
-    public void delete(Long accountId, Long id) {
+    public void delete(Long accountId, Long userId, Long id) {
         requireIndividualAccount(accountId);
-        PersonalDocument entity = find(accountId, id);
+        PersonalDocument entity = findOwned(userId, id);
         repository.delete(entity);
         deleteStoredFile(entity.getStoredFileName());
     }
 
     @Transactional(readOnly = true)
-    public PersonalDocumentSummaryDto summary(Long accountId) {
+    public PersonalDocumentSummaryDto summary(Long accountId, Long userId) {
         requireIndividualAccount(accountId);
         LocalDate today = LocalDate.now();
-        long total = repository.count(accountSpec(accountId));
-        long expired = repository.count(accountSpec(accountId).and((r, q, cb) -> cb.lessThan(r.get("expiryDate"), today)));
-        long soon = repository.count(accountSpec(accountId).and((r, q, cb) -> cb.between(r.get("expiryDate"), today, today.plusDays(30))));
+        List<Long> ids = shareRepository.findBySharedWithUserId(userId).stream().map(s -> s.getDocument().getId()).toList();
+        Specification<PersonalDocument> visible = (r, q, cb) -> cb.or(cb.equal(r.get("uploadedBy"), userId), r.get("id").in(ids));
+        long total = repository.count(visible);
+        long expired = repository.count(visible.and((r, q, cb) -> cb.lessThan(r.get("expiryDate"), today)));
+        long soon = repository.count(visible.and((r, q, cb) -> cb.between(r.get("expiryDate"), today, today.plusDays(30))));
         return PersonalDocumentSummaryDto.builder().total(total).expired(expired).expiringSoon(soon).build();
     }
 
-    private Specification<PersonalDocument> accountSpec(Long id) { return (r, q, cb) -> cb.equal(r.get("account").get("id"), id); }
+    private Specification<PersonalDocument> userSpec(Long id) { return (r, q, cb) -> cb.equal(r.get("uploadedBy"), id); }
     private Specification<PersonalDocument> applyStatus(Specification<PersonalDocument> spec, String status, LocalDate today) {
         if (!StringUtils.hasText(status)) return spec;
         return switch (status.trim().toUpperCase()) {
@@ -189,7 +200,25 @@ public class PersonalDocumentService {
         if (account.getAccountType() != AccountType.INDIVIDUAL) throw new UnauthorizedException("My Documents is available only for Individual accounts");
         return account;
     }
-    private PersonalDocument find(Long accountId, Long id) { return repository.findByIdAndAccountId(id, accountId).orElseThrow(() -> new ResourceNotFoundException("Document not found")); }
+    public void share(Long accountId, Long userId, Long id, PersonalDocumentShareRequest request) {
+        requireIndividualAccount(accountId);
+        PersonalDocument document = findOwned(userId, id);
+        String recipient = request.getRecipient().trim();
+        User target = recipient.contains("@") ? userRepository.findByEmailIgnoreCase(recipient).orElse(null)
+                : userRepository.findByMobile(recipient).orElse(null);
+        if (target == null || !Boolean.TRUE.equals(target.getActive())) throw new ResourceNotFoundException("User not found");
+        if (target.getId().equals(userId)) throw new ValidationException("You already own this document");
+        if (shareRepository.existsByDocumentIdAndSharedWithUserId(id, target.getId()))
+            throw new ValidationException("Document is already shared with this user");
+        shareRepository.save(PersonalDocumentShare.builder().document(document).sharedByUserId(userId)
+                .sharedWithUserId(target.getId()).build());
+    }
+    private PersonalDocument findOwned(Long userId, Long id) { return repository.findByIdAndUploadedBy(id, userId).orElseThrow(() -> new ResourceNotFoundException("Document not found")); }
+    private PersonalDocument findAccessible(Long userId, Long id) {
+        return repository.findById(id).filter(d -> d.getUploadedBy().equals(userId)
+                || shareRepository.existsByDocumentIdAndSharedWithUserId(id, userId))
+                .orElseThrow(() -> new ResourceNotFoundException("Document not found"));
+    }
     private void validateMetadata(PersonalDocumentMetadataRequest r) {
         if (r == null || !StringUtils.hasText(r.getTitle()) || r.getCategory() == null) throw new ValidationException("Title and category are required");
         if (r.getIssueDate() != null && r.getExpiryDate() != null && r.getExpiryDate().isBefore(r.getIssueDate())) throw new ValidationException("Expiry date cannot be before issue date");
@@ -245,10 +274,12 @@ public class PersonalDocumentService {
     }
     private void ensureUnderRoot(Path path) { if (!path.startsWith(uploadRoot)) throw new ValidationException("Invalid upload path"); }
     private String clean(String value) { return StringUtils.hasText(value) ? value.trim() : null; }
-    private PersonalDocumentDto toDto(PersonalDocument d) {
+    private PersonalDocumentDto toDto(PersonalDocument d) { return toDto(d, d.getUploadedBy()); }
+    private PersonalDocumentDto toDto(PersonalDocument d, Long userId) {
         return PersonalDocumentDto.builder().id(d.getId()).title(d.getTitle()).category(d.getCategory()).issuer(d.getIssuer())
                 .documentNumber(d.getDocumentNumber()).issueDate(d.getIssueDate()).expiryDate(d.getExpiryDate())
                 .tags(d.getTags()).notes(d.getNotes()).originalFileName(d.getOriginalFileName()).contentType(d.getContentType())
-                .fileSize(d.getFileSize()).uploadedBy(d.getUploadedBy()).createdAt(d.getCreatedAt()).updatedAt(d.getUpdatedAt()).build();
+                .fileSize(d.getFileSize()).uploadedBy(d.getUploadedBy()).sharedWithMe(!d.getUploadedBy().equals(userId))
+                .createdAt(d.getCreatedAt()).updatedAt(d.getUpdatedAt()).build();
     }
 }

@@ -81,12 +81,9 @@ const PersonalDashboard = () => {
       />
       <ActionRow
         actions={[
-          ['Add Expense', '/expenses/new'],
-          ['View Expenses', '/expenses'],
-          ['Categories', '/categories'],
-          ['Budget', '/budget'],
-          ['Reports', '/personal/reports']
-          ,['Shared Expenses', '/personal/shared-expenses']
+          ['Reports', '/personal/reports'],
+          ['Shared Expenses', '/personal/shared-expenses'],
+          ['My Documents', '/personal/documents']
         ]}
       />
       {loading && <p className="muted">Loading dashboard...</p>}

@@ -12,6 +12,7 @@ export const ExpenseList = () => {
   const [expenses, setExpenses] = useState([])
   const [categories, setCategories] = useState([])
   const [loading, setLoading] = useState(true)
+  const [filtersOpen, setFiltersOpen] = useState(false)
   const [importOpen, setImportOpen] = useState(false)
   const [importing, setImporting] = useState(false)
   const [preview, setPreview] = useState(null)
@@ -159,7 +160,14 @@ export const ExpenseList = () => {
         <Link className="button-link" to="/expenses/new">Add Expense</Link>
       </div>}
     >
-      <section className="toolbar-panel">
+      {currentAccount?.accountType === 'INDIVIDUAL' && (
+        <section className="personal-expense-mobile-toolbar">
+          <div><span>Filtered total</span><strong>{formatCurrency(total)}</strong></div>
+          <button onClick={() => setFiltersOpen(true)}>Filters</button>
+        </section>
+      )}
+
+      <section className={`toolbar-panel ${currentAccount?.accountType === 'INDIVIDUAL' ? 'personal-expense-desktop-filters' : ''}`}>
         <input placeholder="Search category, vendor, description" value={filters.search} onChange={(event) => setFilters({ ...filters, search: event.target.value })} />
         <select value={filters.status} onChange={(event) => setFilters({ ...filters, status: event.target.value })}>
           <option value="">All statuses</option>
@@ -189,7 +197,77 @@ export const ExpenseList = () => {
         <strong>{formatCurrency(total)}</strong>
       </section>
 
-      <div className={`table-wrap ${currentAccount?.accountType === 'INDIVIDUAL' ? 'personal-expense-table-wrap' : ''}`}>
+      {filtersOpen && (
+        <div className="modal-backdrop personal-filter-backdrop" role="presentation" onMouseDown={() => setFiltersOpen(false)}>
+          <section className="expense-modal personal-filter-modal" role="dialog" aria-modal="true" aria-labelledby="personal-filter-title" onMouseDown={(event) => event.stopPropagation()}>
+            <div className="expense-modal-header">
+              <div><h2 id="personal-filter-title">Filter expenses</h2><p className="muted">Narrow down the records shown below.</p></div>
+              <button className="modal-close" aria-label="Close filters" onClick={() => setFiltersOpen(false)}>×</button>
+            </div>
+            <div className="personal-filter-fields">
+              <label>Search<input placeholder="Category, vendor or description" value={filters.search} onChange={(event) => setFilters({ ...filters, search: event.target.value })} /></label>
+              <label>Status<select value={filters.status} onChange={(event) => setFilters({ ...filters, status: event.target.value })}>
+                <option value="">All statuses</option><option value="DRAFT">Draft</option><option value="SUBMITTED">Submitted</option><option value="APPROVED">Approved</option><option value="REJECTED">Rejected</option><option value="PAID">Paid</option>
+              </select></label>
+              <label>Payment mode<select value={filters.paymentMode} onChange={(event) => setFilters({ ...filters, paymentMode: event.target.value })}>
+                <option value="">All payment modes</option><option value="CASH">Cash</option><option value="BANK">Bank</option><option value="UPI">UPI</option><option value="CARD">Card</option><option value="NEFT">NEFT</option><option value="CHEQUE">Cheque</option>
+              </select></label>
+              <label>Category<select value={filters.categoryId} onChange={(event) => setFilters({ ...filters, categoryId: event.target.value })}>
+                <option value="">All categories</option>{categories.map((category) => <option key={category.id} value={category.id}>{category.categoryName}</option>)}
+              </select></label>
+              <label>From date<input type="date" value={filters.startDate} onChange={(event) => setFilters({ ...filters, startDate: event.target.value })} /></label>
+              <label>To date<input type="date" value={filters.endDate} onChange={(event) => setFilters({ ...filters, endDate: event.target.value })} /></label>
+              <label>Minimum amount<input type="number" min="0" placeholder="0" value={filters.minAmount} onChange={(event) => setFilters({ ...filters, minAmount: event.target.value })} /></label>
+              <label>Maximum amount<input type="number" min="0" placeholder="No maximum" value={filters.maxAmount} onChange={(event) => setFilters({ ...filters, maxAmount: event.target.value })} /></label>
+            </div>
+            <div className="expense-modal-actions">
+              <button onClick={() => setFilters({ search: '', status: '', paymentMode: '', categoryId: '', startDate: '', endDate: '', minAmount: '', maxAmount: '' })}>Clear all</button>
+              <button className="primary" onClick={() => setFiltersOpen(false)}>Show {visibleExpenses.length} expenses</button>
+            </div>
+          </section>
+        </div>
+      )}
+
+      {currentAccount?.accountType === 'INDIVIDUAL' && (
+        <div className="personal-expense-mobile-list">
+          {visibleExpenses.map((expense) => (
+            <details className="personal-expense-row" key={expense.id}>
+              <summary>
+                <span className="personal-expense-row-main">
+                  <span className="personal-expense-row-heading">
+                    <strong>{expense.categoryName || 'Uncategorized'}</strong>
+                    <strong className="personal-expense-row-amount">{formatCurrency(expense.amount)}</strong>
+                  </span>
+                  <span className="personal-expense-row-description">{expense.description || 'No description'}</span>
+                  <span className="personal-expense-row-meta">{formatDate(expense.expenseDate)} · {expense.paymentMode || '-'}</span>
+                </span>
+                <span className="personal-expense-chevron" aria-hidden="true">⌄</span>
+              </summary>
+              <div className="personal-expense-details">
+                <dl>
+                  <div><dt>Date</dt><dd>{formatDate(expense.expenseDate)}</dd></div>
+                  <div><dt>Category</dt><dd>{expense.categoryName || '-'}</dd></div>
+                  <div><dt>Description</dt><dd>{expense.description || '-'}</dd></div>
+                  <div><dt>Type</dt><dd>{expense.expenseType || '-'}</dd></div>
+                  <div><dt>Vendor</dt><dd>{expense.vendorName || '-'}</dd></div>
+                  <div><dt>Payment</dt><dd>{expense.paymentMode || '-'}</dd></div>
+                  <div><dt>Status</dt><dd><span className={`status-pill ${String(expense.status).toLowerCase()}`}>{expense.status}</span></dd></div>
+                  <div><dt>Amount</dt><dd>{formatCurrency(expense.amount)}</dd></div>
+                </dl>
+                <div className="table-actions">
+                  <button onClick={() => handleEdit(expense)}>Edit</button>
+                  {expense.status === 'SUBMITTED' && <button onClick={() => handleApprove(expense.id)}>Approve</button>}
+                  {expense.status === 'SUBMITTED' && <button onClick={() => handleReject(expense.id)}>Reject</button>}
+                  <button className="danger" onClick={() => handleDelete(expense.id)}>Delete</button>
+                </div>
+              </div>
+            </details>
+          ))}
+          {!loading && visibleExpenses.length === 0 && <p className="empty-state">No expenses found.</p>}
+        </div>
+      )}
+
+      <div className={`table-wrap ${currentAccount?.accountType === 'INDIVIDUAL' ? 'personal-expense-desktop-table' : ''}`}>
         <table className={currentAccount?.accountType === 'INDIVIDUAL' ? 'personal-expense-table' : undefined}>
           <thead>
             <tr>
