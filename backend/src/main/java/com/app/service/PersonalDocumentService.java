@@ -274,6 +274,16 @@ public class PersonalDocumentService {
     }
     private void ensureUnderRoot(Path path) { if (!path.startsWith(uploadRoot)) throw new ValidationException("Invalid upload path"); }
     private String clean(String value) { return StringUtils.hasText(value) ? value.trim() : null; }
+    public boolean storageAvailable() {
+        if (s3Enabled) {
+            try {
+                s3Client.headBucket(HeadBucketRequest.builder().bucket(s3Bucket).build());
+                return true;
+            } catch (S3Exception ex) { return false; }
+        }
+        return Files.exists(uploadRoot) ? Files.isDirectory(uploadRoot) && Files.isReadable(uploadRoot)
+                : uploadRoot.getParent() != null && Files.isWritable(uploadRoot.getParent());
+    }
     private PersonalDocumentDto toDto(PersonalDocument d) { return toDto(d, d.getUploadedBy()); }
     private PersonalDocumentDto toDto(PersonalDocument d, Long userId) {
         return PersonalDocumentDto.builder().id(d.getId()).title(d.getTitle()).category(d.getCategory()).issuer(d.getIssuer())

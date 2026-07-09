@@ -9,9 +9,11 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface AccountRepository extends JpaRepository<Account, Long> {
+public interface AccountRepository extends JpaRepository<Account, Long>, org.springframework.data.jpa.repository.JpaSpecificationExecutor<Account> {
     List<Account> findByUserId(Long userId);
     List<Account> findByUserIdAndActive(Long userId, Boolean active);
     Optional<Account> findByIdAndUserId(Long accountId, Long userId);
     List<Account> findByAccountType(AccountType accountType);
+    long countByActive(Boolean active);
+    long countByAccountType(AccountType accountType);
 }

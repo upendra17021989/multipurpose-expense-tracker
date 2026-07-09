@@ -1813,3 +1813,59 @@ textarea:disabled {
   .document-mobile-details dt { color: #64748b; font-size: .72rem; font-weight: 700; text-transform: uppercase; }
   .document-mobile-details dd { margin: 0; overflow-wrap: anywhere; text-align: right; }
 }
+.system-admin-stat-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: .8rem; margin-bottom: 1rem; }
+.system-admin-stat-grid article { display: grid; gap: .25rem; padding: 1rem; border: 1px solid #d9e2ec; border-radius: 10px; background: #fff; }
+.system-admin-stat-grid span, .system-admin-stat-grid small { color: #64748b; }
+.system-admin-stat-grid strong { color: #17202a; font-size: 1.8rem; }
+.system-admin-account-bars { display: grid; gap: .85rem; margin-top: 1rem; }
+.system-admin-account-row { display: grid; grid-template-columns: 120px minmax(0, 1fr) 45px; align-items: center; gap: .75rem; }
+.system-admin-account-row > div { height: 10px; overflow: hidden; border-radius: 999px; background: #e5edf5; }
+.system-admin-account-row i { display: block; height: 100%; min-width: 3px; border-radius: inherit; background: #0f766e; }
+.system-admin-account-row strong { text-align: right; }
+.system-admin-privacy-note { margin-top: .75rem; font-size: .8rem; }
+.system-admin-tabs { display: flex; gap: .4rem; margin-bottom: 1rem; overflow-x: auto; }
+.system-admin-tabs a { padding: .55rem .8rem; border: 1px solid #d9e2ec; border-radius: 8px; color: #475569; background: #fff; text-decoration: none; white-space: nowrap; }
+.system-admin-tabs a.active { border-color: #0f766e; color: #0f766e; background: #f0fdfa; font-weight: 700; }
+.system-admin-filters { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: .6rem; margin-bottom: 1rem; }
+.system-admin-management-list { display: grid; gap: .65rem; }
+.system-admin-management-list article { padding: .85rem; border: 1px solid #d9e2ec; border-radius: 9px; background: #fff; }
+.system-admin-management-main { display: flex; align-items: flex-start; justify-content: space-between; gap: .75rem; }
+.system-admin-management-main h3, .system-admin-management-main p { margin: 0; }
+.system-admin-management-main p { margin-top: .2rem; color: #64748b; font-size: .84rem; }
+.system-admin-management-meta { display: flex; gap: .7rem; margin: .65rem 0; color: #64748b; font-size: .78rem; }
+.system-admin-management-meta strong { color: #075985; }
+.system-admin-audit-list { display: grid; gap: .65rem; }
+.system-admin-audit-list article { padding: .85rem; border: 1px solid #d9e2ec; border-radius: 9px; background: #fff; }
+.system-admin-audit-list dl { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .7rem; margin: .7rem 0 0; }
+.system-admin-audit-list dt { color: #64748b; font-size: .72rem; font-weight: 700; text-transform: uppercase; }
+.system-admin-audit-list dd { margin: .2rem 0 0; overflow-wrap: anywhere; }
+.operation-status { font-size: 1.25rem !important; }
+.operation-details dl { display: grid; grid-template-columns: repeat(2, 1fr); gap: .8rem; }
+.operation-details dt { color: #64748b; font-size: .75rem; text-transform: uppercase; }
+.operation-details dd { margin: .2rem 0 0; }
+.storage-usage { margin-top: .8rem; }
+.storage-usage > div { display: grid; grid-template-columns: minmax(0, 1fr) 120px 100px; gap: .7rem; padding: .65rem 0; border-bottom: 1px solid #e5edf5; }
+.storage-usage > div strong { text-align: right; }
+.storage-usage small { color: #64748b; }
+.system-settings-form { display: grid; gap: 1rem; max-width: 760px; }
+.system-settings-form label { display: grid; gap: .35rem; color: #475569; font-size: .82rem; font-weight: 700; }
+
+@media (max-width: 900px) {
+  .system-admin-stat-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 520px) {
+  .system-admin-filters { grid-template-columns: 1fr; }
+  .system-admin-management-main { align-items: flex-start; }
+  .system-admin-management-list .table-actions { display: grid; grid-template-columns: 1fr 1fr; }
+  .system-admin-audit-list dl { grid-template-columns: 1fr; }
+  .operation-details dl { grid-template-columns: 1fr; }
+  .storage-usage > div { grid-template-columns: minmax(0, 1fr) auto; }
+  .storage-usage > div small { grid-column: 1; }
+  .storage-usage > div strong { grid-column: 2; grid-row: 1 / 3; align-self: center; }
+  .system-admin-stat-grid { grid-template-columns: 1fr 1fr; gap: .5rem; }
+  .system-admin-stat-grid article { padding: .7rem; }
+  .system-admin-stat-grid strong { font-size: 1.4rem; }
+  .system-admin-stat-grid small { font-size: .72rem; }
+  .system-admin-account-row { grid-template-columns: 90px minmax(0, 1fr) 30px; gap: .5rem; font-size: .82rem; }
+}

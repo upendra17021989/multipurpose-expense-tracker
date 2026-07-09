@@ -1,6 +1,7 @@
 package com.app.security;
 
 import com.app.util.JwtTokenProvider;
+import com.app.repository.UserRepository;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -17,9 +18,11 @@ import java.io.IOException;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtTokenProvider tokenProvider;
+    private final UserRepository userRepository;
 
-    public JwtAuthenticationFilter(JwtTokenProvider tokenProvider) {
+    public JwtAuthenticationFilter(JwtTokenProvider tokenProvider, UserRepository userRepository) {
         this.tokenProvider = tokenProvider;
+        this.userRepository = userRepository;
     }
 
     @Override
@@ -32,7 +35,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 Long userId = tokenProvider.getUserIdFromToken(jwt);
                 Long accountId = tokenProvider.getAccountIdFromToken(jwt);
 
-                UserPrincipal userPrincipal = new UserPrincipal(userId, accountId);
+                var user = userRepository.findById(userId).filter(candidate -> Boolean.TRUE.equals(candidate.getActive())).orElse(null);
+                if (user == null) {
+                    filterChain.doFilter(request, response);
+                    return;
+                }
+                UserPrincipal userPrincipal = UserPrincipal.builder().userId(userId).accountId(accountId)
+                        .systemAdmin(Boolean.TRUE.equals(user.getSystemAdmin())).build();
                 JwtAuthenticationToken authentication = new JwtAuthenticationToken(userPrincipal, null, userPrincipal.getAuthorities());
                 authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 

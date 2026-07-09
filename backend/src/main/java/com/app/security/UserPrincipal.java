@@ -10,6 +10,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.ArrayList;
 
 @Data
 @NoArgsConstructor
@@ -19,10 +20,14 @@ public class UserPrincipal implements UserDetails {
 
     private Long userId;
     private Long accountId;
+    private boolean systemAdmin;
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER"));
+        Collection<GrantedAuthority> authorities = new ArrayList<>();
+        authorities.add(new SimpleGrantedAuthority("ROLE_USER"));
+        if (systemAdmin) authorities.add(new SimpleGrantedAuthority("ROLE_SYSTEM_ADMIN"));
+        return authorities;
     }
 
     @Override

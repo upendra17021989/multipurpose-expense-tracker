@@ -8,4 +8,6 @@ public interface PersonalDocumentShareRepository extends JpaRepository<PersonalD
     List<PersonalDocumentShare> findBySharedWithUserId(Long userId);
     Optional<PersonalDocumentShare> findByDocumentIdAndSharedWithUserId(Long documentId, Long userId);
     boolean existsByDocumentIdAndSharedWithUserId(Long documentId, Long userId);
+    @org.springframework.data.jpa.repository.Query("select count(distinct s.document.id) from PersonalDocumentShare s")
+    long countDistinctSharedDocuments();
 }

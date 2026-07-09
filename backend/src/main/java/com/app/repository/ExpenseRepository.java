@@ -20,6 +20,7 @@ public interface ExpenseRepository extends JpaRepository<Expense, Long> {
     List<Expense> findByAccountIdAndStatusAndSoftDeletedFalse(Long accountId, ExpenseStatus status);
     List<Expense> findByAccountIdAndFestivalEventIdAndSoftDeletedFalse(Long accountId, Long festivalEventId);
     Optional<Expense> findByAccountIdAndSourceReferenceAndSoftDeletedFalse(Long accountId, String sourceReference);
+    long countBySoftDeletedFalse();
     
     @Query("SELECT e FROM Expense e WHERE e.account.id = :accountId AND e.softDeleted = false AND e.expenseDate = :date")
     List<Expense> findTodaysExpenses(@Param("accountId") Long accountId, @Param("date") LocalDate date);

@@ -96,6 +96,11 @@ export const Navbar = () => {
             <Link to="/home" onClick={closeMenus}>
               Dashboard
             </Link>
+            {user?.systemAdmin && (
+              <Link to="/system-admin" onClick={closeMenus}>
+                System Admin
+              </Link>
+            )}
             {currentAccount?.accountType !== 'SPORTS' &&
               currentAccount?.accountType !== 'SOCIETY' && (
               <Link to="/expenses" onClick={closeMenus}>

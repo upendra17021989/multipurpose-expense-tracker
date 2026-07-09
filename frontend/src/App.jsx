@@ -53,6 +53,11 @@ import { SportsExpenses } from './pages/sports/SportsExpenses'
 import { SportsCollections } from './pages/sports/SportsCollections'
 import { SportsCollectionReceipts } from './pages/sports/SportsCollectionReceipts'
 import { SportsReports } from './pages/sports/SportsReports'
+import { SystemAdminDashboard } from './pages/system-admin/SystemAdminDashboard'
+import { SystemAdminManagement } from './pages/system-admin/SystemAdminManagement'
+import { SystemAdminAuditLogs } from './pages/system-admin/SystemAdminAuditLogs'
+import { SystemAdminOperations } from './pages/system-admin/SystemAdminOperations'
+import { SystemAdminSettings } from './pages/system-admin/SystemAdminSettings'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import { AppErrorBoundary } from './components/AppErrorBoundary'
 import { SessionActivityMonitor } from './components/SessionActivityMonitor'
@@ -504,6 +509,20 @@ function App() {
               </ProtectedRoute>
             }
           />
+          <Route
+            path="/system-admin"
+            element={
+              <ProtectedRoute requireSystemAdmin>
+                <SystemAdminDashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route path="/system-admin/users" element={<ProtectedRoute requireSystemAdmin><SystemAdminManagement mode="users" /></ProtectedRoute>} />
+          <Route path="/system-admin/accounts" element={<ProtectedRoute requireSystemAdmin><SystemAdminManagement mode="accounts" /></ProtectedRoute>} />
+          <Route path="/system-admin/audit-logs" element={<ProtectedRoute requireSystemAdmin><SystemAdminAuditLogs /></ProtectedRoute>} />
+          <Route path="/system-admin/health" element={<ProtectedRoute requireSystemAdmin><SystemAdminOperations mode="health" /></ProtectedRoute>} />
+          <Route path="/system-admin/storage" element={<ProtectedRoute requireSystemAdmin><SystemAdminOperations mode="storage" /></ProtectedRoute>} />
+          <Route path="/system-admin/settings" element={<ProtectedRoute requireSystemAdmin><SystemAdminSettings /></ProtectedRoute>} />
           <Route
             path="/sports/reports"
             element={

@@ -16,5 +16,6 @@ public class UserDto {
     private String mobile;
     private String email;
     private Boolean active;
+    private Boolean systemAdmin;
     private LocalDateTime createdAt;
 }

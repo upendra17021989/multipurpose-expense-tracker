@@ -237,6 +237,7 @@ public class AuthService {
                 .mobile(user.getMobile())
                 .email(user.getEmail())
                 .active(user.getActive())
+                .systemAdmin(Boolean.TRUE.equals(user.getSystemAdmin()))
                 .createdAt(user.getCreatedAt())
                 .build();
     }

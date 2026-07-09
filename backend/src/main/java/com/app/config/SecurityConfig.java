@@ -2,6 +2,7 @@ package com.app.config;
 
 import com.app.security.JwtAuthenticationFilter;
 import com.app.util.JwtTokenProvider;
+import com.app.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -25,12 +26,14 @@ import java.util.List;
 public class SecurityConfig {
 
     private final JwtTokenProvider tokenProvider;
+    private final UserRepository userRepository;
 
     @Value("${app.cors.allowed-origins}")
     private String allowedOrigins;
 
-    public SecurityConfig(JwtTokenProvider tokenProvider) {
+    public SecurityConfig(JwtTokenProvider tokenProvider, UserRepository userRepository) {
         this.tokenProvider = tokenProvider;
+        this.userRepository = userRepository;
     }
 
     @Bean
@@ -40,7 +43,7 @@ public class SecurityConfig {
 
     @Bean
     public JwtAuthenticationFilter jwtAuthenticationFilter() {
-        return new JwtAuthenticationFilter(tokenProvider);
+        return new JwtAuthenticationFilter(tokenProvider, userRepository);
     }
 
     @Bean
@@ -75,6 +78,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/health").permitAll()
                         .requestMatchers("/public/**").permitAll()
                         .requestMatchers("/api/public/**").permitAll()
+                        .requestMatchers("/system-admin/**", "/api/system-admin/**").hasRole("SYSTEM_ADMIN")
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class);

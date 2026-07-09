@@ -11,6 +11,20 @@ export const authAPI = {
   validateToken: () => axiosInstance.get('/auth/validate')
 }
 
+export const systemAdminAPI = {
+  getDashboard: () => axiosInstance.get('/system-admin/dashboard'),
+  getUsers: (params) => axiosInstance.get('/system-admin/users', { params }),
+  setUserStatus: (id, active) => axiosInstance.patch(`/system-admin/users/${id}/status`, { active }),
+  setSystemAdmin: (id, systemAdmin) => axiosInstance.patch(`/system-admin/users/${id}/system-admin`, { systemAdmin }),
+  getAccounts: (params) => axiosInstance.get('/system-admin/accounts', { params }),
+  setAccountStatus: (id, active) => axiosInstance.patch(`/system-admin/accounts/${id}/status`, { active }),
+  getAuditLogs: (params) => axiosInstance.get('/system-admin/audit-logs', { params }),
+  getHealth: () => axiosInstance.get('/system-admin/health'),
+  getStorage: () => axiosInstance.get('/system-admin/storage'),
+  getSettings: () => axiosInstance.get('/system-admin/settings'),
+  updateSettings: (data) => axiosInstance.put('/system-admin/settings', data)
+}
+
 export const expenseCategoryAPI = {
   getCategories: () => axiosInstance.get('/expenses/categories'),
   getCategoriesByType: (categoryType) => axiosInstance.get(`/expenses/categories/type/${categoryType}`),

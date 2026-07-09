@@ -5,13 +5,17 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
+import java.time.LocalDateTime;
 
 @Repository
-public interface UserRepository extends JpaRepository<User, Long> {
+public interface UserRepository extends JpaRepository<User, Long>, org.springframework.data.jpa.repository.JpaSpecificationExecutor<User> {
     Optional<User> findByMobile(String mobile);
     Optional<User> findByEmail(String email);
     Optional<User> findByEmailIgnoreCase(String email);
     boolean existsByMobileAndIdNot(String mobile, Long id);
     boolean existsByEmailIgnoreCaseAndIdNot(String email, Long id);
     Optional<User> findByMobileAndActive(String mobile, Boolean active);
+    long countByActive(Boolean active);
+    long countByCreatedAtGreaterThanEqual(LocalDateTime createdAt);
+    long countBySystemAdminTrueAndActiveTrue();
 }
