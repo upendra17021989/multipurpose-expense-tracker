@@ -11,6 +11,9 @@ export const FlatList = () => {
   const [flats, setFlats] = useState([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
+  const [importOpen, setImportOpen] = useState(false)
+  const [importing, setImporting] = useState(false)
+  const [preview, setPreview] = useState(null)
 
   const loadFlats = () => {
     setLoading(true)
@@ -48,6 +51,41 @@ export const FlatList = () => {
     }
   }
 
+  const handlePreview = async (event) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+    setImporting(true)
+    try {
+      const response = await societyFlatAPI.previewImport(file)
+      setPreview(response.data)
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Unable to read flat import CSV')
+    } finally {
+      setImporting(false)
+      event.target.value = ''
+    }
+  }
+
+  const confirmImport = async () => {
+    const rows = (preview?.rows || []).filter((row) => !row.duplicate && !row.errors?.length)
+    if (!rows.length) {
+      toast.error('No valid flat rows to import')
+      return
+    }
+    setImporting(true)
+    try {
+      const response = await societyFlatAPI.confirmImport(rows)
+      toast.success(`Imported ${response.data.created} flat(s); skipped ${response.data.skipped}`)
+      setPreview(null)
+      setImportOpen(false)
+      loadFlats()
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Flat import failed')
+    } finally {
+      setImporting(false)
+    }
+  }
+
   if (currentAccount?.accountType !== 'SOCIETY') {
     return (
       <Shell title="Flat Master" eyebrow="Society module">
@@ -60,7 +98,7 @@ export const FlatList = () => {
     <Shell
       title="Flat Master"
       eyebrow="Society module"
-      actions={<Link className="button-link" to="/society/flats/new">Add Flat</Link>}
+      actions={<div className="table-actions"><button type="button" onClick={() => setImportOpen(true)}>Import CSV</button><Link className="button-link" to="/society/flats/new">Add Flat</Link></div>}
     >
       <SummaryGrid items={[
         ['Total Flats', flats.length],
@@ -109,6 +147,64 @@ export const FlatList = () => {
         </table>
       </div>
       {loading && <p className="muted">Loading flats...</p>}
+
+      {importOpen && (
+        <div className="modal-backdrop" role="presentation" onMouseDown={() => !importing && setImportOpen(false)}>
+          <section className="expense-modal import-modal flat-import-modal" role="dialog" aria-modal="true" aria-labelledby="flat-import-title" onMouseDown={(event) => event.stopPropagation()}>
+            <div className="expense-modal-header">
+              <div>
+                <h2 id="flat-import-title">Import flat master</h2>
+                <p className="muted">Upload the CSV prepared from the member ledger. Required columns: blockName, flatNumber, ownerName.</p>
+              </div>
+              <button className="modal-close" aria-label="Close" onClick={() => setImportOpen(false)} disabled={importing}>×</button>
+            </div>
+            {!preview && (
+              <label className="import-dropzone">
+                <strong>{importing ? 'Reading CSV...' : 'Choose flat master CSV'}</strong>
+                <span>Use flat_master_import.csv or a CSV with mobile, email, residentType columns.</span>
+                <input type="file" accept=".csv,text/csv" onChange={handlePreview} disabled={importing} />
+              </label>
+            )}
+            {preview && (
+              <>
+                <div className="import-summary">
+                  <span><strong>{preview.totalRows}</strong> rows</span>
+                  <span><strong>{preview.readyRows}</strong> ready</span>
+                  <span><strong>{preview.duplicateRows}</strong> duplicates</span>
+                  <span><strong>{preview.warningRows}</strong> need review</span>
+                </div>
+                <div className="table-wrap import-table-wrap">
+                  <table>
+                    <thead>
+                      <tr><th>Row</th><th>Block</th><th>Flat</th><th>Owner</th><th>Resident</th><th>Review</th></tr>
+                    </thead>
+                    <tbody>
+                      {preview.rows.map((row) => (
+                        <tr key={row.rowNumber} className={row.duplicate || row.errors?.length ? 'import-row-disabled' : ''}>
+                          <td>{row.rowNumber}</td>
+                          <td>{row.blockName || '-'}</td>
+                          <td>{row.flatNumber || '-'}</td>
+                          <td>{row.ownerName || '-'}</td>
+                          <td>{row.residentType || 'OWNER'}</td>
+                          <td>
+                            {row.duplicate && <span className="status-pill rejected">Duplicate</span>}
+                            {[...(row.errors || []), ...(row.warnings || [])].map((message) => <small key={message}>{message}</small>)}
+                            {!row.duplicate && !row.errors?.length && !row.warnings?.length && <span className="status-pill paid">Ready</span>}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <div className="expense-modal-actions">
+                  <button onClick={() => setPreview(null)} disabled={importing}>Choose another file</button>
+                  <button className="primary" onClick={confirmImport} disabled={importing || !preview.readyRows}>{importing ? 'Importing...' : `Import ${preview.readyRows} flats`}</button>
+                </div>
+              </>
+            )}
+          </section>
+        </div>
+      )}
     </Shell>
   )
 }

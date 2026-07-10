@@ -12,4 +12,5 @@ public interface FlatRepository extends JpaRepository<Flat, Long> {
     List<Flat> findByAccountIdAndActiveTrue(Long accountId);
     Optional<Flat> findByAccountIdAndIdAndActiveTrue(Long accountId, Long flatId);
     List<Flat> findByAccountIdAndBlockNameAndActiveTrue(Long accountId, String blockName);
+    Optional<Flat> findByAccountIdAndBlockNameIgnoreCaseAndFlatNumberIgnoreCaseAndActiveTrue(Long accountId, String blockName, String flatNumber);
 }

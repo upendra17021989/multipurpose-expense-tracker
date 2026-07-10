@@ -104,7 +104,13 @@ export const societyFlatAPI = {
   getFlat: (flatId) => axiosInstance.get(`/society/flats/${flatId}`),
   createFlat: (data) => axiosInstance.post('/society/flats', data),
   updateFlat: (flatId, data) => axiosInstance.put(`/society/flats/${flatId}`),
-  deleteFlat: (flatId) => axiosInstance.delete(`/society/flats/${flatId}`)
+  deleteFlat: (flatId) => axiosInstance.delete(`/society/flats/${flatId}`),
+  previewImport: (file) => {
+    const formData = new FormData()
+    formData.append('file', file)
+    return axiosInstance.post('/society/flats/import/preview', formData, { headers: { 'Content-Type': 'multipart/form-data' } })
+  },
+  confirmImport: (rows) => axiosInstance.post('/society/flats/import', { rows })
 }
 
 export const societyAnnualCollectionAPI = {

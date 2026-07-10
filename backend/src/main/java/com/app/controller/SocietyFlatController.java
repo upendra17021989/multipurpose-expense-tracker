@@ -2,6 +2,7 @@ package com.app.controller;
 
 import com.app.dto.FlatCreateRequest;
 import com.app.dto.FlatDto;
+import com.app.dto.FlatImportDtos;
 import com.app.security.UserPrincipal;
 import com.app.service.FlatService;
 import jakarta.validation.Valid;
@@ -18,6 +19,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -58,6 +60,22 @@ public class SocietyFlatController {
         log.info("Creating flat for account: {}", userPrincipal.getAccountId());
         FlatDto created = flatService.createFlat(userPrincipal.getAccountId(), request);
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
+    }
+
+    @PostMapping("/import/preview")
+    public ResponseEntity<FlatImportDtos.Preview> previewImport(
+            @AuthenticationPrincipal UserPrincipal userPrincipal,
+            @RequestParam("file") MultipartFile file) {
+        log.info("Previewing flat import for account: {}", userPrincipal.getAccountId());
+        return ResponseEntity.ok(flatService.previewImport(userPrincipal.getAccountId(), file));
+    }
+
+    @PostMapping("/import")
+    public ResponseEntity<FlatImportDtos.Result> importFlats(
+            @AuthenticationPrincipal UserPrincipal userPrincipal,
+            @RequestBody FlatImportDtos.ConfirmRequest request) {
+        log.info("Importing flats for account: {}", userPrincipal.getAccountId());
+        return ResponseEntity.ok(flatService.confirmImport(userPrincipal.getAccountId(), request));
     }
 
     @PutMapping("/{flatId}")
