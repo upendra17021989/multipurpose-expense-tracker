@@ -5,10 +5,12 @@ import { expenseAPI, expenseCategoryAPI } from '../api/endpoints'
 import { Shell } from './DashboardRouter'
 import { formatCurrency, formatDate } from '../utils/format'
 import { useAuthStore } from '../store/authStore'
+import { useI18n } from '../i18n'
 
 export const ExpenseList = () => {
   const navigate = useNavigate()
   const currentAccount = useAuthStore((state) => state.currentAccount)
+  const { tx } = useI18n()
   const [expenses, setExpenses] = useState([])
   const [categories, setCategories] = useState([])
   const [loading, setLoading] = useState(true)
@@ -183,53 +185,53 @@ export const ExpenseList = () => {
       title="Expenses"
       eyebrow="Common module"
       actions={<div className="table-actions">
-        {currentAccount?.accountType === 'SOCIETY' && <button onClick={() => setImportOpen(true)}>Import Excel</button>}
-        <Link className="button-link" to="/expenses/new">Add Expense</Link>
+        {currentAccount?.accountType === 'SOCIETY' && <button onClick={() => setImportOpen(true)}>{tx('Import Excel')}</button>}
+        <Link className="button-link" to="/expenses/new">{tx('Add Expense')}</Link>
       </div>}
     >
       {currentAccount?.accountType === 'INDIVIDUAL' && (
         <section className="personal-expense-mobile-toolbar">
           <div><span>{visibleExpenses.length} records · {activeFilterCount} filters</span><strong>{formatCurrency(total)}</strong></div>
-          <button onClick={() => setFiltersOpen(true)}>Filters</button>
+          <button onClick={() => setFiltersOpen(true)}>{tx('Filters')}</button>
         </section>
       )}
 
       <section className="expense-list-summary">
-        <article><span>Filtered total</span><strong>{formatCurrency(total)}</strong><small>{visibleExpenses.length} record{visibleExpenses.length === 1 ? '' : 's'}</small></article>
-        <article><span>This month</span><strong>{formatCurrency(monthTotal)}</strong><small>{new Date().toLocaleString('en-IN', { month: 'short', year: 'numeric' })}</small></article>
-        <article><span>Top category</span><strong>{topCategory}</strong><small>Within current filters</small></article>
-        <article><span>Active filters</span><strong>{activeFilterCount}</strong><small>{activeFilterCount ? 'Filters applied' : 'Showing all records'}</small></article>
+        <article><span>{tx('Filtered total')}</span><strong>{formatCurrency(total)}</strong><small>{visibleExpenses.length} {tx(visibleExpenses.length === 1 ? 'record' : 'records')}</small></article>
+        <article><span>{tx('This month')}</span><strong>{formatCurrency(monthTotal)}</strong><small>{new Date().toLocaleString('en-IN', { month: 'short', year: 'numeric' })}</small></article>
+        <article><span>{tx('Top category')}</span><strong>{topCategory}</strong><small>{tx('Within current filters')}</small></article>
+        <article><span>{tx('Active filters')}</span><strong>{activeFilterCount}</strong><small>{activeFilterCount ? tx('Filters applied') : tx('Showing all records')}</small></article>
       </section>
 
       <section className={`toolbar-panel ${currentAccount?.accountType === 'INDIVIDUAL' ? 'personal-expense-desktop-filters' : ''}`}>
-        <input placeholder="Search category, vendor, description" value={filters.search} onChange={(event) => setFilters({ ...filters, search: event.target.value })} />
+        <input placeholder={tx('Search category, vendor, description')} value={filters.search} onChange={(event) => setFilters({ ...filters, search: event.target.value })} />
         <select value={filters.status} onChange={(event) => setFilters({ ...filters, status: event.target.value })}>
-          <option value="">All statuses</option>
-          <option value="DRAFT">Draft</option>
-          <option value="SUBMITTED">Submitted</option>
-          <option value="APPROVED">Approved</option>
-          <option value="REJECTED">Rejected</option>
-          <option value="PAID">Paid</option>
+          <option value="">{tx('All statuses')}</option>
+          <option value="DRAFT">{tx('Draft')}</option>
+          <option value="SUBMITTED">{tx('Submitted')}</option>
+          <option value="APPROVED">{tx('Approved')}</option>
+          <option value="REJECTED">{tx('Rejected')}</option>
+          <option value="PAID">{tx('Paid')}</option>
         </select>
         <select value={filters.paymentMode} onChange={(event) => setFilters({ ...filters, paymentMode: event.target.value })}>
-          <option value="">All payment modes</option>
-          <option value="CASH">Cash</option>
-          <option value="BANK">Bank</option>
+          <option value="">{tx('All payment modes')}</option>
+          <option value="CASH">{tx('Cash')}</option>
+          <option value="BANK">{tx('Bank')}</option>
           <option value="UPI">UPI</option>
-          <option value="CARD">Card</option>
+          <option value="CARD">{tx('Card')}</option>
           <option value="NEFT">NEFT</option>
-          <option value="CHEQUE">Cheque</option>
+          <option value="CHEQUE">{tx('Cheque')}</option>
         </select>
         <select value={filters.categoryId} onChange={(event) => setFilters({ ...filters, categoryId: event.target.value })}>
-          <option value="">All categories</option>
+          <option value="">{tx('All categories')}</option>
           {categories.map((category) => <option key={category.id} value={category.id}>{category.categoryName}</option>)}
         </select>
         <input type="date" value={filters.startDate} onChange={(event) => setFilters({ ...filters, startDate: event.target.value })} />
         <input type="date" value={filters.endDate} onChange={(event) => setFilters({ ...filters, endDate: event.target.value })} />
-        <input type="number" min="0" placeholder="Min amount" value={filters.minAmount} onChange={(event) => setFilters({ ...filters, minAmount: event.target.value })} />
-        <input type="number" min="0" placeholder="Max amount" value={filters.maxAmount} onChange={(event) => setFilters({ ...filters, maxAmount: event.target.value })} />
+        <input type="number" min="0" placeholder={tx('Min amount')} value={filters.minAmount} onChange={(event) => setFilters({ ...filters, minAmount: event.target.value })} />
+        <input type="number" min="0" placeholder={tx('Max amount')} value={filters.maxAmount} onChange={(event) => setFilters({ ...filters, maxAmount: event.target.value })} />
         <strong>{formatCurrency(total)}</strong>
-        <button type="button" disabled={!activeFilterCount} onClick={clearFilters}>Clear</button>
+        <button type="button" disabled={!activeFilterCount} onClick={clearFilters}>{tx('Clear')}</button>
       </section>
 
       {filtersOpen && (
@@ -313,7 +315,7 @@ export const ExpenseList = () => {
               <SortableTh label="Payment" sortKey="paymentMode" sort={sort} onSort={toggleSort} />
               <SortableTh label="Status" sortKey="status" sort={sort} onSort={toggleSort} />
               <SortableTh label="Amount" sortKey="amount" sort={sort} onSort={toggleSort} className="numeric" />
-              <th>Actions</th>
+              <th>{tx('Actions')}</th>
             </tr>
           </thead>
           <tbody>
@@ -327,29 +329,29 @@ export const ExpenseList = () => {
                 <td data-label="Status"><span className={`status-pill ${String(expense.status).toLowerCase()}`}>{expense.status}</span></td>
                 <td data-label="Amount" className="numeric">{formatCurrency(expense.amount)}</td>
                 <td data-label="Actions" className="table-actions">
-                  <button onClick={() => handleEdit(expense)}>Edit</button>
-                  {expense.status === 'SUBMITTED' && <button onClick={() => handleApprove(expense.id)}>Approve</button>}
-                  {expense.status === 'SUBMITTED' && <button onClick={() => handleReject(expense.id)}>Reject</button>}
-                  <button className="danger" onClick={() => handleDelete(expense.id)}>Delete</button>
+                  <button onClick={() => handleEdit(expense)}>{tx('Edit')}</button>
+                  {expense.status === 'SUBMITTED' && <button onClick={() => handleApprove(expense.id)}>{tx('Approve')}</button>}
+                  {expense.status === 'SUBMITTED' && <button onClick={() => handleReject(expense.id)}>{tx('Reject')}</button>}
+                  <button className="danger" onClick={() => handleDelete(expense.id)}>{tx('Delete')}</button>
                 </td>
               </tr>
             ))}
             {!loading && visibleExpenses.length === 0 && (
-              <tr><td colSpan="8" className="empty-state">No expenses found.</td></tr>
+              <tr><td colSpan="8" className="empty-state">{tx('No expenses found.')}</td></tr>
             )}
           </tbody>
         </table>
       </div>
       {visibleExpenses.length > pageSize && (
         <nav className="table-pagination" aria-label="Expense pages">
-          <button type="button" disabled={currentPage === 1} onClick={() => setPage(1)}>First</button>
-          <button type="button" disabled={currentPage === 1} onClick={() => setPage((value) => Math.max(1, value - 1))}>Previous</button>
-          <span>Page {currentPage} of {pageCount}</span>
-          <button type="button" disabled={currentPage === pageCount} onClick={() => setPage((value) => Math.min(pageCount, value + 1))}>Next</button>
-          <button type="button" disabled={currentPage === pageCount} onClick={() => setPage(pageCount)}>Last</button>
+          <button type="button" disabled={currentPage === 1} onClick={() => setPage(1)}>{tx('First')}</button>
+          <button type="button" disabled={currentPage === 1} onClick={() => setPage((value) => Math.max(1, value - 1))}>{tx('Previous')}</button>
+          <span>{tx('Page')} {currentPage} {tx('of')} {pageCount}</span>
+          <button type="button" disabled={currentPage === pageCount} onClick={() => setPage((value) => Math.min(pageCount, value + 1))}>{tx('Next')}</button>
+          <button type="button" disabled={currentPage === pageCount} onClick={() => setPage(pageCount)}>{tx('Last')}</button>
         </nav>
       )}
-      {loading && <p className="muted">Loading expenses...</p>}
+      {loading && <p className="muted">{tx('Loading expenses...')}</p>}
 
       {importOpen && (
         <div className="modal-backdrop" role="presentation" onMouseDown={() => !importing && setImportOpen(false)}>
@@ -415,12 +417,16 @@ const sortRows = (rows, sort, accessors) => [...rows].sort((a, b) => {
   return comparison * direction || Number(b.id || 0) - Number(a.id || 0)
 })
 
-const SortableTh = ({ label, sortKey, sort, onSort, className }) => (
-  <th className={className}>
-    <button type="button" className="sortable-header" onClick={() => onSort(sortKey)}>
-      <span>{label}</span>
-      <span aria-hidden="true">{sort.key === sortKey ? (sort.direction === 'asc' ? 'Asc' : 'Desc') : 'Sort'}</span>
-    </button>
-  </th>
-)
+const SortableTh = ({ label, sortKey, sort, onSort, className }) => {
+  const { tx } = useI18n()
+
+  return (
+    <th className={className}>
+      <button type="button" className="sortable-header" onClick={() => onSort(sortKey)}>
+        <span>{tx(label)}</span>
+        <span aria-hidden="true">{tx(sort.key === sortKey ? (sort.direction === 'asc' ? 'Asc' : 'Desc') : 'Sort')}</span>
+      </button>
+    </th>
+  )
+}
 

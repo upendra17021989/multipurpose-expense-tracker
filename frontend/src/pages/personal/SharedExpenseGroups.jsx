@@ -2,10 +2,12 @@ import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { toast } from 'react-toastify'
 import { sharedExpenseAPI } from '../../api/endpoints'
+import { useI18n } from '../../i18n'
 import { useAuthStore } from '../../store/authStore'
 import { Shell } from '../DashboardRouter'
 
 export const SharedExpenseGroups = () => {
+  const { tx } = useI18n()
   const { currentAccount } = useAuthStore()
   const [groups, setGroups] = useState([])
   const [invitations, setInvitations] = useState([])
@@ -93,33 +95,33 @@ export const SharedExpenseGroups = () => {
     <Shell title="Shared Expenses" eyebrow="Personal module">
       <section className="shared-groups-hero">
         <div>
-          <span>Split bills without losing the thread</span>
-          <h2>Groups, friends, invitations, and archives in one place.</h2>
-          <p>Create a group for trips, rent, household costs, events, or recurring shared spending.</p>
+          <span>{tx('Split bills without losing the thread')}</span>
+          <h2>{tx('Groups, friends, invitations, and archives in one place.')}</h2>
+          <p>{tx('Create a group for trips, rent, household costs, events, or recurring shared spending.')}</p>
         </div>
         <form className="shared-groups-quick-create" onSubmit={create}>
-          <label htmlFor="quick-group-name">New group</label>
+          <label htmlFor="quick-group-name">{tx('New group')}</label>
           <div>
             <input
               id="quick-group-name"
-              placeholder="Trip, Home, Friends..."
+              placeholder={tx('Trip, Home, Friends...')}
               value={name}
               onChange={(e) => setName(e.target.value)}
               maxLength="150"
               required
             />
             <button className="primary" disabled={action !== null}>
-              {action === 'create' ? 'Creating...' : 'Create'}
+              {action === 'create' ? tx('Creating...') : tx('Create')}
             </button>
           </div>
         </form>
       </section>
 
       <section className="shared-groups-stats" aria-label="Shared expenses overview">
-        <article><span>Active groups</span><strong>{activeGroups.length}</strong></article>
-        <article><span>People involved</span><strong>{memberCount}</strong></article>
-        <article><span>Invitations</span><strong>{invitations.length}</strong></article>
-        <article><span>Archived</span><strong>{archivedGroups.length}</strong></article>
+        <article><span>{tx('Active groups')}</span><strong>{activeGroups.length}</strong></article>
+        <article><span>{tx('People involved')}</span><strong>{memberCount}</strong></article>
+        <article><span>{tx('Invitations')}</span><strong>{invitations.length}</strong></article>
+        <article><span>{tx('Archived')}</span><strong>{archivedGroups.length}</strong></article>
       </section>
 
       <nav
@@ -131,22 +133,22 @@ export const SharedExpenseGroups = () => {
           type="button"
           onClick={() => setActiveView('groups')}
         >
-          Groups
+          {tx('Groups')}
         </button>
         <button
           className={activeView === 'create' ? 'active' : ''}
           type="button"
           onClick={() => setActiveView('create')}
         >
-          Create Group
+          {tx('Create Group')}
         </button>
-        <Link to="/personal/friends">Friends</Link>
+        <Link to="/personal/friends">{tx('Friends')}</Link>
         <button
           className={activeView === 'invitations' ? 'active' : ''}
           type="button"
           onClick={() => setActiveView('invitations')}
         >
-          Invitations
+          {tx('Invitations')}
           {!!invitations.length && <span>{invitations.length}</span>}
         </button>
         <button
@@ -154,7 +156,7 @@ export const SharedExpenseGroups = () => {
           type="button"
           onClick={() => setActiveView('archived')}
         >
-          Archived
+          {tx('Archived')}
           {!!archivedGroups.length && <span>{archivedGroups.length}</span>}
         </button>
       </nav>
@@ -162,8 +164,8 @@ export const SharedExpenseGroups = () => {
         <section className="report-panel shared-invitation-panel">
           <div className="groups-panel-header">
             <div>
-              <h2>Invitations</h2>
-              <p>Join groups shared with your registered account.</p>
+              <h2>{tx('Invitations')}</h2>
+              <p>{tx('Join groups shared with your registered account.')}</p>
             </div>
             <span className="group-count">{invitations.length}</span>
           </div>
@@ -172,7 +174,7 @@ export const SharedExpenseGroups = () => {
               <span aria-hidden="true">{item.groupName?.charAt(0)?.toUpperCase() || 'G'}</span>
               <div>
                 <strong>{item.groupName}</strong>
-                <small>{item.invitedBy} invited you</small>
+                <small>{item.invitedBy} {tx('invited you')}</small>
               </div>
               <div className="table-actions">
                 <button
@@ -180,33 +182,33 @@ export const SharedExpenseGroups = () => {
                   disabled={action !== null}
                   onClick={() => respond(item.id, true)}
                 >
-                  {action === `accept-${item.id}` ? 'Accepting...' : 'Accept'}
+                  {action === `accept-${item.id}` ? tx('Accepting...') : tx('Accept')}
                 </button>
                 <button disabled={action !== null} onClick={() => respond(item.id, false)}>
-                  {action === `decline-${item.id}` ? 'Declining...' : 'Decline'}
+                  {action === `decline-${item.id}` ? tx('Declining...') : tx('Decline')}
                 </button>
               </div>
             </div>
           ))}
           {!invitations.length && (
-            <p className="empty-state">No pending invitations.</p>
+            <p className="empty-state">{tx('No pending invitations.')}</p>
           )}
         </section>
       )}
       {activeView === 'create' && (
         <section className="form-panel shared-create-panel">
-          <h2>Create group</h2>
-          <p className="muted">Use this for travel plans, flatmates, event collections, subscriptions, or any shared running balance.</p>
+          <h2>{tx('Create group')}</h2>
+          <p className="muted">{tx('Use this for travel plans, flatmates, event collections, subscriptions, or any shared running balance.')}</p>
           <form className="inline-form" onSubmit={create}>
             <input
-              placeholder="Trip, Home, Friends..."
+              placeholder={tx('Trip, Home, Friends...')}
               value={name}
               onChange={(e) => setName(e.target.value)}
               maxLength="150"
               required
             />
             <button className="primary" disabled={action !== null}>
-              {action === 'create' ? 'Creating...' : 'Create'}
+              {action === 'create' ? tx('Creating...') : tx('Create')}
             </button>
           </form>
         </section>
@@ -215,8 +217,8 @@ export const SharedExpenseGroups = () => {
         <section className="report-panel groups-panel">
           <div className="groups-panel-header">
             <div>
-              <h2>Your groups</h2>
-              <p>Open a group to manage members, expenses, and settlements.</p>
+              <h2>{tx('Your groups')}</h2>
+              <p>{tx('Open a group to manage members, expenses, and settlements.')}</p>
             </div>
             <span className="group-count">{activeGroups.length}</span>
           </div>
@@ -233,9 +235,9 @@ export const SharedExpenseGroups = () => {
                 <span className="group-card-copy">
                   <strong>{g.name}</strong>
                   <small>
-                    {g.members.length} member{g.members.length === 1 ? '' : 's'}
+                    {g.members.length} {tx(g.members.length === 1 ? 'member' : 'members')}
                   </small>
-                  <em>Open balances, expenses, settlements</em>
+                  <em>{tx('Open balances, expenses, settlements')}</em>
                 </span>
                 <span className="group-card-arrow" aria-hidden="true">
                   &gt;
@@ -246,8 +248,8 @@ export const SharedExpenseGroups = () => {
           {!loading && !activeGroups.length && (
             <div className="groups-empty">
               <span aria-hidden="true">+</span>
-              <strong>No active groups</strong>
-              <p>Create a new group above or restore one below.</p>
+              <strong>{tx('No active groups')}</strong>
+              <p>{tx('Create a new group above or restore one below.')}</p>
             </div>
           )}
           {loading && (
@@ -263,8 +265,8 @@ export const SharedExpenseGroups = () => {
         <section className="report-panel archived-groups-panel">
           <div className="groups-panel-header">
             <div>
-              <h2>Archived groups</h2>
-              <p>Restore a group to make it active again.</p>
+              <h2>{tx('Archived groups')}</h2>
+              <p>{tx('Restore a group to make it active again.')}</p>
             </div>
             <span className="group-count muted-count">
               {archivedGroups.length}
@@ -276,13 +278,12 @@ export const SharedExpenseGroups = () => {
                 <div>
                   <strong>{group.name}</strong>
                   <small>
-                    {group.members.length} member
-                    {group.members.length === 1 ? '' : 's'}
+                    {group.members.length} {tx(group.members.length === 1 ? 'member' : 'members')}
                   </small>
                 </div>
                 <div className="archived-group-actions">
                   <button type="button" onClick={() => restore(group)}>
-                    Restore
+                    {tx('Restore')}
                   </button>
                   <button
                     type="button"
@@ -298,7 +299,7 @@ export const SharedExpenseGroups = () => {
                       }
                     }}
                   >
-                    Delete
+                    {tx('Delete')}
                   </button>
                 </div>
               </div>
@@ -306,7 +307,7 @@ export const SharedExpenseGroups = () => {
 
           </div>
           {!archivedGroups.length && (
-            <p className="empty-state">No archived groups.</p>
+            <p className="empty-state">{tx('No archived groups.')}</p>
           )}
         </section>
       )}

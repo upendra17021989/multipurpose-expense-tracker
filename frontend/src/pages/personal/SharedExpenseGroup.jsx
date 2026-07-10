@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom'
 import { toast } from 'react-toastify'
 import { sharedExpenseAPI } from '../../api/endpoints'
 import { formatCurrency, formatDate } from '../../utils/format'
+import { useI18n } from '../../i18n'
 import { Shell } from '../DashboardRouter'
 const today = new Date().toISOString().slice(0, 10)
 const sharedExpenseCategories = [
@@ -25,6 +26,7 @@ const sharedExpenseCategories = [
   'Miscellaneous'
 ]
 export const SharedExpenseGroup = () => {
+  const { tx } = useI18n()
   const [activeSection, setActiveSection] = useState('balances')
   const { groupId } = useParams()
   const [group, setGroup] = useState(null)
@@ -278,19 +280,15 @@ export const SharedExpenseGroup = () => {
     if (!group) return
     const page = document.querySelector('.page-shell')
     if (!page) return
-    const heading = (label) =>
-      [...page.querySelectorAll('h2')].find(
-        (node) => node.textContent.trim() === label
-      )
     const sections = {
       balances: page.querySelector('.shared-balance-board'),
-      members: heading('Members')?.closest('.two-column-grid'),
-      expense: heading('Add shared expense')?.closest('section'),
-      history: heading('Expense history')?.closest('section'),
-      activity: heading('Activity')?.closest('section'),
-      archived: heading('Archive group')?.closest('section')
+      members: page.querySelector('[data-shared-section="members"]'),
+      expense: page.querySelector('[data-shared-section="expense"]'),
+      history: page.querySelector('[data-shared-section="history"]'),
+      activity: page.querySelector('[data-shared-section="activity"]'),
+      archived: page.querySelector('[data-shared-section="archived"]')
     }
-    const invite = heading('Invite registered user')?.closest('section')
+    const invite = page.querySelector('[data-shared-section="invite"]')
     Object.values(sections).forEach((node) =>
       node?.classList.add('shared-tab-hidden')
     )
@@ -352,21 +350,21 @@ export const SharedExpenseGroup = () => {
       actions={
         <div className="shared-mobile-actions">
           <Link className="button-link" to="/personal/shared-expenses">
-            All groups
+            {tx('All groups')}
           </Link>
         </div>
       }
     >
       <section className="shared-group-hero">
         <div>
-          <span>{group.active ? 'Active shared group' : 'Archived shared group'}</span>
-          <h2>{formatCurrency(totalSpent)} tracked across {group.expenses?.length || 0} expenses</h2>
-          <p>{recentActivity ? recentActivity.message : 'Add the first expense or invite members to start the shared ledger.'}</p>
+          <span>{tx(group.active ? 'Active shared group' : 'Archived shared group')}</span>
+          <h2>{formatCurrency(totalSpent)} {tx('tracked across')} {group.expenses?.length || 0} {tx('expenses')}</h2>
+          <p>{recentActivity ? recentActivity.message : tx('Add the first expense or invite members to start the shared ledger.')}</p>
         </div>
         <div className="shared-group-pulse">
-          <article><span>Members</span><strong>{active.length}</strong></article>
-          <article><span>Unsettled</span><strong>{unsettledMembers}</strong></article>
-          <article><span>Settled</span><strong>{settledMembers}</strong></article>
+          <article><span>{tx('Members')}</span><strong>{active.length}</strong></article>
+          <article><span>{tx('Unsettled')}</span><strong>{unsettledMembers}</strong></article>
+          <article><span>{tx('Settled')}</span><strong>{settledMembers}</strong></article>
         </div>
       </section>
       <nav className="shared-expense-submenu" aria-label="Group navigation">
@@ -375,51 +373,51 @@ export const SharedExpenseGroup = () => {
           type="button"
           onClick={() => setActiveSection('balances')}
         >
-          Balances
+          {tx('Balances')}
         </button>
         <button
           className={activeSection === 'expense' ? 'active' : ''}
           type="button"
           onClick={() => setActiveSection('expense')}
         >
-          Add expense
+          {tx('Add expense')}
         </button>
         <button
           className={activeSection === 'members' ? 'active' : ''}
           type="button"
           onClick={() => setActiveSection('members')}
         >
-          Members
+          {tx('Members')}
         </button>
         <button
           className={activeSection === 'history' ? 'active' : ''}
           type="button"
           onClick={() => setActiveSection('history')}
         >
-          History
+          {tx('History')}
         </button>
         <button
           className={activeSection === 'activity' ? 'active' : ''}
           type="button"
           onClick={() => setActiveSection('activity')}
         >
-          Activity
+          {tx('Activity')}
         </button>
         <button
           className={activeSection === 'archived' ? 'active' : ''}
           type="button"
           onClick={() => setActiveSection('archived')}
         >
-          Archive
+          {tx('Archive')}
         </button>
         <details className="export-menu shared-submenu-export">
-          <summary>Export</summary>
+          <summary>{tx('Export')}</summary>
           <div className="export-menu-panel">
             <button type="button" disabled={exporting} onClick={exportGroup}>
-              {exporting ? 'Exporting...' : 'Export Excel'}
+              {exporting ? tx('Exporting...') : tx('Export Excel')}
             </button>
             <button type="button" disabled={exportingPdf} onClick={exportGroupPdf}>
-              {exportingPdf ? 'Exporting...' : 'Export PDF'}
+              {exportingPdf ? tx('Exporting...') : tx('Export PDF')}
             </button>
           </div>
         </details>
@@ -432,39 +430,39 @@ export const SharedExpenseGroup = () => {
               <span>{x.memberName?.charAt(0)?.toUpperCase() || 'M'}</span>
               <div>
                 <strong>{x.memberName}</strong>
-                <small>{balance > 0 ? 'Gets back' : balance < 0 ? 'Needs to pay' : 'All settled'}</small>
+                <small>{tx(balance > 0 ? 'Gets back' : balance < 0 ? 'Needs to pay' : 'All settled')}</small>
               </div>
-              <b>{balance > 0 ? formatCurrency(balance) : balance < 0 ? formatCurrency(-balance) : 'Settled'}</b>
+              <b>{balance > 0 ? formatCurrency(balance) : balance < 0 ? formatCurrency(-balance) : tx('Settled')}</b>
             </article>
           )
         })}
-        {!group.balances?.length && <p className="empty-state">Add members to see balances here.</p>}
+        {!group.balances?.length && <p className="empty-state">{tx('Add members to see balances here.')}</p>}
       </section>
-      <section className="form-panel">
-        <h2>Invite registered user</h2>
+      <section className="form-panel" data-shared-section="invite">
+        <h2>{tx('Invite registered user')}</h2>
         <form className="inline-form" onSubmit={inviteUser}>
           <input
             type="email"
-            placeholder="Email"
+            placeholder={tx('Email')}
             value={invite.email}
             onChange={(e) => setInvite({ email: e.target.value, mobile: '' })}
           />
           <input
-            placeholder="Or mobile"
+            placeholder={tx('Or mobile')}
             value={invite.mobile}
             onChange={(e) => setInvite({ mobile: e.target.value, email: '' })}
           />
           <button className="primary" disabled={submitting !== null}>
-            {submitting === 'invite' ? 'Sending...' : 'Send invitation'}
+            {submitting === 'invite' ? tx('Sending...') : tx('Send invitation')}
           </button>
         </form>
       </section>
-      <div className="two-column-grid">
+      <div className="two-column-grid" data-shared-section="members">
         <section className="form-panel">
-          <h2>Members</h2>
+          <h2>{tx('Members')}</h2>
           <form onSubmit={addMember}>
             <input
-              placeholder="Name"
+              placeholder={tx('Name')}
               required
               value={member.memberName}
               onChange={(e) =>
@@ -472,18 +470,18 @@ export const SharedExpenseGroup = () => {
               }
             />
             <input
-              placeholder="Email (optional)"
+              placeholder={tx('Email (optional)')}
               type="email"
               value={member.email}
               onChange={(e) => setMember({ ...member, email: e.target.value })}
             />
             <input
-              placeholder="Mobile (optional)"
+              placeholder={tx('Mobile (optional)')}
               value={member.mobile}
               onChange={(e) => setMember({ ...member, mobile: e.target.value })}
             />
             <button className="primary" disabled={submitting !== null}>
-              {submitting === 'member' ? 'Adding...' : 'Add member'}
+              {submitting === 'member' ? tx('Adding...') : tx('Add member')}
             </button>
           </form>
           <div>
@@ -496,7 +494,7 @@ export const SharedExpenseGroup = () => {
                     className="danger"
                     onClick={() => deactivateMember(x)}
                   >
-                    Deactivate
+                    {tx('Deactivate')}
                   </button>
                 )}
               </p>
@@ -504,7 +502,7 @@ export const SharedExpenseGroup = () => {
           </div>
         </section>
         <section className="form-panel">
-          <h2>Settle up</h2>
+          <h2>{tx('Settle up')}</h2>
           <form onSubmit={addSettlement}>
             <select
               required
@@ -513,7 +511,7 @@ export const SharedExpenseGroup = () => {
                 setSettle({ ...settle, paidByMemberId: e.target.value })
               }
             >
-              <option value="">Paid by</option>
+              <option value="">{tx('Paid by')}</option>
               {active.map((x) => (
                 <option key={x.id} value={x.id}>
                   {x.memberName}
@@ -527,7 +525,7 @@ export const SharedExpenseGroup = () => {
                 setSettle({ ...settle, paidToMemberId: e.target.value })
               }
             >
-              <option value="">Paid to</option>
+              <option value="">{tx('Paid to')}</option>
               {active.map((x) => (
                 <option key={x.id} value={x.id}>
                   {x.memberName}
@@ -539,7 +537,7 @@ export const SharedExpenseGroup = () => {
               type="number"
               min="0.01"
               step="0.01"
-              placeholder="Amount"
+              placeholder={tx('Amount')}
               value={settle.amount}
               onChange={(e) => setSettle({ ...settle, amount: e.target.value })}
             />
@@ -552,18 +550,18 @@ export const SharedExpenseGroup = () => {
               }
             />
             <button className="primary" disabled={submitting !== null}>
-              {submitting === 'settlement' ? 'Recording...' : 'Record settlement'}
+              {submitting === 'settlement' ? tx('Recording...') : tx('Record settlement')}
             </button>
           </form>
         </section>
       </div>
-      <section className="form-panel">
-        <h2>Add shared expense</h2>
+      <section className="form-panel" data-shared-section="expense">
+        <h2>{tx('Add shared expense')}</h2>
         <form onSubmit={addExpense}>
           <div className="form-grid">
             <input
               required
-              placeholder="Description"
+              placeholder={tx('Description')}
               value={expense.description}
               onChange={(e) =>
                 setExpense({ ...expense, description: e.target.value })
@@ -571,13 +569,13 @@ export const SharedExpenseGroup = () => {
             />
             <select
               required
-              aria-label="Category"
+              aria-label={tx('Category')}
               value={expense.category}
               onChange={(e) =>
                 setExpense({ ...expense, category: e.target.value })
               }
             >
-              <option value="">Select category</option>
+              <option value="">{tx('Select category')}</option>
               {sharedExpenseCategories.map((category) => (
                 <option key={category} value={category}>{category}</option>
               ))}
@@ -595,7 +593,7 @@ export const SharedExpenseGroup = () => {
               type="number"
               min="0.01"
               step="0.01"
-              placeholder="Total amount"
+              placeholder={tx('Total amount')}
               value={expense.totalAmount}
               onChange={(e) =>
                 setExpense({ ...expense, totalAmount: e.target.value })
@@ -607,11 +605,11 @@ export const SharedExpenseGroup = () => {
                 setExpense({ ...expense, splitType: e.target.value })
               }
             >
-              <option value="EQUAL">Split equally</option>
-              <option value="EXACT">Exact amounts</option>
+              <option value="EQUAL">{tx('Split equally')}</option>
+              <option value="EXACT">{tx('Exact amounts')}</option>
             </select>
           </div>
-          <h3>Who paid?</h3>
+          <h3>{tx('Who paid?')}</h3>
           <div className="participant-grid">
             {active.map((x) => (
               <label key={x.id}>
@@ -620,7 +618,7 @@ export const SharedExpenseGroup = () => {
                   type="number"
                   min="0"
                   step="0.01"
-                  placeholder="Paid amount"
+                  placeholder={tx('Paid amount')}
                   value={expense.payers[x.id] || ''}
                   onChange={(e) =>
                     setExpense({
@@ -633,9 +631,9 @@ export const SharedExpenseGroup = () => {
             ))}
           </div>
           <div className="section-heading-row">
-            <h3>Who shares it?</h3>
+            <h3>{tx('Who shares it?')}</h3>
             <button type="button" onClick={toggleAllParticipants}>
-              {allParticipantsSelected ? 'Clear all' : 'Select all'}
+              {allParticipantsSelected ? tx('Clear all') : tx('Select all')}
             </button>
           </div>
           <div className="participant-grid">
@@ -653,7 +651,7 @@ export const SharedExpenseGroup = () => {
                       type="number"
                       min="0.01"
                       step="0.01"
-                      placeholder="Share"
+                      placeholder={tx('Share')}
                       value={expense.shares[x.id] || ''}
                       onChange={(e) =>
                         setExpense({
@@ -667,15 +665,15 @@ export const SharedExpenseGroup = () => {
             ))}
           </div>
           <button className="primary" disabled={submitting !== null}>
-            {submitting === 'expense' ? 'Adding...' : 'Add expense'}
+            {submitting === 'expense' ? tx('Adding...') : tx('Add expense')}
           </button>
         </form>
       </section>
-      <section className="report-panel">
+      <section className="report-panel" data-shared-section="history">
         <div className="section-heading-row expense-history-heading">
-          <h2>Expense history</h2>
+          <h2>{tx('Expense history')}</h2>
           <button type="button" className="danger" disabled={!selectedExpenseIds.length || reversingExpenses} onClick={reverseSelectedExpenses}>
-            {reversingExpenses ? 'Reversing...' : `Reverse selected${selectedExpenseIds.length ? ` (${selectedExpenseIds.length})` : ''}`}
+            {reversingExpenses ? tx('Reversing...') : `${tx('Reverse selected')}${selectedExpenseIds.length ? ` (${selectedExpenseIds.length})` : ''}`}
           </button>
         </div>
         <div className="shared-history-mobile-list">
@@ -683,37 +681,37 @@ export const SharedExpenseGroup = () => {
             <details className="personal-expense-row shared-history-row" key={x.id}>
               <summary>
                 <span className="shared-history-select" onClick={(event) => event.stopPropagation()}>
-                  {x.reversed ? <span className="reversed-badge">Reversed</span> : <input type="checkbox" aria-label={`Select ${x.description}`} checked={selectedExpenseIds.includes(x.id)} onChange={() => toggleExpenseSelection(x.id)} />}
+                  {x.reversed ? <span className="reversed-badge">{tx('Reversed')}</span> : <input type="checkbox" aria-label={`${tx('Select')} ${x.description}`} checked={selectedExpenseIds.includes(x.id)} onChange={() => toggleExpenseSelection(x.id)} />}
                 </span>
                 <span className="personal-expense-row-main">
                   <span className="personal-expense-row-heading">
-                    <strong>{x.category || 'Uncategorized'}</strong>
+                    <strong>{x.category || tx('Uncategorized')}</strong>
                     <strong className="personal-expense-row-amount">{formatCurrency(x.totalAmount)}</strong>
                   </span>
-                  <span className="personal-expense-row-description">{x.description || 'No description'}</span>
-                  <span className="personal-expense-row-meta">{formatDate(x.expenseDate)} - Paid by {x.paidBy || '-'}</span>
+                  <span className="personal-expense-row-description">{x.description || tx('No description')}</span>
+                  <span className="personal-expense-row-meta">{formatDate(x.expenseDate)} - {tx('Paid by')} {x.paidBy || '-'}</span>
                 </span>
                 <span className="personal-expense-chevron" aria-hidden="true">⌄</span>
               </summary>
               <div className="personal-expense-details">
                 <dl>
-                  <div><dt>Date</dt><dd>{formatDate(x.expenseDate)}</dd></div>
-                  <div><dt>Description</dt><dd>{x.description || '-'}</dd></div>
-                  <div><dt>Category</dt><dd>{x.category || '-'}</dd></div>
-                  <div><dt>Paid by</dt><dd>{x.paidBy || '-'}</dd></div>
-                  <div><dt>Split</dt><dd>{x.splitType || '-'}</dd></div>
-                  <div><dt>Amount</dt><dd>{formatCurrency(x.totalAmount)}</dd></div>
+                  <div><dt>{tx('Date')}</dt><dd>{formatDate(x.expenseDate)}</dd></div>
+                  <div><dt>{tx('Description')}</dt><dd>{x.description || '-'}</dd></div>
+                  <div><dt>{tx('Category')}</dt><dd>{x.category || '-'}</dd></div>
+                  <div><dt>{tx('Paid by')}</dt><dd>{x.paidBy || '-'}</dd></div>
+                  <div><dt>{tx('Split')}</dt><dd>{x.splitType || '-'}</dd></div>
+                  <div><dt>{tx('Amount')}</dt><dd>{formatCurrency(x.totalAmount)}</dd></div>
                 </dl>
               </div>
             </details>
           ))}
-          {!group.expenses?.length && <p className="empty-state">No expenses yet.</p>}
+          {!group.expenses?.length && <p className="empty-state">{tx('No expenses yet.')}</p>}
         </div>
         <div className="table-wrap shared-expense-history-wrap shared-history-desktop-table">
           <table className="shared-expense-history">
             <thead>
               <tr>
-                <th className="selection-cell"><input type="checkbox" aria-label="Select all expenses on this page" checked={allVisibleSelected} disabled={!selectableVisibleIds.length} onChange={toggleVisibleExpenses} /></th>
+                <th className="selection-cell"><input type="checkbox" aria-label={tx('Select all expenses on this page')} checked={allVisibleSelected} disabled={!selectableVisibleIds.length} onChange={toggleVisibleExpenses} /></th>
                 <SortableTh label="Date" sortKey="expenseDate" sort={expenseSort} onSort={toggleExpenseSort} />
                 <SortableTh label="Description" sortKey="description" sort={expenseSort} onSort={toggleExpenseSort} />
                 <SortableTh label="Category" sortKey="category" sort={expenseSort} onSort={toggleExpenseSort} />
@@ -726,7 +724,7 @@ export const SharedExpenseGroup = () => {
               {visibleExpenses.map((x) => (
                 <tr key={x.id}>
                   <td data-label="Select" className="selection-cell">
-                    {x.reversed ? <span className="reversed-badge">Reversed</span> : <input type="checkbox" aria-label={`Select ${x.description}`} checked={selectedExpenseIds.includes(x.id)} onChange={() => toggleExpenseSelection(x.id)} />}
+                    {x.reversed ? <span className="reversed-badge">{tx('Reversed')}</span> : <input type="checkbox" aria-label={`${tx('Select')} ${x.description}`} checked={selectedExpenseIds.includes(x.id)} onChange={() => toggleExpenseSelection(x.id)} />}
                   </td>
                   <td data-label="Date">{formatDate(x.expenseDate)}</td>
                   <td data-label="Description">{x.description}</td>
@@ -737,23 +735,23 @@ export const SharedExpenseGroup = () => {
                 </tr>
               ))}
               {!group.expenses?.length && (
-                <tr><td colSpan="7" className="empty-state">No expenses yet.</td></tr>
+                <tr><td colSpan="7" className="empty-state">{tx('No expenses yet.')}</td></tr>
               )}
             </tbody>
           </table>
         </div>
         {expensePageCount > 1 && (
           <nav className="table-pagination" aria-label="Expense history pages">
-            <button type="button" disabled={currentExpensePage === 1} onClick={() => setExpensePage(1)}>First</button>
-            <button type="button" disabled={currentExpensePage === 1} onClick={() => setExpensePage((page) => Math.max(1, page - 1))}>Previous</button>
-            <span>Page {currentExpensePage} of {expensePageCount}</span>
-            <button type="button" disabled={currentExpensePage === expensePageCount} onClick={() => setExpensePage((page) => Math.min(expensePageCount, page + 1))}>Next</button>
-            <button type="button" disabled={currentExpensePage === expensePageCount} onClick={() => setExpensePage(expensePageCount)}>Last</button>
+            <button type="button" disabled={currentExpensePage === 1} onClick={() => setExpensePage(1)}>{tx('First')}</button>
+            <button type="button" disabled={currentExpensePage === 1} onClick={() => setExpensePage((page) => Math.max(1, page - 1))}>{tx('Previous')}</button>
+            <span>{tx('Page')} {currentExpensePage} {tx('of')} {expensePageCount}</span>
+            <button type="button" disabled={currentExpensePage === expensePageCount} onClick={() => setExpensePage((page) => Math.min(expensePageCount, page + 1))}>{tx('Next')}</button>
+            <button type="button" disabled={currentExpensePage === expensePageCount} onClick={() => setExpensePage(expensePageCount)}>{tx('Last')}</button>
           </nav>
         )}
       </section>
-      <section className="report-panel">
-        <h2>Activity</h2>
+      <section className="report-panel" data-shared-section="activity">
+        <h2>{tx('Activity')}</h2>
         {(group.activities || []).map((x) => (
           <p key={x.id}>
             <strong>{x.actorName}</strong> {x.message}{' '}
@@ -763,12 +761,12 @@ export const SharedExpenseGroup = () => {
           </p>
         ))}
         {!group.activities?.length && (
-          <p className="empty-state">No activity yet.</p>
+          <p className="empty-state">{tx('No activity yet.')}</p>
         )}
       </section>
-      <section className="archive-danger-zone">
+      <section className="archive-danger-zone" data-shared-section="archived">
         <div>
-          <h2>Archive group</h2>
+          <h2>{tx('Archive group')}</h2>
           <p>
             {group.active
               ? 'Hide this group from active groups while preserving its members, expenses, settlements, and activity history.'
@@ -777,7 +775,7 @@ export const SharedExpenseGroup = () => {
         </div>
         {group.active && (
           <button type="button" className="danger" onClick={archiveGroup}>
-            Archive this group
+            {tx('Archive this group')}
           </button>
         )}
       </section>
@@ -805,11 +803,15 @@ const sortRows = (rows, sort, accessors) => [...rows].sort((a, b) => {
   return comparison * direction || Number(b.id || 0) - Number(a.id || 0)
 })
 
-const SortableTh = ({ label, sortKey, sort, onSort, className }) => (
-  <th className={className}>
-    <button type="button" className="sortable-header" onClick={() => onSort(sortKey)}>
-      <span>{label}</span>
-      <span aria-hidden="true">{sort.key === sortKey ? (sort.direction === 'asc' ? 'Asc' : 'Desc') : 'Sort'}</span>
-    </button>
-  </th>
-)
+const SortableTh = ({ label, sortKey, sort, onSort, className }) => {
+  const { tx } = useI18n()
+
+  return (
+    <th className={className}>
+      <button type="button" className="sortable-header" onClick={() => onSort(sortKey)}>
+        <span>{tx(label)}</span>
+        <span aria-hidden="true">{tx(sort.key === sortKey ? (sort.direction === 'asc' ? 'Asc' : 'Desc') : 'Sort')}</span>
+      </button>
+    </th>
+  )
+}
