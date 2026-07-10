@@ -1,8 +1,21 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { toast } from 'react-toastify'
 import { authAPI } from '../api/endpoints'
 import { useAuthStore } from '../store/authStore'
-import { toast } from 'react-toastify'
+
+const accountHighlights = [
+  ['Personal', 'Budgets, expense history, documents, and shared bills.'],
+  ['Society', 'Collections, vendors, flats, festivals, and annual finance.'],
+  ['Kirana', 'Products, sales, purchases, customers, and supplier dues.'],
+  ['Sports', 'Members, events, expenses, collections, and reports.']
+]
+
+const workflowCards = [
+  { value: '1', label: 'Add expenses fast', text: 'Record payments, receipts, and categories from one place.' },
+  { value: '2', label: 'Review your money', text: 'Use dashboards, filters, history, and reports to spot trends.' },
+  { value: '3', label: 'Share and settle', text: 'Track group balances, split costs, and export shared history.' }
+]
 
 export const Login = () => {
   const navigate = useNavigate()
@@ -11,9 +24,9 @@ export const Login = () => {
   const [pendingSession, setPendingSession] = useState(null)
   const [formData, setFormData] = useState({ mobile: '', password: '' })
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target
-    setFormData(prev => ({ ...prev, [name]: value }))
+  const handleInputChange = (event) => {
+    const { name, value } = event.target
+    setFormData((prev) => ({ ...prev, [name]: value }))
   }
 
   const completeLogin = (session) => {
@@ -23,8 +36,8 @@ export const Login = () => {
     navigate('/home')
   }
 
-  const handleSubmit = async (e) => {
-    e.preventDefault()
+  const handleSubmit = async (event) => {
+    event.preventDefault()
     setLoading(true)
 
     try {
@@ -56,56 +69,133 @@ export const Login = () => {
   }
 
   return (
-    <div className="auth-page" style={styles.container}>
-      <div className="auth-card" style={styles.formBox}>
-        <h2 style={styles.title}>Login</h2>
+    <main className="auth-page login-experience">
+      <section className="login-showcase" aria-label="Expense tracker overview">
+        <div className="login-brand">
+          <span>Expense Tracker</span>
+          <h1>One place for personal, shared, society, store, and sports finances.</h1>
+          <p>
+            Keep daily expenses organized, split bills with groups, manage collections,
+            and understand where money is moving without jumping between tools.
+          </p>
+        </div>
+
+        <div className="login-workflow-grid">
+          {workflowCards.map((item) => (
+            <article className="login-workflow-card" key={item.value}>
+              <strong>{item.value}</strong>
+              <div>
+                <h2>{item.label}</h2>
+                <p>{item.text}</p>
+              </div>
+            </article>
+          ))}
+        </div>
+
+        <div className="login-module-panel">
+          <div>
+            <h2>Built for different accounts</h2>
+            <p>Choose the module that matches how you track money.</p>
+          </div>
+          <div className="login-module-list">
+            {accountHighlights.map(([title, text]) => (
+              <article key={title}>
+                <span>{title.slice(0, 2).toUpperCase()}</span>
+                <div>
+                  <strong>{title}</strong>
+                  <small>{text}</small>
+                </div>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="auth-card login-panel">
+        <div className="login-panel-heading">
+          <span>{pendingSession ? 'Account selection' : 'Welcome back'}</span>
+          <h2>{pendingSession ? 'Choose your workspace' : 'Sign in to continue'}</h2>
+          <p>
+            {pendingSession
+              ? 'Your mobile number is linked with multiple accounts.'
+              : 'Use your registered mobile number and password to open your dashboard.'}
+          </p>
+        </div>
+
         {!pendingSession ? (
-          <form onSubmit={handleSubmit}>
-            <div style={styles.formGroup}>
-              <label htmlFor="mobile">Mobile</label>
-              <input type="tel" id="mobile" name="mobile" value={formData.mobile} onChange={handleInputChange} placeholder="Enter your mobile number" required style={styles.input} />
-            </div>
+          <form className="login-form" onSubmit={handleSubmit}>
+            <label htmlFor="mobile">
+              Mobile
+              <input
+                type="tel"
+                id="mobile"
+                name="mobile"
+                value={formData.mobile}
+                onChange={handleInputChange}
+                placeholder="Enter your mobile number"
+                required
+              />
+            </label>
 
-            <div style={styles.formGroup}>
-              <label htmlFor="password">Password</label>
-              <input type="password" id="password" name="password" value={formData.password} onChange={handleInputChange} placeholder="Enter your password" required style={styles.input} />
-            </div>
+            <label htmlFor="password">
+              Password
+              <input
+                type="password"
+                id="password"
+                name="password"
+                value={formData.password}
+                onChange={handleInputChange}
+                placeholder="Enter your password"
+                required
+              />
+            </label>
 
-            <button type="submit" disabled={loading} style={styles.button}>{loading ? 'Logging in...' : 'Login'}</button>
+            <button type="submit" className="primary login-submit" disabled={loading}>
+              {loading ? 'Logging in...' : 'Login'}
+            </button>
           </form>
         ) : (
-          <div>
-            <p style={styles.helperText}>Choose which account you want to open.</p>
-            <div style={styles.accountList}>
+          <div className="login-account-select">
+            <div className="login-account-list">
               {pendingSession.accounts.map((account) => (
-                <button key={account.id} type="button" disabled={loading} onClick={() => handleAccountSelect(account.id)} style={styles.accountButton}>
-                  <strong>{account.accountName}</strong>
-                  <span>{account.accountType}</span>
+                <button
+                  key={account.id}
+                  type="button"
+                  disabled={loading}
+                  onClick={() => handleAccountSelect(account.id)}
+                >
+                  <span>{account.accountName?.slice(0, 1)?.toUpperCase() || 'A'}</span>
+                  <div>
+                    <strong>{account.accountName}</strong>
+                    <small>{account.accountType}</small>
+                  </div>
                 </button>
               ))}
             </div>
-            <button type="button" onClick={() => setPendingSession(null)} style={styles.secondaryButton}>Back</button>
+            <button type="button" onClick={() => setPendingSession(null)}>
+              Back to login
+            </button>
           </div>
         )}
 
-        {!pendingSession && <p style={styles.bottomText}><Link to="/reset-password" style={styles.link}>Forgot password?</Link></p>}
-        <p style={styles.bottomText}>Don't have an account? <Link to="/register" style={styles.link}>Register here</Link></p>
-      </div>
-    </div>
-  )
-}
+        <div className="login-help-grid">
+          {!pendingSession && (
+            <Link to="/reset-password">
+              <strong>Forgot password?</strong>
+              <span>Reset using your registered details.</span>
+            </Link>
+          )}
+          <Link to="/register">
+            <strong>New here?</strong>
+            <span>Create an account for personal, society, kirana, or sports tracking.</span>
+          </Link>
+        </div>
 
-const styles = {
-  container: { display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', backgroundColor: '#f5f5f5' },
-  formBox: { backgroundColor: 'white', padding: '2rem', borderRadius: '8px', boxShadow: '0 2px 10px rgba(0,0,0,0.1)', width: '100%', maxWidth: '420px' },
-  title: { textAlign: 'center', marginBottom: '1.5rem', color: '#1a1a1a' },
-  formGroup: { marginBottom: '1rem' },
-  input: { width: '100%', padding: '0.75rem', border: '1px solid #ddd', borderRadius: '4px', fontSize: '1rem', marginTop: '0.5rem' },
-  button: { width: '100%', padding: '0.75rem', backgroundColor: '#646cff', color: 'white', border: 'none', borderRadius: '4px', fontSize: '1rem', cursor: 'pointer', marginTop: '1rem' },
-  secondaryButton: { width: '100%', padding: '0.75rem', marginTop: '1rem' },
-  helperText: { color: '#666', marginBottom: '1rem' },
-  accountList: { display: 'grid', gap: '0.75rem' },
-  accountButton: { display: 'grid', gap: '0.25rem', width: '100%', textAlign: 'left', padding: '0.85rem', backgroundColor: '#f8fafc', color: '#17202a', border: '1px solid #d9e2ec', borderRadius: '8px' },
-  bottomText: { textAlign: 'center', marginTop: '1rem', color: '#666' },
-  link: { color: '#646cff', textDecoration: 'none' }
+        <div className="login-current-user-note">
+          <strong>Returning user tip</strong>
+          <p>After login, use the account switcher in the top menu when your mobile is linked to multiple workspaces.</p>
+        </div>
+      </section>
+    </main>
+  )
 }
