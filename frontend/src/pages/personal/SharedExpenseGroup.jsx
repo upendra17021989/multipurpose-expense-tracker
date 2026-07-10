@@ -3,7 +3,7 @@ import { Link, useParams } from 'react-router-dom'
 import { toast } from 'react-toastify'
 import { sharedExpenseAPI } from '../../api/endpoints'
 import { formatCurrency, formatDate } from '../../utils/format'
-import { Shell, SummaryGrid } from '../DashboardRouter'
+import { Shell } from '../DashboardRouter'
 const today = new Date().toISOString().slice(0, 10)
 const sharedExpenseCategories = [
   'Food & Dining',
@@ -33,6 +33,7 @@ export const SharedExpenseGroup = () => {
   const [exporting, setExporting] = useState(false)
   const [exportingPdf, setExportingPdf] = useState(false)
   const [expensePage, setExpensePage] = useState(1)
+  const [expenseSort, setExpenseSort] = useState({ key: 'expenseDate', direction: 'desc' })
   const [selectedExpenseIds, setSelectedExpenseIds] = useState([])
   const [reversingExpenses, setReversingExpenses] = useState(false)
   const [member, setMember] = useState({
@@ -282,7 +283,7 @@ export const SharedExpenseGroup = () => {
         (node) => node.textContent.trim() === label
       )
     const sections = {
-      balances: page.querySelector('.summary-grid'),
+      balances: page.querySelector('.shared-balance-board'),
       members: heading('Members')?.closest('.two-column-grid'),
       expense: heading('Add shared expense')?.closest('section'),
       history: heading('Expense history')?.closest('section'),
@@ -311,15 +312,22 @@ export const SharedExpenseGroup = () => {
       </Shell>
     )
   const expensePageSize = 10
+  const sortedExpenses = sortRows(group.expenses || [], expenseSort, sharedExpenseSortAccessors)
   const expensePageCount = Math.max(
     1,
-    Math.ceil((group.expenses?.length || 0) / expensePageSize)
+    Math.ceil(sortedExpenses.length / expensePageSize)
   )
   const currentExpensePage = Math.min(expensePage, expensePageCount)
-  const visibleExpenses = (group.expenses || []).slice(
+  const visibleExpenses = sortedExpenses.slice(
     (currentExpensePage - 1) * expensePageSize,
     currentExpensePage * expensePageSize
   )
+  const totalSpent = (group.expenses || [])
+    .filter((x) => !x.reversed)
+    .reduce((total, x) => total + Number(x.totalAmount || 0), 0)
+  const settledMembers = (group.balances || []).filter((x) => Number(x.balance || 0) === 0).length
+  const unsettledMembers = Math.max((group.balances || []).length - settledMembers, 0)
+  const recentActivity = group.activities?.[0]
   const selectableVisibleIds = visibleExpenses.filter((x) => !x.reversed).map((x) => x.id)
   const allVisibleSelected = selectableVisibleIds.length > 0 && selectableVisibleIds.every((id) => selectedExpenseIds.includes(id))
   const toggleVisibleExpenses = () => setSelectedExpenseIds((selected) =>
@@ -330,24 +338,37 @@ export const SharedExpenseGroup = () => {
   const toggleExpenseSelection = (id) => setSelectedExpenseIds((selected) =>
     selected.includes(id) ? selected.filter((value) => value !== id) : [...selected, id]
   )
+  const toggleExpenseSort = (key) => {
+    setExpenseSort((current) => ({
+      key,
+      direction: current.key === key && current.direction === 'asc' ? 'desc' : 'asc'
+    }))
+    setExpensePage(1)
+  }
   return (
     <Shell
       title={group.name}
       eyebrow="Shared expenses"
       actions={
-        <>
-          <button type="button" className="button-link" disabled={exporting} onClick={exportGroup}>
-            {exporting ? 'Exporting...' : 'Export Excel'}
-          </button>
-          <button type="button" className="button-link" disabled={exportingPdf} onClick={exportGroupPdf}>
-            {exportingPdf ? 'Exporting...' : 'Export PDF'}
-          </button>
+        <div className="shared-mobile-actions">
           <Link className="button-link" to="/personal/shared-expenses">
             All groups
           </Link>
-        </>
+        </div>
       }
     >
+      <section className="shared-group-hero">
+        <div>
+          <span>{group.active ? 'Active shared group' : 'Archived shared group'}</span>
+          <h2>{formatCurrency(totalSpent)} tracked across {group.expenses?.length || 0} expenses</h2>
+          <p>{recentActivity ? recentActivity.message : 'Add the first expense or invite members to start the shared ledger.'}</p>
+        </div>
+        <div className="shared-group-pulse">
+          <article><span>Members</span><strong>{active.length}</strong></article>
+          <article><span>Unsettled</span><strong>{unsettledMembers}</strong></article>
+          <article><span>Settled</span><strong>{settledMembers}</strong></article>
+        </div>
+      </section>
       <nav className="shared-expense-submenu" aria-label="Group navigation">
         <button
           className={activeSection === 'balances' ? 'active' : ''}
@@ -391,17 +412,34 @@ export const SharedExpenseGroup = () => {
         >
           Archive
         </button>
+        <details className="export-menu shared-submenu-export">
+          <summary>Export</summary>
+          <div className="export-menu-panel">
+            <button type="button" disabled={exporting} onClick={exportGroup}>
+              {exporting ? 'Exporting...' : 'Export Excel'}
+            </button>
+            <button type="button" disabled={exportingPdf} onClick={exportGroupPdf}>
+              {exportingPdf ? 'Exporting...' : 'Export PDF'}
+            </button>
+          </div>
+        </details>
       </nav>
-      <SummaryGrid
-        items={group.balances.map((x) => [
-          x.memberName,
-          x.balance > 0
-            ? `Gets ${formatCurrency(x.balance)}`
-            : x.balance < 0
-              ? `Owes ${formatCurrency(-x.balance)}`
-              : 'Settled'
-        ])}
-      />
+      <section className="shared-balance-board">
+        {(group.balances || []).map((x) => {
+          const balance = Number(x.balance || 0)
+          return (
+            <article className={balance > 0 ? 'gets' : balance < 0 ? 'owes' : 'settled'} key={x.memberId || x.memberName}>
+              <span>{x.memberName?.charAt(0)?.toUpperCase() || 'M'}</span>
+              <div>
+                <strong>{x.memberName}</strong>
+                <small>{balance > 0 ? 'Gets back' : balance < 0 ? 'Needs to pay' : 'All settled'}</small>
+              </div>
+              <b>{balance > 0 ? formatCurrency(balance) : balance < 0 ? formatCurrency(-balance) : 'Settled'}</b>
+            </article>
+          )
+        })}
+        {!group.balances?.length && <p className="empty-state">Add members to see balances here.</p>}
+      </section>
       <section className="form-panel">
         <h2>Invite registered user</h2>
         <form className="inline-form" onSubmit={inviteUser}>
@@ -640,17 +678,48 @@ export const SharedExpenseGroup = () => {
             {reversingExpenses ? 'Reversing...' : `Reverse selected${selectedExpenseIds.length ? ` (${selectedExpenseIds.length})` : ''}`}
           </button>
         </div>
-        <div className="table-wrap shared-expense-history-wrap">
+        <div className="shared-history-mobile-list">
+          {visibleExpenses.map((x) => (
+            <details className="personal-expense-row shared-history-row" key={x.id}>
+              <summary>
+                <span className="shared-history-select" onClick={(event) => event.stopPropagation()}>
+                  {x.reversed ? <span className="reversed-badge">Reversed</span> : <input type="checkbox" aria-label={`Select ${x.description}`} checked={selectedExpenseIds.includes(x.id)} onChange={() => toggleExpenseSelection(x.id)} />}
+                </span>
+                <span className="personal-expense-row-main">
+                  <span className="personal-expense-row-heading">
+                    <strong>{x.category || 'Uncategorized'}</strong>
+                    <strong className="personal-expense-row-amount">{formatCurrency(x.totalAmount)}</strong>
+                  </span>
+                  <span className="personal-expense-row-description">{x.description || 'No description'}</span>
+                  <span className="personal-expense-row-meta">{formatDate(x.expenseDate)} - Paid by {x.paidBy || '-'}</span>
+                </span>
+                <span className="personal-expense-chevron" aria-hidden="true">⌄</span>
+              </summary>
+              <div className="personal-expense-details">
+                <dl>
+                  <div><dt>Date</dt><dd>{formatDate(x.expenseDate)}</dd></div>
+                  <div><dt>Description</dt><dd>{x.description || '-'}</dd></div>
+                  <div><dt>Category</dt><dd>{x.category || '-'}</dd></div>
+                  <div><dt>Paid by</dt><dd>{x.paidBy || '-'}</dd></div>
+                  <div><dt>Split</dt><dd>{x.splitType || '-'}</dd></div>
+                  <div><dt>Amount</dt><dd>{formatCurrency(x.totalAmount)}</dd></div>
+                </dl>
+              </div>
+            </details>
+          ))}
+          {!group.expenses?.length && <p className="empty-state">No expenses yet.</p>}
+        </div>
+        <div className="table-wrap shared-expense-history-wrap shared-history-desktop-table">
           <table className="shared-expense-history">
             <thead>
               <tr>
                 <th className="selection-cell"><input type="checkbox" aria-label="Select all expenses on this page" checked={allVisibleSelected} disabled={!selectableVisibleIds.length} onChange={toggleVisibleExpenses} /></th>
-                <th>Date</th>
-                <th>Description</th>
-                <th>Category</th>
-                <th>Paid by</th>
-                <th>Split</th>
-                <th>Amount</th>
+                <SortableTh label="Date" sortKey="expenseDate" sort={expenseSort} onSort={toggleExpenseSort} />
+                <SortableTh label="Description" sortKey="description" sort={expenseSort} onSort={toggleExpenseSort} />
+                <SortableTh label="Category" sortKey="category" sort={expenseSort} onSort={toggleExpenseSort} />
+                <SortableTh label="Paid by" sortKey="paidBy" sort={expenseSort} onSort={toggleExpenseSort} />
+                <SortableTh label="Split" sortKey="splitType" sort={expenseSort} onSort={toggleExpenseSort} />
+                <SortableTh label="Amount" sortKey="totalAmount" sort={expenseSort} onSort={toggleExpenseSort} />
               </tr>
             </thead>
             <tbody>
@@ -675,9 +744,11 @@ export const SharedExpenseGroup = () => {
         </div>
         {expensePageCount > 1 && (
           <nav className="table-pagination" aria-label="Expense history pages">
+            <button type="button" disabled={currentExpensePage === 1} onClick={() => setExpensePage(1)}>First</button>
             <button type="button" disabled={currentExpensePage === 1} onClick={() => setExpensePage((page) => Math.max(1, page - 1))}>Previous</button>
             <span>Page {currentExpensePage} of {expensePageCount}</span>
             <button type="button" disabled={currentExpensePage === expensePageCount} onClick={() => setExpensePage((page) => Math.min(expensePageCount, page + 1))}>Next</button>
+            <button type="button" disabled={currentExpensePage === expensePageCount} onClick={() => setExpensePage(expensePageCount)}>Last</button>
           </nav>
         )}
       </section>
@@ -713,3 +784,32 @@ export const SharedExpenseGroup = () => {
     </Shell>
   )
 }
+
+const sharedExpenseSortAccessors = {
+  expenseDate: (expense) => expense.expenseDate || '',
+  description: (expense) => expense.description || '',
+  category: (expense) => expense.category || '',
+  paidBy: (expense) => expense.paidBy || '',
+  splitType: (expense) => expense.splitType || '',
+  totalAmount: (expense) => Number(expense.totalAmount || 0)
+}
+
+const sortRows = (rows, sort, accessors) => [...rows].sort((a, b) => {
+  const getValue = accessors[sort.key] || (() => '')
+  const first = getValue(a)
+  const second = getValue(b)
+  const direction = sort.direction === 'asc' ? 1 : -1
+  const comparison = typeof first === 'number' || typeof second === 'number'
+    ? Number(first || 0) - Number(second || 0)
+    : String(first || '').localeCompare(String(second || ''), undefined, { numeric: true, sensitivity: 'base' })
+  return comparison * direction || Number(b.id || 0) - Number(a.id || 0)
+})
+
+const SortableTh = ({ label, sortKey, sort, onSort, className }) => (
+  <th className={className}>
+    <button type="button" className="sortable-header" onClick={() => onSort(sortKey)}>
+      <span>{label}</span>
+      <span aria-hidden="true">{sort.key === sortKey ? (sort.direction === 'asc' ? 'Asc' : 'Desc') : 'Sort'}</span>
+    </button>
+  </th>
+)

@@ -16,6 +16,8 @@ export const ExpenseList = () => {
   const [importOpen, setImportOpen] = useState(false)
   const [importing, setImporting] = useState(false)
   const [preview, setPreview] = useState(null)
+  const [page, setPage] = useState(1)
+  const [sort, setSort] = useState({ key: 'expenseDate', direction: 'desc' })
   const [filters, setFilters] = useState({
     search: '',
     status: '',
@@ -45,7 +47,7 @@ export const ExpenseList = () => {
 
   const visibleExpenses = useMemo(() => {
     const search = filters.search.toLowerCase()
-    return expenses.filter((expense) => {
+    const filtered = expenses.filter((expense) => {
       const matchesSearch = !search || [expense.description, expense.vendorName, expense.categoryName]
         .filter(Boolean)
         .some((value) => value.toLowerCase().includes(search))
@@ -58,13 +60,38 @@ export const ExpenseList = () => {
       const matchesMinAmount = !filters.minAmount || amount >= Number(filters.minAmount)
       const matchesMaxAmount = !filters.maxAmount || amount <= Number(filters.maxAmount)
       return matchesSearch && matchesStatus && matchesPayment && matchesCategory && matchesStartDate && matchesEndDate && matchesMinAmount && matchesMaxAmount
-    }).sort((a, b) => {
-      const byDate = String(b.expenseDate || '').localeCompare(String(a.expenseDate || ''))
-      return byDate || Number(b.id || 0) - Number(a.id || 0)
     })
-  }, [expenses, filters])
+    return sortRows(filtered, sort, expenseSortAccessors)
+  }, [expenses, filters, sort])
+
+  useEffect(() => {
+    setPage(1)
+  }, [filters])
 
   const total = visibleExpenses.reduce((sum, expense) => sum + Number(expense.amount || 0), 0)
+  const pageSize = 20
+  const pageCount = Math.max(1, Math.ceil(visibleExpenses.length / pageSize))
+  const currentPage = Math.min(page, pageCount)
+  const pageExpenses = visibleExpenses.slice((currentPage - 1) * pageSize, currentPage * pageSize)
+  const activeFilterCount = Object.values(filters).filter(Boolean).length
+  const today = new Date().toISOString().slice(0, 10)
+  const monthPrefix = today.slice(0, 7)
+  const monthTotal = visibleExpenses
+    .filter((expense) => expense.expenseDate?.startsWith(monthPrefix))
+    .reduce((sum, expense) => sum + Number(expense.amount || 0), 0)
+  const topCategory = useMemo(() => {
+    const totals = new Map()
+    visibleExpenses.forEach((expense) => {
+      if (!expense.categoryName) return
+      totals.set(expense.categoryName, (totals.get(expense.categoryName) || 0) + Number(expense.amount || 0))
+    })
+    return [...totals.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] || '-'
+  }, [visibleExpenses])
+  const clearFilters = () => setFilters({ search: '', status: '', paymentMode: '', categoryId: '', startDate: '', endDate: '', minAmount: '', maxAmount: '' })
+  const toggleSort = (key) => setSort((current) => ({
+    key,
+    direction: current.key === key && current.direction === 'asc' ? 'desc' : 'asc'
+  }))
 
   const handleDelete = async (expenseId) => {
     if (!window.confirm('Delete this expense?')) return
@@ -162,10 +189,17 @@ export const ExpenseList = () => {
     >
       {currentAccount?.accountType === 'INDIVIDUAL' && (
         <section className="personal-expense-mobile-toolbar">
-          <div><span>Filtered total</span><strong>{formatCurrency(total)}</strong></div>
+          <div><span>{visibleExpenses.length} records · {activeFilterCount} filters</span><strong>{formatCurrency(total)}</strong></div>
           <button onClick={() => setFiltersOpen(true)}>Filters</button>
         </section>
       )}
+
+      <section className="expense-list-summary">
+        <article><span>Filtered total</span><strong>{formatCurrency(total)}</strong><small>{visibleExpenses.length} record{visibleExpenses.length === 1 ? '' : 's'}</small></article>
+        <article><span>This month</span><strong>{formatCurrency(monthTotal)}</strong><small>{new Date().toLocaleString('en-IN', { month: 'short', year: 'numeric' })}</small></article>
+        <article><span>Top category</span><strong>{topCategory}</strong><small>Within current filters</small></article>
+        <article><span>Active filters</span><strong>{activeFilterCount}</strong><small>{activeFilterCount ? 'Filters applied' : 'Showing all records'}</small></article>
+      </section>
 
       <section className={`toolbar-panel ${currentAccount?.accountType === 'INDIVIDUAL' ? 'personal-expense-desktop-filters' : ''}`}>
         <input placeholder="Search category, vendor, description" value={filters.search} onChange={(event) => setFilters({ ...filters, search: event.target.value })} />
@@ -195,6 +229,7 @@ export const ExpenseList = () => {
         <input type="number" min="0" placeholder="Min amount" value={filters.minAmount} onChange={(event) => setFilters({ ...filters, minAmount: event.target.value })} />
         <input type="number" min="0" placeholder="Max amount" value={filters.maxAmount} onChange={(event) => setFilters({ ...filters, maxAmount: event.target.value })} />
         <strong>{formatCurrency(total)}</strong>
+        <button type="button" disabled={!activeFilterCount} onClick={clearFilters}>Clear</button>
       </section>
 
       {filtersOpen && (
@@ -221,7 +256,7 @@ export const ExpenseList = () => {
               <label>Maximum amount<input type="number" min="0" placeholder="No maximum" value={filters.maxAmount} onChange={(event) => setFilters({ ...filters, maxAmount: event.target.value })} /></label>
             </div>
             <div className="expense-modal-actions">
-              <button onClick={() => setFilters({ search: '', status: '', paymentMode: '', categoryId: '', startDate: '', endDate: '', minAmount: '', maxAmount: '' })}>Clear all</button>
+              <button onClick={clearFilters}>Clear all</button>
               <button className="primary" onClick={() => setFiltersOpen(false)}>Show {visibleExpenses.length} expenses</button>
             </div>
           </section>
@@ -230,7 +265,7 @@ export const ExpenseList = () => {
 
       {currentAccount?.accountType === 'INDIVIDUAL' && (
         <div className="personal-expense-mobile-list">
-          {visibleExpenses.map((expense) => (
+          {pageExpenses.map((expense) => (
             <details className="personal-expense-row" key={expense.id}>
               <summary>
                 <span className="personal-expense-row-main">
@@ -271,18 +306,18 @@ export const ExpenseList = () => {
         <table className={currentAccount?.accountType === 'INDIVIDUAL' ? 'personal-expense-table' : undefined}>
           <thead>
             <tr>
-              <th>Date</th>
-              <th>Category</th>
-              <th>Type</th>
-              <th>Vendor</th>
-              <th>Payment</th>
-              <th>Status</th>
-              <th className="numeric">Amount</th>
+              <SortableTh label="Date" sortKey="expenseDate" sort={sort} onSort={toggleSort} />
+              <SortableTh label="Category" sortKey="categoryName" sort={sort} onSort={toggleSort} />
+              <SortableTh label="Type" sortKey="expenseType" sort={sort} onSort={toggleSort} />
+              <SortableTh label="Vendor" sortKey="vendorName" sort={sort} onSort={toggleSort} />
+              <SortableTh label="Payment" sortKey="paymentMode" sort={sort} onSort={toggleSort} />
+              <SortableTh label="Status" sortKey="status" sort={sort} onSort={toggleSort} />
+              <SortableTh label="Amount" sortKey="amount" sort={sort} onSort={toggleSort} className="numeric" />
               <th>Actions</th>
             </tr>
           </thead>
           <tbody>
-            {visibleExpenses.map((expense) => (
+            {pageExpenses.map((expense) => (
               <tr key={expense.id}>
                 <td data-label="Date">{formatDate(expense.expenseDate)}</td>
                 <td data-label="Category">{expense.categoryName || '-'}</td>
@@ -305,6 +340,15 @@ export const ExpenseList = () => {
           </tbody>
         </table>
       </div>
+      {visibleExpenses.length > pageSize && (
+        <nav className="table-pagination" aria-label="Expense pages">
+          <button type="button" disabled={currentPage === 1} onClick={() => setPage(1)}>First</button>
+          <button type="button" disabled={currentPage === 1} onClick={() => setPage((value) => Math.max(1, value - 1))}>Previous</button>
+          <span>Page {currentPage} of {pageCount}</span>
+          <button type="button" disabled={currentPage === pageCount} onClick={() => setPage((value) => Math.min(pageCount, value + 1))}>Next</button>
+          <button type="button" disabled={currentPage === pageCount} onClick={() => setPage(pageCount)}>Last</button>
+        </nav>
+      )}
       {loading && <p className="muted">Loading expenses...</p>}
 
       {importOpen && (
@@ -349,4 +393,34 @@ export const ExpenseList = () => {
     </Shell>
   )
 }
+
+const expenseSortAccessors = {
+  expenseDate: (expense) => expense.expenseDate || '',
+  categoryName: (expense) => expense.categoryName || '',
+  expenseType: (expense) => expense.expenseType || '',
+  vendorName: (expense) => expense.vendorName || '',
+  paymentMode: (expense) => expense.paymentMode || '',
+  status: (expense) => expense.status || '',
+  amount: (expense) => Number(expense.amount || 0)
+}
+
+const sortRows = (rows, sort, accessors) => [...rows].sort((a, b) => {
+  const getValue = accessors[sort.key] || (() => '')
+  const first = getValue(a)
+  const second = getValue(b)
+  const direction = sort.direction === 'asc' ? 1 : -1
+  const comparison = typeof first === 'number' || typeof second === 'number'
+    ? Number(first || 0) - Number(second || 0)
+    : String(first || '').localeCompare(String(second || ''), undefined, { numeric: true, sensitivity: 'base' })
+  return comparison * direction || Number(b.id || 0) - Number(a.id || 0)
+})
+
+const SortableTh = ({ label, sortKey, sort, onSort, className }) => (
+  <th className={className}>
+    <button type="button" className="sortable-header" onClick={() => onSort(sortKey)}>
+      <span>{label}</span>
+      <span aria-hidden="true">{sort.key === sortKey ? (sort.direction === 'asc' ? 'Asc' : 'Desc') : 'Sort'}</span>
+    </button>
+  </th>
+)
 

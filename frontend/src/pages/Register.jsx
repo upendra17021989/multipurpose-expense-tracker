@@ -11,6 +11,12 @@ const accountTypeLabels = {
   SPORTS: 'Sports'
 }
 
+const RequiredLabel = ({ htmlFor, children }) => (
+  <label htmlFor={htmlFor} style={styles.requiredLabel}>
+    <span>{children}</span><span style={styles.requiredAsterisk}>*</span>
+  </label>
+)
+
 export const Register = () => {
   const navigate = useNavigate()
   const [loading, setLoading] = useState(false)
@@ -69,29 +75,29 @@ export const Register = () => {
         <form onSubmit={handleSubmit}>
           <div style={styles.grid}>
             <div style={styles.formGroup}>
-              <label htmlFor="name">Name</label>
+              <RequiredLabel htmlFor="name">Name</RequiredLabel>
               <input id="name" name="name" value={formData.name} onChange={handleInputChange} required style={styles.input} />
             </div>
 
             <div style={styles.formGroup}>
-              <label htmlFor="mobile">Mobile</label>
+              <RequiredLabel htmlFor="mobile">Mobile</RequiredLabel>
               <input id="mobile" name="mobile" type="tel" value={formData.mobile} onChange={handleInputChange} required style={styles.input} />
             </div>
           </div>
 
           <div style={styles.formGroup}>
-            <label htmlFor="email">Email</label>
-            <input id="email" name="email" type="email" value={formData.email} onChange={handleInputChange} style={styles.input} />
+            <RequiredLabel htmlFor="email">Email</RequiredLabel>
+            <input id="email" name="email" type="email" value={formData.email} onChange={handleInputChange} required style={styles.input} />
           </div>
 
           <div style={styles.formGroup}>
-            <label htmlFor="password">Password</label>
+            <RequiredLabel htmlFor="password">Password</RequiredLabel>
             <input id="password" name="password" type="password" value={formData.password} onChange={handleInputChange} required minLength="6" style={styles.input} />
           </div>
 
           <div style={styles.formGroup}>
-            <label htmlFor="accountType">Account type</label>
-            <select id="accountType" name="accountType" value={formData.accountType} onChange={handleInputChange} style={styles.input}>
+            <RequiredLabel htmlFor="accountType">Account type</RequiredLabel>
+            <select id="accountType" name="accountType" value={formData.accountType} onChange={handleInputChange} required style={styles.input}>
               {Object.entries(accountTypeLabels).map(([value, label]) => (
                 <option key={value} value={value}>{label}</option>
               ))}
@@ -99,7 +105,7 @@ export const Register = () => {
           </div>
 
           <div style={styles.formGroup}>
-            <label htmlFor="accountName">Account name</label>
+            <RequiredLabel htmlFor="accountName">Account name</RequiredLabel>
             <input
               id="accountName"
               name="accountName"
@@ -178,6 +184,17 @@ const styles = {
   },
   formGroup: {
     marginBottom: '1rem'
+  },
+  requiredLabel: {
+    display: 'inline-flex',
+    alignItems: 'baseline',
+    gap: '0.2rem',
+    width: 'auto'
+  },
+  requiredAsterisk: {
+    display: 'inline',
+    color: '#dc2626',
+    fontWeight: 700
   },
   input: {
     width: '100%',
