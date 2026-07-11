@@ -1184,6 +1184,20 @@ th {
   text-transform: uppercase;
 }
 
+.sortable-header .sort-symbol {
+  font-size: 0.72rem;
+  line-height: 1;
+  letter-spacing: 0;
+}
+
+.shared-expense-history th,
+.shared-expense-history .sortable-header,
+.shared-expense-history .sortable-header span {
+  white-space: nowrap;
+  overflow-wrap: normal;
+  word-break: normal;
+}
+
 th.numeric .sortable-header {
   justify-content: flex-end;
 }
@@ -1245,6 +1259,18 @@ th.numeric .sortable-header {
   color: #64748b;
   font-size: 0.9rem;
   font-weight: 700;
+}
+
+.table-pagination button {
+  display: inline-flex;
+  width: 38px;
+  min-width: 38px;
+  min-height: 38px;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  font-size: 1.25rem;
+  line-height: 1;
 }
 
 .selection-cell {
@@ -1992,8 +2018,10 @@ th.numeric .sortable-header {
   }
 
   .table-pagination button {
-    padding-left: 0.75rem;
-    padding-right: 0.75rem;
+    width: 36px;
+    min-width: 36px;
+    min-height: 36px;
+    padding: 0;
   }
 
   .expense-history-heading {
@@ -2844,6 +2872,163 @@ textarea:disabled {
   display: none !important;
 }
 
+.shared-expense-insights {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.shared-insight-filters {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  align-items: end;
+  margin-top: 1rem;
+  padding: 0.65rem;
+  border: 1px solid #dbe7e5;
+  border-radius: 12px;
+  background: #f8fffe;
+}
+
+.shared-insight-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.shared-insight-presets button {
+  min-height: 38px;
+  padding: 0.45rem 0.7rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 9px;
+  background: #fff;
+  color: #475569;
+  font-weight: 700;
+}
+
+.shared-insight-presets button.active {
+  border-color: #0f766e;
+  background: #0f766e;
+  color: #fff;
+}
+
+.shared-insight-dates {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.shared-insight-dates label {
+  display: grid;
+  gap: 0.25rem;
+  color: #64748b;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.shared-insight-dates input {
+  min-height: 38px;
+  margin: 0;
+  padding: 0.35rem 0.5rem;
+}
+
+.shared-expense-insights h2 {
+  margin-top: 0;
+}
+
+.shared-insight-list {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.shared-insight-list article {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.35rem 0.75rem;
+  align-items: center;
+}
+
+.shared-insight-list article > div:first-child {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.shared-insight-list article span {
+  color: #64748b;
+  font-size: 0.8rem;
+}
+
+.shared-insight-track {
+  height: 7px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #e2e8f0;
+}
+
+.shared-insight-track > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #0f766e, #2dd4bf);
+}
+
+.shared-insight-track.category > span {
+  background: linear-gradient(90deg, #2563eb, #60a5fa);
+}
+
+.shared-export-heading h2,
+.shared-export-options h3 {
+  margin: 0;
+}
+
+.shared-export-heading p,
+.shared-export-options p {
+  margin: 0.35rem 0 0;
+  color: #64748b;
+}
+
+.shared-export-options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.shared-export-options article {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.85rem;
+  align-items: start;
+  padding: 1rem;
+  border: 1px solid #dbe7e5;
+  border-radius: 12px;
+  background: #f8fffe;
+}
+
+.shared-export-options article > button {
+  grid-column: 1 / -1;
+  width: 100%;
+}
+
+.shared-export-icon {
+  display: inline-flex;
+  width: 48px;
+  height: 48px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  background: #dcfce7;
+  color: #166534;
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.shared-export-icon.pdf {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
 .export-menu {
   position: relative;
   z-index: 230;
@@ -2907,6 +3092,43 @@ textarea:disabled {
 }
 
 @media (max-width: 640px) {
+  .shared-insight-filters,
+  .shared-insight-dates {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .shared-insight-presets {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .shared-insight-presets button {
+    padding-inline: 0.35rem;
+    font-size: 0.75rem;
+  }
+
+  .shared-expense-insights {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+
+  .shared-export-options {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+
+  .shared-expense-submenu {
+    position: relative;
+    top: auto;
+    flex-wrap: wrap;
+    overflow: visible;
+  }
+
+  .shared-submenu-export {
+    margin-left: auto;
+  }
+
   .shared-mobile-actions {
     display: flex;
     gap: 0.45rem;
@@ -2925,9 +3147,10 @@ textarea:disabled {
   }
 
   .export-menu-panel {
-    right: auto;
-    left: 0;
+    right: 0;
+    left: auto;
     min-width: 150px;
+    max-width: calc(100vw - 2rem);
   }
 
   .shared-submenu-export > summary {
@@ -2997,49 +3220,90 @@ textarea:disabled {
   }
 
   .shared-expense-submenu {
-    position: static;
-    z-index: 20;
-    margin: 0 -0.5rem 0.75rem;
-    padding: 0.45rem 0.5rem;
-    border-right: 0;
-    border-left: 0;
-    border-radius: 0;
-    background:
-      linear-gradient(90deg, #e5e7eb 0, rgba(229,231,235,0) 1.3rem) left center / 1.3rem 100% no-repeat,
-      linear-gradient(270deg, #e5e7eb 0, rgba(229,231,235,0) 1.3rem) right center / 1.3rem 100% no-repeat,
-      rgba(255,255,255,0.96);
-    box-shadow: none;
-    overflow-x: auto;
-    overflow-y: visible;
-    -webkit-overflow-scrolling: touch;
-  }
-
-  .shared-expense-submenu::before,
-  .shared-expense-submenu::after {
-    content: "";
     position: sticky;
-    z-index: 2;
-    flex: 0 0 1rem;
-    pointer-events: none;
+    top: 0.5rem;
+    z-index: 20;
+    flex-wrap: nowrap;
+    gap: 0.4rem;
+    margin: 0 0 0.85rem;
+    padding: 0.45rem;
+    border: 1px solid #dbe7e5;
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.94);
+    box-shadow: 0 8px 24px rgba(15, 118, 110, 0.1);
+    overflow-x: auto;
+    scroll-padding-inline: 0.45rem;
+    scroll-snap-type: x proximity;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    backdrop-filter: blur(12px);
   }
 
-  .shared-expense-submenu::before {
-    left: -0.5rem;
-    margin-left: -0.5rem;
-    background: linear-gradient(90deg, #e5e7eb, rgba(229,231,235,0));
-  }
-
-  .shared-expense-submenu::after {
-    right: -0.5rem;
-    margin-right: -0.5rem;
-    background: linear-gradient(270deg, #e5e7eb, rgba(229,231,235,0));
+  .shared-expense-submenu::-webkit-scrollbar {
+    display: none;
   }
 
   .shared-expense-submenu a,
-  .shared-expense-submenu button {
-    min-height: 36px;
-    padding: 0.45rem 0.6rem;
+  .shared-expense-submenu button,
+  .shared-submenu-export > summary {
+    min-height: 40px;
+    padding: 0.55rem 0.75rem;
+    border: 1px solid transparent;
+    border-radius: 10px;
     font-size: 0.82rem;
+    scroll-snap-align: start;
+    transition: background-color 160ms ease, color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+  }
+
+  .shared-expense-submenu a.active,
+  .shared-expense-submenu button.active,
+  .shared-submenu-export[open] > summary {
+    border-color: #0f766e;
+    background: linear-gradient(135deg, #0f766e, #0d9488);
+    color: #fff;
+    box-shadow: 0 5px 12px rgba(15, 118, 110, 0.24);
+  }
+
+  .shared-expense-submenu a:active,
+  .shared-expense-submenu button:active,
+  .shared-submenu-export > summary:active {
+    transform: scale(0.96);
+  }
+
+  .shared-submenu-export {
+    margin-left: 0;
+    scroll-snap-align: end;
+  }
+
+  .export-menu-panel {
+    position: fixed;
+    top: auto;
+    right: 1rem;
+    bottom: calc(1rem + env(safe-area-inset-bottom));
+    left: 1rem;
+    z-index: 1000;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.5rem;
+    min-width: 0;
+    max-width: none;
+    padding: 0.55rem;
+    border-radius: 14px;
+    box-shadow: 0 18px 48px rgba(15, 23, 42, 0.28);
+  }
+
+  .export-menu-panel button {
+    justify-content: center;
+    min-height: 48px;
+    padding: 0.75rem 0.9rem;
+    border-radius: 10px;
+    font-size: 0.9rem;
+    text-align: center;
+  }
+
+  .shared-expense-submenu:has(.shared-submenu-export[open]) {
+    overflow-x: auto;
+    backdrop-filter: none;
   }
 
   .groups-panel,

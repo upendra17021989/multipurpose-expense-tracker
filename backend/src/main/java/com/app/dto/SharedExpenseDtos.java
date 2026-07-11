@@ -13,7 +13,8 @@ public final class SharedExpenseDtos { private SharedExpenseDtos() {}
  @Value @Builder public static class FriendBalanceDto { Long userId; String name; String email; String mobile; Integer sharedGroups; BigDecimal balance; }
  @Value @Builder public static class MemberDto { Long id; Long userId; String memberName; String email; String mobile; Boolean active; }
  @Value @Builder public static class BalanceDto { Long memberId; String memberName; BigDecimal balance; }
- @Value @Builder public static class ExpenseDto { Long id; String description; String category; LocalDate expenseDate; BigDecimal totalAmount; SharedSplitType splitType; String paidBy; Boolean reversed; }
+ @Value @Builder public static class ExpensePayerDto { Long memberId; String memberName; BigDecimal amount; }
+ @Value @Builder public static class ExpenseDto { Long id; String description; String category; LocalDate expenseDate; BigDecimal totalAmount; SharedSplitType splitType; String paidBy; List<ExpensePayerDto> payers; Boolean reversed; }
  @Value @Builder public static class ActivityDto { Long id; String activityType; String message; String actorName; LocalDateTime createdAt; }
  @Value @Builder public static class GroupDto { Long id; String name; Boolean active; List<MemberDto> members; List<ExpenseDto> expenses; List<BalanceDto> balances; List<ActivityDto> activities; }
 }

@@ -172,6 +172,14 @@ function App() {
             }
           />
           <Route
+            path="/personal/shared-expenses/:groupId/:section"
+            element={
+              <ProtectedRoute>
+                <SharedExpenseGroup />
+              </ProtectedRoute>
+            }
+          />
+          <Route
             path="/personal/friends"
             element={
               <ProtectedRoute>

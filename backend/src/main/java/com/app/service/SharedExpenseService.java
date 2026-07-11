@@ -431,6 +431,17 @@ public class SharedExpenseService {
                                     .map(p -> p.getMember().getMemberName())
                                     .distinct()
                                     .collect(joining(", ")))
+                            .payers(
+                                payers
+                                    .findByExpenseGroupIdAndExpenseReversedFalse(g.getId())
+                                    .stream()
+                                    .filter(p -> p.getExpense().getId().equals(x.getId()))
+                                    .map(p -> ExpensePayerDto.builder()
+                                        .memberId(p.getMember().getId())
+                                        .memberName(p.getMember().getMemberName())
+                                        .amount(p.getPaidAmount())
+                                        .build())
+                                    .toList())
                             .build())
                 .toList()
             : List.of();

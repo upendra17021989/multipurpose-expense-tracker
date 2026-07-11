@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'react-toastify'
 import { sharedExpenseAPI } from '../../api/endpoints'
 import { formatCurrency, formatDate } from '../../utils/format'
@@ -25,15 +25,20 @@ const sharedExpenseCategories = [
   'Gifts',
   'Miscellaneous'
 ]
+const sharedGroupSections = new Set(['balances', 'expense', 'members', 'history', 'activity', 'export', 'archived'])
 export const SharedExpenseGroup = () => {
   const { tx } = useI18n()
-  const [activeSection, setActiveSection] = useState('balances')
-  const { groupId } = useParams()
+  const navigate = useNavigate()
+  const { groupId, section } = useParams()
+  const activeSection = sharedGroupSections.has(section) ? section : 'balances'
+  const openSection = (nextSection) => navigate(`/personal/shared-expenses/${groupId}/${nextSection}`)
   const [group, setGroup] = useState(null)
   const submittingRef = useRef(false)
   const [submitting, setSubmitting] = useState(null)
   const [exporting, setExporting] = useState(false)
   const [exportingPdf, setExportingPdf] = useState(false)
+  const [insightRange, setInsightRange] = useState('all')
+  const [insightDates, setInsightDates] = useState({ from: '', to: '' })
   const [expensePage, setExpensePage] = useState(1)
   const [expenseSort, setExpenseSort] = useState({ key: 'expenseDate', direction: 'desc' })
   const [selectedExpenseIds, setSelectedExpenseIds] = useState([])
@@ -69,6 +74,11 @@ export const SharedExpenseGroup = () => {
       .catch((e) =>
         toast.error(e.response?.data?.message || 'Unable to load group')
       )
+  useEffect(() => {
+    if (section && !sharedGroupSections.has(section)) {
+      navigate(`/personal/shared-expenses/${groupId}/balances`, { replace: true })
+    }
+  }, [groupId, navigate, section])
   useEffect(() => {
     load()
   }, [groupId])
@@ -281,12 +291,13 @@ export const SharedExpenseGroup = () => {
     const page = document.querySelector('.page-shell')
     if (!page) return
     const sections = {
-      balances: page.querySelector('.shared-balance-board'),
+      balances: page.querySelector('[data-shared-section="balances"]'),
       members: page.querySelector('[data-shared-section="members"]'),
       expense: page.querySelector('[data-shared-section="expense"]'),
       history: page.querySelector('[data-shared-section="history"]'),
       activity: page.querySelector('[data-shared-section="activity"]'),
-      archived: page.querySelector('[data-shared-section="archived"]')
+      archived: page.querySelector('[data-shared-section="archived"]'),
+      export: page.querySelector('[data-shared-section="export"]')
     }
     const invite = page.querySelector('[data-shared-section="invite"]')
     Object.values(sections).forEach((node) =>
@@ -323,6 +334,34 @@ export const SharedExpenseGroup = () => {
   const totalSpent = (group.expenses || [])
     .filter((x) => !x.reversed)
     .reduce((total, x) => total + Number(x.totalAmount || 0), 0)
+  const activeExpenses = (group.expenses || []).filter((x) => !x.reversed)
+  const currentMonth = today.slice(0, 7)
+  const insightExpenses = activeExpenses.filter((item) => {
+    if (insightRange === 'month') return item.expenseDate?.startsWith(currentMonth)
+    if (insightRange === 'custom') {
+      if (insightDates.from && item.expenseDate < insightDates.from) return false
+      if (insightDates.to && item.expenseDate > insightDates.to) return false
+    }
+    return true
+  })
+  const insightTotal = insightExpenses.reduce((sum, item) => sum + Number(item.totalAmount || 0), 0)
+  const paidByMember = (group.members || []).map((member) => ({
+    memberId: member.id,
+    memberName: member.memberName,
+    amount: insightExpenses.reduce(
+      (sum, item) => sum + (item.payers || [])
+        .filter((payer) => payer.memberId === member.id)
+        .reduce((payerSum, payer) => payerSum + Number(payer.amount || 0), 0),
+      0
+    )
+  })).sort((a, b) => b.amount - a.amount)
+  const categoryTotals = Object.values(insightExpenses.reduce((totals, item) => {
+    const category = item.category || tx('Uncategorized')
+    totals[category] ||= { category, amount: 0, count: 0 }
+    totals[category].amount += Number(item.totalAmount || 0)
+    totals[category].count += 1
+    return totals
+  }, {})).sort((a, b) => b.amount - a.amount)
   const settledMembers = (group.balances || []).filter((x) => Number(x.balance || 0) === 0).length
   const unsettledMembers = Math.max((group.balances || []).length - settledMembers, 0)
   const recentActivity = group.activities?.[0]
@@ -371,58 +410,55 @@ export const SharedExpenseGroup = () => {
         <button
           className={activeSection === 'balances' ? 'active' : ''}
           type="button"
-          onClick={() => setActiveSection('balances')}
+          onClick={() => openSection('balances')}
         >
           {tx('Balances')}
         </button>
         <button
           className={activeSection === 'expense' ? 'active' : ''}
           type="button"
-          onClick={() => setActiveSection('expense')}
+          onClick={() => openSection('expense')}
         >
           {tx('Add expense')}
         </button>
         <button
           className={activeSection === 'members' ? 'active' : ''}
           type="button"
-          onClick={() => setActiveSection('members')}
+          onClick={() => openSection('members')}
         >
           {tx('Members')}
         </button>
         <button
           className={activeSection === 'history' ? 'active' : ''}
           type="button"
-          onClick={() => setActiveSection('history')}
+          onClick={() => openSection('history')}
         >
           {tx('History')}
         </button>
         <button
           className={activeSection === 'activity' ? 'active' : ''}
           type="button"
-          onClick={() => setActiveSection('activity')}
+          onClick={() => openSection('activity')}
         >
           {tx('Activity')}
         </button>
         <button
+          className={activeSection === 'export' ? 'active' : ''}
+          type="button"
+          onClick={() => openSection('export')}
+        >
+          {tx('Export')}
+        </button>
+        <button
           className={activeSection === 'archived' ? 'active' : ''}
           type="button"
-          onClick={() => setActiveSection('archived')}
+          onClick={() => openSection('archived')}
         >
           {tx('Archive')}
         </button>
-        <details className="export-menu shared-submenu-export">
-          <summary>{tx('Export')}</summary>
-          <div className="export-menu-panel">
-            <button type="button" disabled={exporting} onClick={exportGroup}>
-              {exporting ? tx('Exporting...') : tx('Export Excel')}
-            </button>
-            <button type="button" disabled={exportingPdf} onClick={exportGroupPdf}>
-              {exportingPdf ? tx('Exporting...') : tx('Export PDF')}
-            </button>
-          </div>
-        </details>
       </nav>
-      <section className="shared-balance-board">
+      <section className="shared-balances-page" data-shared-section="balances">
+        <div className="shared-balance-board">
         {(group.balances || []).map((x) => {
           const balance = Number(x.balance || 0)
           return (
@@ -437,6 +473,58 @@ export const SharedExpenseGroup = () => {
           )
         })}
         {!group.balances?.length && <p className="empty-state">{tx('Add members to see balances here.')}</p>}
+        </div>
+        <div className="shared-insight-filters" aria-label={tx('Expense insight date range')}>
+          <div className="shared-insight-presets">
+            {[
+              ['all', 'All time'],
+              ['month', 'This month'],
+              ['custom', 'Custom range']
+            ].map(([value, label]) => (
+              <button
+                key={value}
+                className={insightRange === value ? 'active' : ''}
+                type="button"
+                onClick={() => setInsightRange(value)}
+              >
+                {tx(label)}
+              </button>
+            ))}
+          </div>
+          {insightRange === 'custom' && (
+            <div className="shared-insight-dates">
+              <label>{tx('From')}<input type="date" value={insightDates.from} max={insightDates.to || undefined} onChange={(e) => setInsightDates({ ...insightDates, from: e.target.value })} /></label>
+              <label>{tx('To')}<input type="date" value={insightDates.to} min={insightDates.from || undefined} onChange={(e) => setInsightDates({ ...insightDates, to: e.target.value })} /></label>
+            </div>
+          )}
+        </div>
+        <div className="shared-expense-insights">
+          <section className="report-panel">
+            <h2>{tx('Paid by member')}</h2>
+            <div className="shared-insight-list">
+              {paidByMember.map((item) => (
+                <article key={item.memberId}>
+                  <div><strong>{item.memberName}</strong><span>{insightTotal ? Math.round((item.amount / insightTotal) * 100) : 0}%</span></div>
+                  <div className="shared-insight-track"><span style={{ width: `${insightTotal ? (item.amount / insightTotal) * 100 : 0}%` }} /></div>
+                  <b>{formatCurrency(item.amount)}</b>
+                </article>
+              ))}
+            </div>
+          </section>
+          <section className="report-panel">
+            <h2>{tx('Spending by category')}</h2>
+            <div className="shared-insight-list">
+              {categoryTotals.map((item) => (
+                <article key={item.category}>
+                  <div><strong>{item.category}</strong><span>{item.count} {tx(item.count === 1 ? 'expense' : 'expenses')}</span></div>
+                  <div className="shared-insight-track category"><span style={{ width: `${insightTotal ? (item.amount / insightTotal) * 100 : 0}%` }} /></div>
+                  <b>{formatCurrency(item.amount)}</b>
+                </article>
+              ))}
+              {!categoryTotals.length && <p className="empty-state">{tx('Add expenses to see category insights.')}</p>}
+            </div>
+          </section>
+        </div>
       </section>
       <section className="form-panel" data-shared-section="invite">
         <h2>{tx('Invite registered user')}</h2>
@@ -742,11 +830,11 @@ export const SharedExpenseGroup = () => {
         </div>
         {expensePageCount > 1 && (
           <nav className="table-pagination" aria-label="Expense history pages">
-            <button type="button" disabled={currentExpensePage === 1} onClick={() => setExpensePage(1)}>{tx('First')}</button>
-            <button type="button" disabled={currentExpensePage === 1} onClick={() => setExpensePage((page) => Math.max(1, page - 1))}>{tx('Previous')}</button>
+            <button type="button" aria-label={tx('First')} title={tx('First')} disabled={currentExpensePage === 1} onClick={() => setExpensePage(1)}>«</button>
+            <button type="button" aria-label={tx('Previous')} title={tx('Previous')} disabled={currentExpensePage === 1} onClick={() => setExpensePage((page) => Math.max(1, page - 1))}>‹</button>
             <span>{tx('Page')} {currentExpensePage} {tx('of')} {expensePageCount}</span>
-            <button type="button" disabled={currentExpensePage === expensePageCount} onClick={() => setExpensePage((page) => Math.min(expensePageCount, page + 1))}>{tx('Next')}</button>
-            <button type="button" disabled={currentExpensePage === expensePageCount} onClick={() => setExpensePage(expensePageCount)}>{tx('Last')}</button>
+            <button type="button" aria-label={tx('Next')} title={tx('Next')} disabled={currentExpensePage === expensePageCount} onClick={() => setExpensePage((page) => Math.min(expensePageCount, page + 1))}>›</button>
+            <button type="button" aria-label={tx('Last')} title={tx('Last')} disabled={currentExpensePage === expensePageCount} onClick={() => setExpensePage(expensePageCount)}>»</button>
           </nav>
         )}
       </section>
@@ -763,6 +851,36 @@ export const SharedExpenseGroup = () => {
         {!group.activities?.length && (
           <p className="empty-state">{tx('No activity yet.')}</p>
         )}
+      </section>
+      <section className="report-panel shared-export-page" data-shared-section="export">
+        <div className="shared-export-heading">
+          <div>
+            <h2>{tx('Export group')}</h2>
+            <p>{tx('Download the complete shared expense report in your preferred format.')}</p>
+          </div>
+        </div>
+        <div className="shared-export-options">
+          <article>
+            <span className="shared-export-icon" aria-hidden="true">XLSX</span>
+            <div>
+              <h3>{tx('Excel report')}</h3>
+              <p>{tx('Best for filtering, calculations, and detailed expense analysis.')}</p>
+            </div>
+            <button className="primary" type="button" disabled={exporting} onClick={exportGroup}>
+              {exporting ? tx('Exporting...') : tx('Export Excel')}
+            </button>
+          </article>
+          <article>
+            <span className="shared-export-icon pdf" aria-hidden="true">PDF</span>
+            <div>
+              <h3>{tx('PDF report')}</h3>
+              <p>{tx('Best for sharing, printing, and keeping a readable record.')}</p>
+            </div>
+            <button className="primary" type="button" disabled={exportingPdf} onClick={exportGroupPdf}>
+              {exportingPdf ? tx('Exporting...') : tx('Export PDF')}
+            </button>
+          </article>
+        </div>
       </section>
       <section className="archive-danger-zone" data-shared-section="archived">
         <div>
@@ -805,12 +923,14 @@ const sortRows = (rows, sort, accessors) => [...rows].sort((a, b) => {
 
 const SortableTh = ({ label, sortKey, sort, onSort, className }) => {
   const { tx } = useI18n()
+  const sortState = sort.key === sortKey ? sort.direction : null
+  const sortLabel = sortState === 'asc' ? tx('Ascending') : sortState === 'desc' ? tx('Descending') : tx('Sort')
 
   return (
     <th className={className}>
-      <button type="button" className="sortable-header" onClick={() => onSort(sortKey)}>
+      <button type="button" className="sortable-header" aria-label={`${tx(label)}: ${sortLabel}`} title={sortLabel} onClick={() => onSort(sortKey)}>
         <span>{tx(label)}</span>
-        <span aria-hidden="true">{tx(sort.key === sortKey ? (sort.direction === 'asc' ? 'Asc' : 'Desc') : 'Sort')}</span>
+        <span className="sort-symbol" aria-hidden="true">{sortState === 'asc' ? '▲' : sortState === 'desc' ? '▼' : '↕'}</span>
       </button>
     </th>
   )
