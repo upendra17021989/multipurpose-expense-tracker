@@ -11,6 +11,8 @@ export const FlatList = () => {
   const [flats, setFlats] = useState([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
+  const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(10)
   const [importOpen, setImportOpen] = useState(false)
   const [importing, setImporting] = useState(false)
   const [preview, setPreview] = useState(null)
@@ -32,6 +34,11 @@ export const FlatList = () => {
       .filter(Boolean)
       .some((value) => String(value).toLowerCase().includes(query)))
   }, [flats, search])
+  const pageCount = Math.max(1, Math.ceil(visibleFlats.length / pageSize))
+  const currentPage = Math.min(page, pageCount)
+  const pagedFlats = visibleFlats.slice((currentPage - 1) * pageSize, currentPage * pageSize)
+
+  useEffect(() => setPage(1), [search, pageSize])
 
   const summary = useMemo(() => {
     const blocks = new Set(flats.map((flat) => flat.blockName).filter(Boolean))
@@ -113,7 +120,7 @@ export const FlatList = () => {
       </section>
 
       <div className="table-wrap">
-        <table>
+        <table className="flat-master-table">
           <thead>
             <tr>
               <th>Block</th>
@@ -127,11 +134,11 @@ export const FlatList = () => {
             </tr>
           </thead>
           <tbody>
-            {visibleFlats.map((flat) => (
+            {pagedFlats.map((flat) => (
               <tr key={flat.id}>
                 <td>{flat.blockName}</td>
                 <td>{flat.flatNumber}</td>
-                <td>{flat.ownerName}</td>
+                <td className="flat-owner-name">{flat.ownerName}</td>
                 <td>{flat.mobile || '-'}</td>
                 <td>{flat.email || '-'}</td>
                 <td>{flat.residentType}</td>
@@ -146,6 +153,23 @@ export const FlatList = () => {
           </tbody>
         </table>
       </div>
+      {visibleFlats.length > 0 && (
+        <div className="flat-table-footer">
+          <label>
+            Rows
+            <select value={pageSize} onChange={(event) => setPageSize(Number(event.target.value))}>
+              {[10, 25, 50].map((size) => <option key={size} value={size}>{size}</option>)}
+            </select>
+          </label>
+          <nav className="table-pagination" aria-label="Flat master pages">
+            <button type="button" aria-label="First page" title="First page" disabled={currentPage === 1} onClick={() => setPage(1)}>«</button>
+            <button type="button" aria-label="Previous page" title="Previous page" disabled={currentPage === 1} onClick={() => setPage((value) => Math.max(1, value - 1))}>‹</button>
+            <span>Page {currentPage} of {pageCount}</span>
+            <button type="button" aria-label="Next page" title="Next page" disabled={currentPage === pageCount} onClick={() => setPage((value) => Math.min(pageCount, value + 1))}>›</button>
+            <button type="button" aria-label="Last page" title="Last page" disabled={currentPage === pageCount} onClick={() => setPage(pageCount)}>»</button>
+          </nav>
+        </div>
+      )}
       {loading && <p className="muted">Loading flats...</p>}
 
       {importOpen && (
