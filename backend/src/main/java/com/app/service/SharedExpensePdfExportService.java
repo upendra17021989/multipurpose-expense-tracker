@@ -95,6 +95,35 @@ public class SharedExpensePdfExportService {
       }
       document.add(balanceTable);
 
+      document.add(new Paragraph("Paid by member").setBold().setFontSize(13));
+      Table paidByMemberTable = table("Member", "Total paid");
+      Map<Long, BigDecimal> paidTotals = payerRows.stream().collect(Collectors.groupingBy(
+          row -> row.getMember().getId(),
+          Collectors.reducing(BigDecimal.ZERO, SharedExpensePayer::getPaidAmount, BigDecimal::add)));
+      for (SharedGroupMember member : memberRows) {
+        addRow(paidByMemberTable, member.getMemberName(), money(paidTotals.getOrDefault(member.getId(), BigDecimal.ZERO)));
+      }
+      document.add(paidByMemberTable);
+
+      record CategoryTotal(long count, BigDecimal amount) {}
+      Map<String, CategoryTotal> categoryTotals = new LinkedHashMap<>();
+      expenseRows.forEach(expense -> {
+        String category = expense.getCategory() == null || expense.getCategory().isBlank()
+            ? "Uncategorized" : expense.getCategory();
+        CategoryTotal current = categoryTotals.get(category);
+        categoryTotals.put(category, new CategoryTotal(
+            current == null ? 1 : current.count() + 1,
+            (current == null ? BigDecimal.ZERO : current.amount()).add(expense.getTotalAmount())));
+      });
+      document.add(new Paragraph("Spending by category").setBold().setFontSize(13));
+      Table categoryTable = table("Category", "Expense count", "Total amount");
+      categoryTotals.entrySet().stream()
+          .sorted(Map.Entry.<String, CategoryTotal>comparingByValue(
+              Comparator.comparing(CategoryTotal::amount)).reversed())
+          .forEach(entry -> addRow(categoryTable, entry.getKey(), String.valueOf(entry.getValue().count()), money(entry.getValue().amount())));
+      emptyRow(categoryTable, categoryTotals.isEmpty(), 3, "No category expenses");
+      document.add(categoryTable);
+
       document.add(new Paragraph("Expenses").setBold().setFontSize(13));
       Table expenseTable =
           table("Date", "Description", "Category", "Paid by", "Split", "Amount");

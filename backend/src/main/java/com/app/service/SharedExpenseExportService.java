@@ -46,6 +46,8 @@ public class SharedExpenseExportService {
         ByteArrayOutputStream output = new ByteArrayOutputStream()) {
       Styles styles = new Styles(workbook);
       summary(workbook, styles, group, memberRows, payerRows, shareRows, settlementRows);
+      paidByMemberSheet(workbook, styles, memberRows, payerRows);
+      categorySummarySheet(workbook, styles, expenseRows);
       expenseSheet(workbook, styles, expenseRows, payerRows);
       shareSheet(workbook, styles, expenseRows, payerRows, shareRows);
       settlementSheet(workbook, styles, settlementRows);
@@ -55,6 +57,48 @@ public class SharedExpenseExportService {
     } catch (IOException e) {
       throw new IllegalStateException("Unable to generate shared expense export", e);
     }
+  }
+
+  private void paidByMemberSheet(
+      Workbook workbook,
+      Styles styles,
+      List<SharedGroupMember> memberRows,
+      List<SharedExpensePayer> payerRows) {
+    Sheet sheet = workbook.createSheet("Paid by Member");
+    header(sheet, 0, styles, "Member", "Total paid");
+    Map<Long, BigDecimal> totals = payerRows.stream().collect(Collectors.groupingBy(
+        row -> row.getMember().getId(),
+        Collectors.reducing(BigDecimal.ZERO, SharedExpensePayer::getPaidAmount, BigDecimal::add)));
+    int index = 1;
+    for (SharedGroupMember member : memberRows) {
+      Row row = cells(sheet, index++, styles.normal, member.getMemberName(), totals.getOrDefault(member.getId(), BigDecimal.ZERO));
+      row.getCell(1).setCellStyle(styles.money);
+    }
+    finish(sheet, 0, 2);
+  }
+
+  private void categorySummarySheet(
+      Workbook workbook, Styles styles, List<SharedExpense> expenseRows) {
+    record CategoryTotal(long count, BigDecimal amount) {}
+    Map<String, CategoryTotal> totals = new LinkedHashMap<>();
+    expenseRows.forEach(expense -> {
+      String category = expense.getCategory() == null || expense.getCategory().isBlank()
+          ? "Uncategorized" : expense.getCategory();
+      CategoryTotal current = totals.get(category);
+      totals.put(category, new CategoryTotal(
+          current == null ? 1 : current.count() + 1,
+          (current == null ? BigDecimal.ZERO : current.amount()).add(expense.getTotalAmount())));
+    });
+    Sheet sheet = workbook.createSheet("Category Summary");
+    header(sheet, 0, styles, "Category", "Expense count", "Total amount");
+    int index = 1;
+    for (Map.Entry<String, CategoryTotal> entry : totals.entrySet().stream()
+        .sorted(Map.Entry.<String, CategoryTotal>comparingByValue(
+            Comparator.comparing(CategoryTotal::amount)).reversed()).toList()) {
+      Row row = cells(sheet, index++, styles.normal, entry.getKey(), entry.getValue().count(), entry.getValue().amount());
+      row.getCell(2).setCellStyle(styles.money);
+    }
+    finish(sheet, 0, 3);
   }
 
   private void summary(
