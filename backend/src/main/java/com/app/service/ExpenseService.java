@@ -8,6 +8,7 @@ import com.app.entity.Expense;
 import com.app.entity.ExpenseCategory;
 import com.app.entity.ExpenseStatus;
 import com.app.entity.ExpenseType;
+import com.app.entity.ExpenseItem;
 import com.app.entity.FestivalEvent;
 import com.app.entity.PaymentMode;
 import com.app.exception.ResourceNotFoundException;
@@ -15,6 +16,7 @@ import com.app.exception.ValidationException;
 import com.app.repository.AccountRepository;
 import com.app.repository.ExpenseCategoryRepository;
 import com.app.repository.ExpenseRepository;
+import com.app.repository.ExpenseItemRepository;
 import com.app.repository.FestivalEventRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -34,15 +36,18 @@ public class ExpenseService {
     private final ExpenseCategoryRepository categoryRepository;
     private final AccountRepository accountRepository;
     private final FestivalEventRepository festivalEventRepository;
+    private final ExpenseItemRepository itemRepository;
 
     public ExpenseService(ExpenseRepository expenseRepository,
                           ExpenseCategoryRepository categoryRepository,
                           AccountRepository accountRepository,
-                          FestivalEventRepository festivalEventRepository) {
+                          FestivalEventRepository festivalEventRepository,
+                          ExpenseItemRepository itemRepository) {
         this.expenseRepository = expenseRepository;
         this.categoryRepository = categoryRepository;
         this.accountRepository = accountRepository;
         this.festivalEventRepository = festivalEventRepository;
+        this.itemRepository = itemRepository;
     }
 
     public List<ExpenseDto> getExpensesByAccountId(Long accountId) {
@@ -119,6 +124,7 @@ public class ExpenseService {
                 .build();
 
         Expense savedExpense = expenseRepository.save(expense);
+        saveItems(savedExpense, request.getItems());
         refreshFestivalExpenseTotal(savedExpense.getFestivalEvent());
         log.info("Expense created with ID: {}", savedExpense.getId());
 
@@ -175,6 +181,8 @@ public class ExpenseService {
         }
 
         Expense updated = expenseRepository.save(expense);
+        itemRepository.deleteByExpenseId(updated.getId());
+        saveItems(updated, request.getItems());
         refreshFestivalExpenseTotal(previousFestivalEvent);
         refreshFestivalExpenseTotal(updated.getFestivalEvent());
         return mapToDto(updated);
@@ -231,6 +239,19 @@ public class ExpenseService {
     }
 
     private void validateExpenseRequest(ExpenseCreateRequest request) {
+        if (request.getItems() != null && !request.getItems().isEmpty()) {
+            request.getItems().forEach(item -> {
+                BigDecimal quantity = item.getQuantity() == null ? BigDecimal.ONE : item.getQuantity();
+                if (item.getUnitPrice() != null && quantity.multiply(item.getUnitPrice()).compareTo(item.getAmount()) != 0) {
+                    throw new ValidationException("Item amount must equal quantity multiplied by unit price");
+                }
+            });
+            BigDecimal itemTotal = request.getItems().stream().map(ExpenseCreateRequest.ItemRequest::getAmount)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+            if (itemTotal.compareTo(request.getAmount()) != 0) {
+                throw new ValidationException("Item total must equal expense amount");
+            }
+        }
         if (request.getAmount().compareTo(java.math.BigDecimal.ZERO) <= 0) {
             throw new ValidationException("Amount must be greater than 0");
         }
@@ -305,7 +326,20 @@ public class ExpenseService {
                 .remarks(expense.getRemarks())
                 .status(expense.getStatus())
                 .createdAt(expense.getCreatedAt())
+                .items(itemRepository.findByExpenseIdOrderByDisplayOrderAscIdAsc(expense.getId()).stream()
+                        .map(item -> ExpenseDto.ItemDto.builder().id(item.getId()).itemName(item.getItemName()).quantity(item.getQuantity()).unitPrice(item.getUnitPrice()).amount(item.getAmount()).build())
+                        .toList())
                 .build();
+    }
+
+    private void saveItems(Expense expense, List<ExpenseCreateRequest.ItemRequest> items) {
+        if (items == null) return;
+        for (int index = 0; index < items.size(); index++) {
+            var item = items.get(index);
+            itemRepository.save(ExpenseItem.builder().expense(expense).itemName(item.getItemName().trim())
+                    .quantity(item.getQuantity() == null ? BigDecimal.ONE : item.getQuantity()).unitPrice(item.getUnitPrice())
+                    .amount(item.getAmount()).displayOrder(index).build());
+        }
     }
 
 

@@ -57,8 +57,10 @@ export const SharedExpenseGroup = () => {
     splitType: 'EQUAL',
     participantIds: [],
     payers: {},
-    shares: {}
+    shares: {},
+    items: []
   })
+  const [itemizedExpense, setItemizedExpense] = useState(false)
   const [settle, setSettle] = useState({
     paidByMemberId: '',
     paidToMemberId: '',
@@ -147,6 +149,12 @@ export const SharedExpenseGroup = () => {
     }))
   const addExpense = (e) => {
     e.preventDefault()
+    const items = itemizedExpense ? expense.items.filter((item) => item.itemName.trim() && Number(item.amount) > 0) : []
+    if (itemizedExpense && items.length !== expense.items.length) {
+      toast.error('Enter a name and amount for every item, or remove the empty row')
+      return
+    }
+    const totalAmount = itemizedExpense ? items.reduce((sum, item) => sum + Number(item.amount), 0) : Number(expense.totalAmount)
     const shares =
       expense.splitType === 'EXACT'
         ? expense.participantIds.map((memberId) => ({
@@ -163,20 +171,16 @@ export const SharedExpenseGroup = () => {
     submit(
       'expense',
       sharedExpenseAPI.addExpense,
-      { ...expense, totalAmount: Number(expense.totalAmount), payers, shares },
+      { ...expense, totalAmount, items: items.map((item) => ({ itemName: item.itemName.trim(), quantity: Number(item.quantity || 1), unitPrice: item.unitPrice === '' ? null : Number(item.unitPrice), amount: Number(item.amount) })), payers, shares },
       'Expense added'
-    ).then((saved) =>
-      saved && setExpense({
-        description: '',
-        category: '',
-        expenseDate: today,
-        totalAmount: '',
-        splitType: 'EQUAL',
-        participantIds: [],
-        payers: {},
-        shares: {}
+    ).then((saved) => {
+      if (!saved) return
+      setExpense({
+        description: '', category: '', expenseDate: today, totalAmount: '',
+        splitType: 'EQUAL', participantIds: [], payers: {}, shares: {}, items: []
       })
-    )
+      setItemizedExpense(false)
+    })
   }
   const addSettlement = (e) => {
     e.preventDefault()
@@ -682,10 +686,11 @@ export const SharedExpenseGroup = () => {
               min="0.01"
               step="0.01"
               placeholder={tx('Total amount')}
-              value={expense.totalAmount}
+              value={itemizedExpense ? expense.items.reduce((sum, item) => sum + Number(item.amount || 0), 0) || '' : expense.totalAmount}
               onChange={(e) =>
                 setExpense({ ...expense, totalAmount: e.target.value })
               }
+              disabled={itemizedExpense}
             />
             <select
               value={expense.splitType}
@@ -697,6 +702,28 @@ export const SharedExpenseGroup = () => {
               <option value="EXACT">{tx('Exact amounts')}</option>
             </select>
           </div>
+          <section className="alert-panel expense-items-panel">
+            <label className="expense-items-toggle">
+              <input type="checkbox" checked={itemizedExpense} onChange={(event) => {
+                const enabled = event.target.checked
+                setItemizedExpense(enabled)
+                if (enabled && expense.items.length === 0) setExpense({ ...expense, items: [{ itemName: '', quantity: 1, unitPrice: '', amount: '' }] })
+              }} />
+              <span><strong>{tx('Add item details')}</strong><small> {tx('Optional — useful for bills with multiple items')}</small></span>
+            </label>
+            {itemizedExpense && <>
+              {expense.items.map((item, index) => (
+                <div className="expense-item-row" key={index}>
+                  <input placeholder={tx('Item name')} value={item.itemName} onChange={(event) => setExpense({ ...expense, items: expense.items.map((row, rowIndex) => rowIndex === index ? { ...row, itemName: event.target.value } : row) })} />
+                  <input type="number" min="0.001" step="0.001" placeholder={tx('Qty')} value={item.quantity} onChange={(event) => setExpense({ ...expense, items: expense.items.map((row, rowIndex) => rowIndex === index ? { ...row, quantity: event.target.value, amount: row.unitPrice !== '' ? (Number(event.target.value) * Number(row.unitPrice)).toFixed(2) : row.amount } : row) })} />
+                  <input type="number" min="0" step="0.01" placeholder={tx('Unit price')} value={item.unitPrice ?? ''} onChange={(event) => setExpense({ ...expense, items: expense.items.map((row, rowIndex) => rowIndex === index ? { ...row, unitPrice: event.target.value, amount: event.target.value !== '' ? (Number(row.quantity || 1) * Number(event.target.value)).toFixed(2) : row.amount } : row) })} />
+                  <input type="number" min="0.01" step="0.01" placeholder={tx('Total')} value={item.amount} disabled={item.unitPrice !== '' && item.unitPrice != null} onChange={(event) => setExpense({ ...expense, items: expense.items.map((row, rowIndex) => rowIndex === index ? { ...row, amount: event.target.value } : row) })} />
+                  <button type="button" disabled={expense.items.length === 1} onClick={() => setExpense({ ...expense, items: expense.items.filter((_, rowIndex) => rowIndex !== index) })}>{tx('Remove')}</button>
+                </div>
+              ))}
+              <button type="button" onClick={() => setExpense({ ...expense, items: [...expense.items, { itemName: '', quantity: 1, unitPrice: '', amount: '' }] })}>+ {tx('Add another item')}</button>
+            </>}
+          </section>
           <h3>{tx('Who paid?')}</h3>
           <div className="participant-grid">
             {active.map((x) => (
@@ -789,6 +816,7 @@ export const SharedExpenseGroup = () => {
                   <div><dt>{tx('Paid by')}</dt><dd>{x.paidBy || '-'}</dd></div>
                   <div><dt>{tx('Split')}</dt><dd>{x.splitType || '-'}</dd></div>
                   <div><dt>{tx('Amount')}</dt><dd>{formatCurrency(x.totalAmount)}</dd></div>
+                  {x.items?.length > 0 && <div><dt>{tx('Items')}</dt><dd>{x.items.map((item) => `${item.itemName} × ${Number(item.quantity || 1)} (${formatCurrency(item.amount)})`).join(', ')}</dd></div>}
                 </dl>
               </div>
             </details>

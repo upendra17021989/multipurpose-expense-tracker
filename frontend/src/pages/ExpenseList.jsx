@@ -290,6 +290,7 @@ export const ExpenseList = () => {
                   <div><dt>Payment</dt><dd>{expense.paymentMode || '-'}</dd></div>
                   <div><dt>Status</dt><dd><span className={`status-pill ${String(expense.status).toLowerCase()}`}>{expense.status}</span></dd></div>
                   <div><dt>Amount</dt><dd>{formatCurrency(expense.amount)}</dd></div>
+                  {expense.items?.length > 0 && <div><dt>Items</dt><dd>{expense.items.map((item) => `${item.itemName} × ${Number(item.quantity || 1)} (${formatCurrency(item.amount)})`).join(', ')}</dd></div>}
                 </dl>
                 <div className="table-actions">
                   <button onClick={() => handleEdit(expense)}>Edit</button>
@@ -419,12 +420,15 @@ const sortRows = (rows, sort, accessors) => [...rows].sort((a, b) => {
 
 const SortableTh = ({ label, sortKey, sort, onSort, className }) => {
   const { tx } = useI18n()
+  const active = sort.key === sortKey
+  const symbol = active ? (sort.direction === 'asc' ? '↑' : '↓') : '↕'
+  const nextDirection = active && sort.direction === 'asc' ? 'descending' : 'ascending'
 
   return (
-    <th className={className}>
-      <button type="button" className="sortable-header" onClick={() => onSort(sortKey)}>
+    <th className={className} aria-sort={active ? (sort.direction === 'asc' ? 'ascending' : 'descending') : 'none'}>
+      <button type="button" className="sortable-header" aria-label={`${tx(label)}: sort ${nextDirection}`} onClick={() => onSort(sortKey)}>
         <span>{tx(label)}</span>
-        <span aria-hidden="true">{tx(sort.key === sortKey ? (sort.direction === 'asc' ? 'Asc' : 'Desc') : 'Sort')}</span>
+        <span className="sort-symbol" aria-hidden="true">{symbol}</span>
       </button>
     </th>
   )

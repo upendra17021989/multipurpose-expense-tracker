@@ -20,6 +20,7 @@ const initialForm = {
   vendorName: '',
   remarks: '',
   status: 'DRAFT'
+  ,items: []
 }
 
 const expenseTypesByAccount = {
@@ -128,6 +129,7 @@ export const ExpenseForm = () => {
   const [voiceTranscript, setVoiceTranscript] = useState('')
   const [listening, setListening] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [itemized, setItemized] = useState(false)
   const recognitionRef = useRef(null)
   const isEdit = Boolean(expenseId)
   const isApproved = isEdit && form.status === 'APPROVED'
@@ -177,7 +179,9 @@ export const ExpenseForm = () => {
           vendorName: expense.vendorName || '',
           remarks: expense.remarks || '',
           status: expense.status || 'DRAFT'
+          ,items: (expense.items || []).map((item) => ({ ...item, quantity: item.quantity || 1 }))
         })
+        setItemized(Boolean(expense.items?.length))
       })
       .catch(() => toast.error('Unable to load expense'))
   }, [expenseId, isEdit, availableTypes])
@@ -332,11 +336,17 @@ export const ExpenseForm = () => {
       return
     }
 
+    const validItems = itemized ? form.items.filter((item) => item.itemName.trim() && Number(item.amount) > 0) : []
+    if (itemized && validItems.length !== form.items.length) {
+      toast.error('Enter a name and amount for every item, or remove the empty row')
+      return
+    }
     const payload = {
       ...form,
       categoryId: Number(form.categoryId),
       festivalEventId: showFestivalEvent ? Number(form.festivalEventId) : null,
-      amount: Number(form.amount),
+      amount: itemized ? validItems.reduce((sum, item) => sum + Number(item.amount), 0) : Number(form.amount),
+      items: validItems.map((item) => ({ itemName: item.itemName.trim(), quantity: Number(item.quantity || 1), unitPrice: item.unitPrice === '' ? null : Number(item.unitPrice), amount: Number(item.amount) })),
       transactionId: form.transactionId || null,
       utr: form.utr || null,
       chequeNumber: form.chequeNumber || null,
@@ -421,7 +431,7 @@ export const ExpenseForm = () => {
           )}
           <label>
             Amount
-            <input type="number" min="1" step="0.01" value={form.amount} onChange={(event) => update('amount', event.target.value)} required disabled={isApproved} />
+            <input type="number" min="1" step="0.01" value={itemized ? form.items.reduce((sum, item) => sum + Number(item.amount || 0), 0) || '' : form.amount} onChange={(event) => update('amount', event.target.value)} required disabled={isApproved || itemized} />
           </label>
           <label>
             Payment Mode
@@ -473,6 +483,30 @@ export const ExpenseForm = () => {
             <input type="file" accept="image/*,.jfif,.pdf" capture="environment" onChange={(event) => handleReceiptFile(event.target.files?.[0])} disabled={isApproved || saving} />
           </label>
         </div>
+        {currentAccount?.accountType === 'INDIVIDUAL' && (
+          <section className="alert-panel expense-items-panel">
+            <label className="expense-items-toggle">
+              <input type="checkbox" checked={itemized} disabled={isApproved} onChange={(event) => {
+                const enabled = event.target.checked
+                setItemized(enabled)
+                if (enabled && form.items.length === 0) update('items', [{ itemName: '', quantity: 1, unitPrice: '', amount: '' }])
+              }} />
+              <span><strong>Add item details</strong><small> Optional — useful for bills with multiple items</small></span>
+            </label>
+            {itemized && <>
+              {form.items.map((item, index) => (
+                <div className="expense-item-row" key={index}>
+                  <input aria-label={`Item ${index + 1} name`} placeholder="Item name" value={item.itemName} disabled={isApproved} onChange={(event) => update('items', form.items.map((row, rowIndex) => rowIndex === index ? { ...row, itemName: event.target.value } : row))} />
+                  <input aria-label={`Item ${index + 1} quantity`} type="number" min="0.001" step="0.001" placeholder="Qty" value={item.quantity} disabled={isApproved} onChange={(event) => update('items', form.items.map((row, rowIndex) => rowIndex === index ? { ...row, quantity: event.target.value, amount: row.unitPrice !== '' ? (Number(event.target.value) * Number(row.unitPrice)).toFixed(2) : row.amount } : row))} />
+                  <input aria-label={`Item ${index + 1} unit price`} type="number" min="0" step="0.01" placeholder="Unit price" value={item.unitPrice ?? ''} disabled={isApproved} onChange={(event) => update('items', form.items.map((row, rowIndex) => rowIndex === index ? { ...row, unitPrice: event.target.value, amount: event.target.value !== '' ? (Number(row.quantity || 1) * Number(event.target.value)).toFixed(2) : row.amount } : row))} />
+                  <input aria-label={`Item ${index + 1} amount`} type="number" min="0.01" step="0.01" placeholder="Total" value={item.amount} disabled={isApproved || item.unitPrice !== '' && item.unitPrice != null} onChange={(event) => update('items', form.items.map((row, rowIndex) => rowIndex === index ? { ...row, amount: event.target.value } : row))} />
+                  <button type="button" disabled={isApproved || form.items.length === 1} onClick={() => update('items', form.items.filter((_, rowIndex) => rowIndex !== index))}>Remove</button>
+                </div>
+              ))}
+              <button type="button" disabled={isApproved} onClick={() => update('items', [...form.items, { itemName: '', quantity: 1, unitPrice: '', amount: '' }])}>+ Add another item</button>
+            </>}
+          </section>
+        )}
         {ocrStatus && <p className="muted">{ocrStatus}</p>}
         <label>
           Description

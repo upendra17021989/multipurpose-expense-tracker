@@ -11,12 +11,15 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.math.BigDecimal;
+import java.util.List;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 public class ExpenseDto {
+    @Data @NoArgsConstructor @AllArgsConstructor @Builder
+    public static class ItemDto { private Long id; private String itemName; private BigDecimal quantity; private BigDecimal unitPrice; private BigDecimal amount; }
     private Long id;
     private Long accountId;
     private LocalDate expenseDate;
@@ -38,4 +41,5 @@ public class ExpenseDto {
     private String remarks;
     private ExpenseStatus status;
     private LocalDateTime createdAt;
+    private List<ItemDto> items;
 }

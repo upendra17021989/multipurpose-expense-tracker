@@ -2330,6 +2330,12 @@ textarea:disabled {
   min-height: 0;
 }
 
+.expense-items-toggle { display: flex; align-items: center; gap: .65rem; cursor: pointer; }
+.expense-items-toggle input { width: auto; }
+.expense-items-toggle small { font-weight: 400; color: var(--muted-color, #64748b); }
+.expense-item-row { display: grid; grid-template-columns: minmax(8rem, 1fr) 6rem 8rem 8rem auto; gap: .6rem; margin-top: .75rem; }
+@media (max-width: 760px) { .expense-item-row { grid-template-columns: 1fr 6rem; } .expense-item-row button { grid-column: 1 / -1; } }
+
 .shared-groups-hero,
 .shared-friends-hero,
 .shared-group-hero {

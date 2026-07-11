@@ -6,7 +6,8 @@ public final class SharedExpenseDtos { private SharedExpenseDtos() {}
  @Data public static class MemberRequest { @NotBlank @Size(max=150) private String memberName; @Email private String email; private String mobile; }
  @Data public static class MemberUpdateRequest { @NotBlank @Size(max=150) private String memberName; @Email private String email; private String mobile; @NotNull private Boolean active; }
  @Data public static class AmountRow { @NotNull private Long memberId; @NotNull @DecimalMin("0.01") private BigDecimal amount; }
- @Data public static class ExpenseRequest { @NotBlank @Size(max=500) private String description; private String category; @NotNull private LocalDate expenseDate; @NotNull @DecimalMin("0.01") private BigDecimal totalAmount; @NotNull private SharedSplitType splitType; private Long paidByMemberId; @Valid private List<AmountRow> payers; @NotEmpty private List<Long> participantIds; @Valid private List<AmountRow> shares; }
+ @Data public static class ItemRequest { @NotBlank @Size(max=200) private String itemName; @NotNull @DecimalMin("0.01") private BigDecimal amount; @DecimalMin("0.001") private BigDecimal quantity; @DecimalMin("0.00") private BigDecimal unitPrice; }
+ @Data public static class ExpenseRequest { @NotBlank @Size(max=500) private String description; private String category; @NotNull private LocalDate expenseDate; @NotNull @DecimalMin("0.01") private BigDecimal totalAmount; @NotNull private SharedSplitType splitType; private Long paidByMemberId; @Valid private List<AmountRow> payers; @NotEmpty private List<Long> participantIds; @Valid private List<AmountRow> shares; @Valid private List<ItemRequest> items; }
  @Data public static class SettlementRequest { @NotNull private Long paidByMemberId; @NotNull private Long paidToMemberId; @NotNull @DecimalMin("0.01") private BigDecimal amount; @NotNull private LocalDate settlementDate; private String paymentMode; private String notes; }
  @Data public static class InvitationRequest { @Email private String email; private String mobile; }
  @Value @Builder public static class InvitationDto { Long id; Long groupId; String groupName; String invitedBy; String email; String mobile; String status; LocalDateTime createdAt; LocalDateTime expiresAt; }
@@ -14,7 +15,8 @@ public final class SharedExpenseDtos { private SharedExpenseDtos() {}
  @Value @Builder public static class MemberDto { Long id; Long userId; String memberName; String email; String mobile; Boolean active; }
  @Value @Builder public static class BalanceDto { Long memberId; String memberName; BigDecimal balance; }
  @Value @Builder public static class ExpensePayerDto { Long memberId; String memberName; BigDecimal amount; }
- @Value @Builder public static class ExpenseDto { Long id; String description; String category; LocalDate expenseDate; BigDecimal totalAmount; SharedSplitType splitType; String paidBy; List<ExpensePayerDto> payers; Boolean reversed; }
+ @Value @Builder public static class ItemDto { Long id; String itemName; BigDecimal quantity; BigDecimal unitPrice; BigDecimal amount; }
+ @Value @Builder public static class ExpenseDto { Long id; String description; String category; LocalDate expenseDate; BigDecimal totalAmount; SharedSplitType splitType; String paidBy; List<ExpensePayerDto> payers; List<ItemDto> items; Boolean reversed; }
  @Value @Builder public static class ActivityDto { Long id; String activityType; String message; String actorName; LocalDateTime createdAt; }
  @Value @Builder public static class GroupDto { Long id; String name; Boolean active; List<MemberDto> members; List<ExpenseDto> expenses; List<BalanceDto> balances; List<ActivityDto> activities; }
 }

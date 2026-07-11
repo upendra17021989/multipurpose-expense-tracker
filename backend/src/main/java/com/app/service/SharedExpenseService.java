@@ -21,6 +21,7 @@ public class SharedExpenseService {
   private final SharedExpenseRepository expenses;
   private final SharedExpensePayerRepository payers;
   private final SharedExpenseShareRepository shares;
+  private final SharedExpenseItemRepository items;
   private final SharedSettlementRepository settlements;
   private final SharedExpenseActivityRepository activities;
   private final AccountRepository accounts;
@@ -227,6 +228,16 @@ public class SharedExpenseService {
   public GroupDto addExpense(Long accountId, Long userId, Long groupId, ExpenseRequest r) {
     SharedExpenseGroup g = group(accountId, userId, groupId);
     BigDecimal total = money(r.getTotalAmount());
+    if (r.getItems() != null && !r.getItems().isEmpty()) {
+      r.getItems().forEach(item -> {
+        BigDecimal quantity = item.getQuantity() == null ? BigDecimal.ONE : item.getQuantity();
+        if (item.getUnitPrice() != null && quantity.multiply(item.getUnitPrice()).compareTo(item.getAmount()) != 0)
+          throw new ValidationException("Item amount must equal quantity multiplied by unit price");
+      });
+      BigDecimal itemTotal = r.getItems().stream().map(ItemRequest::getAmount).map(this::money)
+          .reduce(BigDecimal.ZERO, BigDecimal::add);
+      if (itemTotal.compareTo(total) != 0) throw new ValidationException("Item total must equal expense total");
+    }
     List<AmountRow> payerRows = r.getPayers();
     if (payerRows == null || payerRows.isEmpty()) {
       if (r.getPaidByMemberId() == null) throw new ValidationException("Select at least one payer");
@@ -275,6 +286,14 @@ public class SharedExpenseService {
                 .totalAmount(total)
                 .splitType(r.getSplitType())
                 .build());
+    if (r.getItems() != null) {
+      for (int index = 0; index < r.getItems().size(); index++) {
+        ItemRequest item = r.getItems().get(index);
+        items.save(SharedExpenseItem.builder().expense(e).itemName(item.getItemName().trim())
+            .quantity(item.getQuantity() == null ? BigDecimal.ONE : item.getQuantity()).unitPrice(item.getUnitPrice())
+            .amount(money(item.getAmount())).displayOrder(index).build());
+      }
+    }
     paid.forEach(
         (id, amount) ->
             payers.save(
@@ -442,6 +461,9 @@ public class SharedExpenseService {
                                         .amount(p.getPaidAmount())
                                         .build())
                                     .toList())
+                            .items(items.findByExpenseIdOrderByDisplayOrderAscIdAsc(x.getId()).stream()
+                                .map(item -> ItemDto.builder().id(item.getId()).itemName(item.getItemName()).quantity(item.getQuantity()).unitPrice(item.getUnitPrice()).amount(item.getAmount()).build())
+                                .toList())
                             .build())
                 .toList()
             : List.of();
