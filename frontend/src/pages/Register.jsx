@@ -180,7 +180,7 @@ export const Register = () => {
         </form>
 
         <p style={styles.bottomText}>
-          Already have an account? <Link to="/login" style={styles.link}>Login</Link>
+          Already have an account? <Link to="/login" style={styles.link}>Login</Link> and open Workspaces from the account menu to add or join another workspace.
         </p>
       </div>
     </div>
@@ -274,3 +274,4 @@ const styles = {
     textDecoration: 'none'
   }
 }
+

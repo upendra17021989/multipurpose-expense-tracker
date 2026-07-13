@@ -6,6 +6,7 @@ export const authAPI = {
   loginWithAccount: (data, accountId) => axiosInstance.post(`/auth/login/${accountId}`, data),
   resetPassword: (data) => axiosInstance.post('/auth/reset-password', data),
   switchAccount: (accountId) => axiosInstance.post(`/auth/switch-account/${accountId}`),
+  addWorkspace: (data) => axiosInstance.post('/auth/workspaces', data),
   updateProfile: (data) => axiosInstance.put('/auth/profile', data),
   changePassword: (data) => axiosInstance.put('/auth/change-password', data),
   validateToken: () => axiosInstance.get('/auth/validate')
@@ -258,7 +259,4 @@ export const sportsAPI = {
   getReceipts: (collectionId) => axiosInstance.get(`/sports/collections/${collectionId}/receipts`),
   voidReceipt: (receiptId, data) => axiosInstance.post(`/sports/receipts/${receiptId}/void`, data)
 }
-
-
-
 

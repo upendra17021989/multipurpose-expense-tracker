@@ -10,6 +10,7 @@ import { Register } from './pages/Register'
 import { ResetPassword } from './pages/ResetPassword'
 import { ProfileSettings } from './pages/ProfileSettings'
 import { ChangePassword } from './pages/ChangePassword'
+import { Workspaces } from './pages/Workspaces'
 import { DashboardRouter } from './pages/DashboardRouter'
 import { ExpenseList } from './pages/ExpenseList'
 import { ExpenseForm } from './pages/ExpenseForm'
@@ -89,6 +90,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <ChangePassword />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/workspaces"
+            element={
+              <ProtectedRoute>
+                <Workspaces />
               </ProtectedRoute>
             }
           />
@@ -555,3 +564,4 @@ function App() {
 }
 
 export default App
+

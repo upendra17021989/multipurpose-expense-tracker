@@ -56,9 +56,15 @@ public class AuthService {
 
     @Transactional
     public UserDto register(RegisterRequest request) {
-        User user = userRepository.findByMobile(request.getMobile())
-                .map(existingUser -> validateExistingUserForNewAccount(existingUser, request))
-                .orElseGet(() -> createUser(request));
+        if (userRepository.findByMobile(request.getMobile()).isPresent()) {
+            throw new ValidationException("You already have an account. Please log in to add or join another workspace.");
+        }
+        if (request.getEmail() != null && !request.getEmail().isBlank()
+                && userRepository.findByEmailIgnoreCase(request.getEmail()).isPresent()) {
+            throw new ValidationException("This email is already registered. Please log in to add or join another workspace.");
+        }
+
+        User user = createUser(request);
 
         if (request.getAccountType() == AccountType.SOCIETY
                 && request.getSocietyId() != null
@@ -76,6 +82,30 @@ public class AuthService {
         log.info("Account {} created for user ID: {}", savedAccount.getId(), user.getId());
 
         return mapToUserDto(user);
+    }
+
+    @Transactional
+    public LoginResponse addWorkspace(Long userId, Long currentAccountId, RegisterRequest request) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UnauthorizedException("User not found"));
+        if (!Boolean.TRUE.equals(user.getActive())) {
+            throw new UnauthorizedException("This account is inactive. Please contact support.");
+        }
+
+        if (request.getAccountType() == AccountType.SOCIETY
+                && request.getSocietyId() != null
+                && !Boolean.TRUE.equals(request.getCreateNewSociety())) {
+            requestSocietyMembership(request.getSocietyId(), user);
+            sharedInvitationService.claimPendingInvitations(user);
+            return buildAccountLoginResponse(user, currentAccountId);
+        }
+
+        Account account = buildInitialAccount(request, user);
+        Account savedAccount = accountRepository.save(account);
+        expenseCategoryService.seedDefaultCategories(savedAccount);
+        sharedInvitationService.claimPendingInvitations(user);
+        log.info("Workspace account {} created for existing user ID: {}", savedAccount.getId(), user.getId());
+        return buildAccountLoginResponse(user, savedAccount.getId());
     }
 
     private void requestSocietyMembership(Long societyId, User user) {
@@ -223,15 +253,6 @@ public class AuthService {
         return new ArrayList<>(accounts.values());
     }
 
-    private User validateExistingUserForNewAccount(User user, RegisterRequest request) {
-        if (!user.getActive()) {
-            throw new ValidationException("User is inactive");
-        }
-        if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
-            throw new UnauthorizedException("Mobile already exists. Enter the correct password to add another account type.");
-        }
-        return user;
-    }
 
     private User createUser(RegisterRequest request) {
         if (request.getEmail() != null && !request.getEmail().isBlank() && userRepository.findByEmail(request.getEmail()).isPresent()) {
@@ -320,3 +341,4 @@ public class AuthService {
         };
     }
 }
+

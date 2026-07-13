@@ -60,6 +60,15 @@ public class AuthController {
         return ResponseEntity.ok(response);
     }
 
+    @PostMapping("/workspaces")
+    public ResponseEntity<LoginResponse> addWorkspace(
+            @AuthenticationPrincipal UserPrincipal userPrincipal,
+            @RequestBody RegisterRequest request) {
+        log.info("Add workspace request for user: {} type: {}", userPrincipal.getUserId(), request.getAccountType());
+        LoginResponse response = authService.addWorkspace(userPrincipal.getUserId(), userPrincipal.getAccountId(), request);
+        return ResponseEntity.ok(response);
+    }
+
     @GetMapping("/validate")
     public ResponseEntity<String> validateToken() {
         return ResponseEntity.ok("Token is valid");
@@ -80,3 +89,4 @@ public class AuthController {
         return ResponseEntity.noContent().build();
     }
 }
+

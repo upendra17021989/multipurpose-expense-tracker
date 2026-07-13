@@ -320,6 +320,9 @@ export const Navbar = () => {
                     {currentAccount.accountName}
                   </p>
                 )}
+                <Link to="/workspaces" onClick={closeMenus}>
+                  {tx('Workspaces')}
+                </Link>
                 <Link to="/profile" onClick={closeMenus}>
                   {tx('Edit account details')}
                 </Link>
@@ -340,3 +343,4 @@ export const Navbar = () => {
     </nav>
   )
 }
+
