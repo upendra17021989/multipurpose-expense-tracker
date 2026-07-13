@@ -41,6 +41,15 @@ const translations = {
   Members: { hi: 'सदस्य', gu: 'સભ્યો' },
   Events: { hi: 'इवेंट', gu: 'ઇવેન્ટ' },
   Account: { hi: 'अकाउंट', gu: 'એકાઉન્ટ' },
+  Workspaces: { hi: 'वर्कस्पेस', gu: 'વર્કસ્પેસ' },
+  'Your workspaces': { hi: 'आपके वर्कस्पेस', gu: 'તમારા વર્કસ્પેસ' },
+  'Add workspace': { hi: 'वर्कस्पेस जोड़ें', gu: 'વર્કસ્પેસ ઉમેરો' },
+  'Workspace type': { hi: 'वर्कस्पेस प्रकार', gu: 'વર્કસ્પેસ પ્રકાર' },
+  'Workspace name': { hi: 'वर्कस्पेस नाम', gu: 'વર્કસ્પેસ નામ' },
+  Current: { hi: 'वर्तमान', gu: 'હાલનું' },
+  Switch: { hi: 'बदलें', gu: 'બદલો' },
+  'Switching...': { hi: 'बदल रहा है...', gu: 'બદલાઈ રહ્યું છે...' },
+  'Adding workspace...': { hi: 'वर्कस्पेस जोड़ा जा रहा है...', gu: 'વર્કસ્પેસ ઉમેરાઈ રહ્યું છે...' },
   'Edit account details': { hi: 'अकाउंट विवरण बदलें', gu: 'એકાઉન્ટ વિગતો બદલો' },
   'Change password': { hi: 'पासवर्ड बदलें', gu: 'પાસવર્ડ બદલો' },
   Logout: { hi: 'लॉग आउट', gu: 'લૉગ આઉટ' },
@@ -293,3 +302,4 @@ export const useI18n = () => {
   if (!context) throw new Error('useI18n must be used inside I18nProvider')
   return context
 }
+

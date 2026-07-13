@@ -5,6 +5,7 @@ const saveSession = (token, user, accounts, currentAccount) => {
   localStorage.setItem('user', JSON.stringify(user))
   localStorage.setItem('accounts', JSON.stringify(accounts))
   localStorage.setItem('currentAccount', JSON.stringify(currentAccount))
+  if (currentAccount?.id) localStorage.setItem('lastWorkspaceId', String(currentAccount.id))
   localStorage.setItem('lastActivityAt', String(Date.now()))
 }
 
@@ -35,6 +36,7 @@ export const useAuthStore = create((set) => ({
 
   selectAccount: (account) => {
     localStorage.setItem('currentAccount', JSON.stringify(account))
+    if (account?.id) localStorage.setItem('lastWorkspaceId', String(account.id))
     set({ currentAccount: account })
   },
 
@@ -74,3 +76,4 @@ export const useAuthStore = create((set) => ({
     })
   }
 }))
+

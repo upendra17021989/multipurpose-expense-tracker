@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { toast } from 'react-toastify'
 import { authAPI, societyMembershipAPI } from '../api/endpoints'
 import { useAuthStore } from '../store/authStore'
+import { useI18n } from '../i18n'
 import { Shell } from './DashboardRouter'
 
 const workspaceTypes = [
@@ -23,6 +24,7 @@ const defaultForm = {
 
 export const Workspaces = () => {
   const { accounts, currentAccount, setSession } = useAuthStore()
+  const { tx } = useI18n()
   const [form, setForm] = useState(defaultForm)
   const [societies, setSocieties] = useState([])
   const [loadingSocieties, setLoadingSocieties] = useState(false)
@@ -98,23 +100,23 @@ export const Workspaces = () => {
       <section className="report-panel">
         <div className="section-heading-row">
           <div>
-            <h2>Your workspaces</h2>
+            <h2>{tx('Your workspaces')}</h2>
             <p className="muted">Switch between the accounts and product areas connected to your login.</p>
           </div>
         </div>
-        <div className="shared-friend-grid">
+        <div className="workspace-grid">
           {accounts.map((account) => (
-            <article className="shared-friend-card" key={account.id}>
-              <span>{workspaceInitial(account.accountType)}</span>
+            <article className="workspace-card" key={account.id}>
+              <span className="workspace-card-symbol" aria-hidden="true">{workspaceInitial(account.accountType)}</span>
               <div>
                 <strong>{account.accountName}</strong>
-                <small>{workspaceLabel(account.accountType)} · {account.role || 'Member'}</small>
+                <small>{workspaceLabel(account.accountType)} - {account.role || 'Member'}</small>
               </div>
               {currentAccount?.id === account.id ? (
-                <b>Current</b>
+                <b>{tx('Current')}</b>
               ) : (
                 <button type="button" onClick={() => switchWorkspace(account.id)} disabled={switchingId === account.id}>
-                  {switchingId === account.id ? 'Switching...' : 'Switch'}
+                  {switchingId === account.id ? tx('Switching...') : tx('Switch')}
                 </button>
               )}
             </article>
@@ -123,11 +125,11 @@ export const Workspaces = () => {
       </section>
 
       <form className="form-panel" onSubmit={submit}>
-        <h2>Add workspace</h2>
+        <h2>{tx('Add workspace')}</h2>
         <p className="muted">Create or join another workspace using this same login.</p>
         <div className="form-grid">
           <label>
-            Workspace type
+            {tx('Workspace type')}
             <select name="accountType" value={form.accountType} onChange={update} required>
               {workspaceTypes.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
             </select>
@@ -155,7 +157,7 @@ export const Workspaces = () => {
             </label>
           ) : (
             <label>
-              Workspace name
+              {tx('Workspace name')}
               <input name="accountName" value={form.accountName} onChange={update} placeholder={placeholder(form.accountType)} required />
             </label>
           )}
@@ -186,7 +188,7 @@ export const Workspaces = () => {
 
         <div className="form-actions">
           <button className="primary" type="submit" disabled={submitting || (form.accountType === 'SOCIETY' && form.societyMode === 'JOIN' && !form.societyId)}>
-            {submitting ? 'Adding workspace...' : 'Add workspace'}
+            {submitting ? tx('Adding workspace...') : tx('Add workspace')}
           </button>
         </div>
       </form>

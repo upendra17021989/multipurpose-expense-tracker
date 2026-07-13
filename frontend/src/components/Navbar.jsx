@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { toast } from 'react-toastify'
 import { authAPI } from '../api/endpoints'
@@ -8,6 +8,7 @@ import { useAuthStore } from '../store/authStore'
 
 export const Navbar = () => {
   const navigate = useNavigate()
+  const navRef = useRef(null)
   const { user, currentAccount, accounts, setSession, logout } = useAuthStore()
   const { canInstall, hasNativePrompt, promptInstall } = useInstallPrompt()
   const { language, setLanguage, tx } = useI18n()
@@ -60,6 +61,27 @@ export const Navbar = () => {
     setAccountOpen(false)
   }
 
+  useEffect(() => {
+    if (!menuOpen && !moduleOpen && !accountOpen) return undefined
+
+    const handlePointerDown = (event) => {
+      if (navRef.current?.contains(event.target)) return
+      closeMenus()
+    }
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') closeMenus()
+    }
+
+    document.addEventListener('mousedown', handlePointerDown)
+    document.addEventListener('touchstart', handlePointerDown)
+    document.addEventListener('keydown', handleKeyDown)
+    return () => {
+      document.removeEventListener('mousedown', handlePointerDown)
+      document.removeEventListener('touchstart', handlePointerDown)
+      document.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [menuOpen, moduleOpen, accountOpen])
+
   const moduleLabel =
     currentAccount?.accountType === 'KIRANA_STORE'
       ? 'Kirana'
@@ -70,7 +92,7 @@ export const Navbar = () => {
           : 'Personal'
 
   return (
-    <nav className="navbar">
+    <nav className="navbar" ref={navRef}>
       <div className="nav-container">
         <div className="nav-topline">
           <Link
@@ -329,9 +351,7 @@ export const Navbar = () => {
                 <Link to="/change-password" onClick={closeMenus}>
                   {tx('Change password')}
                 </Link>
-                <Link to="/society/join" onClick={closeMenus}>
-                  {tx('Join another society')}
-                </Link>
+
                 <button onClick={handleLogout} className="logout-btn">
                   {tx('Logout')}
                 </button>

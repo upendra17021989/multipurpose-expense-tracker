@@ -44,6 +44,13 @@ export const Login = () => {
       const response = await authAPI.login(formData)
       const { accounts } = response.data
       if (accounts?.length > 1) {
+        const lastWorkspaceId = localStorage.getItem('lastWorkspaceId')
+        const lastWorkspace = accounts.find((account) => String(account.id) === lastWorkspaceId)
+        if (lastWorkspace) {
+          const selectedResponse = await authAPI.loginWithAccount(formData, lastWorkspace.id)
+          completeLogin(selectedResponse.data)
+          return
+        }
         setPendingSession(response.data)
         toast.info('Select an account to continue')
       } else {
@@ -199,3 +206,4 @@ export const Login = () => {
     </main>
   )
 }
+
