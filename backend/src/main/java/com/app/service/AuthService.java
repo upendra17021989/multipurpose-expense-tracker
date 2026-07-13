@@ -60,6 +60,15 @@ public class AuthService {
                 .map(existingUser -> validateExistingUserForNewAccount(existingUser, request))
                 .orElseGet(() -> createUser(request));
 
+        if (request.getAccountType() == AccountType.SOCIETY
+                && request.getSocietyId() != null
+                && !Boolean.TRUE.equals(request.getCreateNewSociety())) {
+            requestSocietyMembership(request.getSocietyId(), user);
+            sharedInvitationService.claimPendingInvitations(user);
+            log.info("Society membership requested for account {} by user {}", request.getSocietyId(), user.getId());
+            return mapToUserDto(user);
+        }
+
         Account account = buildInitialAccount(request, user);
         Account savedAccount = accountRepository.save(account);
         expenseCategoryService.seedDefaultCategories(savedAccount);
@@ -67,6 +76,18 @@ public class AuthService {
         log.info("Account {} created for user ID: {}", savedAccount.getId(), user.getId());
 
         return mapToUserDto(user);
+    }
+
+    private void requestSocietyMembership(Long societyId, User user) {
+        Account society = accountRepository.findById(societyId)
+                .filter(account -> account.getAccountType() == AccountType.SOCIETY && Boolean.TRUE.equals(account.getActive()))
+                .orElseThrow(() -> new ValidationException("Society not found"));
+        if (society.getUser().getId().equals(user.getId())
+                || membershipRepository.findByAccountIdAndUserId(societyId, user.getId()).isPresent()) {
+            throw new ValidationException("You already belong to, or have requested access to, this society");
+        }
+        membershipRepository.save(com.app.entity.AccountUserMembership.builder()
+                .account(society).user(user).role(UserRole.MEMBER).active(false).build());
     }
 
     public LoginResponse login(LoginRequest request) {

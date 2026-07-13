@@ -14,6 +14,7 @@ public interface AccountRepository extends JpaRepository<Account, Long>, org.spr
     List<Account> findByUserIdAndActive(Long userId, Boolean active);
     Optional<Account> findByIdAndUserId(Long accountId, Long userId);
     List<Account> findByAccountType(AccountType accountType);
+    List<Account> findByAccountTypeAndActiveTrueOrderByAccountNameAsc(AccountType accountType);
     long countByActive(Boolean active);
     long countByAccountType(AccountType accountType);
 }

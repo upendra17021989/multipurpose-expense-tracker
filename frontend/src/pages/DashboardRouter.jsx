@@ -4,7 +4,7 @@ import { useAuthStore } from '../store/authStore'
 import { formatCurrency, formatDate } from '../utils/format'
 import { useEffect, useMemo, useState } from 'react'
 import { toast } from 'react-toastify'
-import { expenseAPI, expenseCategoryAPI, kiranaProductAPI, personalBudgetAPI, societyFlatAPI } from '../api/endpoints'
+import { expenseAPI, expenseCategoryAPI, kiranaProductAPI, personalBudgetAPI, societyFlatAPI, societyMembershipAPI } from '../api/endpoints'
 import { useI18n } from '../i18n'
 
 const accountLabels = {
@@ -319,7 +319,59 @@ const SocietyDashboard = () => {
         ]}
       />
       <ActionRow actions={[[ 'Add Expense', '/expenses/new' ], [ 'View Expenses', '/expenses' ], [ 'Categories', '/categories' ], [ 'Flat Master', '/society/flats' ], [ 'Festivals', '/society/festivals' ], [ 'Collections', '/society/festival-collections' ]]} />
+      <SocietyMembershipRequests />
     </Shell>
+  )
+}
+
+const SocietyMembershipRequests = () => {
+  const currentAccount = useAuthStore((state) => state.currentAccount)
+  const [requests, setRequests] = useState([])
+  const [loading, setLoading] = useState(true)
+  const isAdmin = currentAccount?.role === 'ADMIN'
+
+  const loadRequests = () => {
+    if (!isAdmin) return
+    setLoading(true)
+    societyMembershipAPI.getPending()
+      .then((response) => setRequests(response.data || []))
+      .catch((error) => toast.error(error.response?.data?.message || 'Unable to load membership requests'))
+      .finally(() => setLoading(false))
+  }
+
+  useEffect(loadRequests, [isAdmin])
+
+  if (!isAdmin) return null
+
+  const respond = async (request, approve) => {
+    try {
+      if (approve) await societyMembershipAPI.approve(request.id)
+      else await societyMembershipAPI.reject(request.id)
+      setRequests((items) => items.filter((item) => item.id !== request.id))
+      toast.success(`${request.name}'s request ${approve ? 'approved' : 'rejected'}`)
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Unable to update membership request')
+    }
+  }
+
+  return (
+    <section className="panel">
+      <h2>Society membership requests</h2>
+      {loading && <p className="muted">Checking for new requests…</p>}
+      {!loading && !requests.length && <p className="muted">No pending membership requests.</p>}
+      {requests.map((request) => (
+        <article className="shared-invitation-card" key={request.id}>
+          <div>
+            <strong>{request.name}</strong>
+            <small>{request.mobile}{request.email ? ` · ${request.email}` : ''}</small>
+          </div>
+          <div className="table-actions">
+            <button className="primary" type="button" onClick={() => respond(request, true)}>Approve</button>
+            <button type="button" onClick={() => respond(request, false)}>Reject</button>
+          </div>
+        </article>
+      ))}
+    </section>
   )
 }
 

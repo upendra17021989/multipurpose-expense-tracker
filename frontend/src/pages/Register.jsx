@@ -1,7 +1,7 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { ToastContainer, toast } from 'react-toastify'
-import { authAPI } from '../api/endpoints'
+import { authAPI, societyMembershipAPI } from '../api/endpoints'
 import 'react-toastify/dist/ReactToastify.css'
 
 const accountTypeLabels = {
@@ -20,6 +20,7 @@ const RequiredLabel = ({ htmlFor, children }) => (
 export const Register = () => {
   const navigate = useNavigate()
   const [loading, setLoading] = useState(false)
+  const [societies, setSocieties] = useState([])
   const [formData, setFormData] = useState({
     name: '',
     mobile: '',
@@ -29,8 +30,16 @@ export const Register = () => {
     accountName: '',
     address: '',
     societyName: '',
-    storeName: ''
+    storeName: '',
+    societyMode: 'JOIN',
+    societyId: ''
   })
+
+  useEffect(() => {
+    societyMembershipAPI.listSocieties()
+      .then((response) => setSocieties(response.data || []))
+      .catch(() => setSocieties([]))
+  }, [])
 
   const accountNamePlaceholder = useMemo(() => {
     if (formData.accountType === 'SOCIETY') return 'e.g. Shree Residency Society'
@@ -50,14 +59,19 @@ export const Register = () => {
 
     const payload = {
       ...formData,
-      role: resolveRole(formData.accountType),
+      role: resolveRole(formData.accountType, formData.societyMode),
+      societyId: formData.accountType === 'SOCIETY' && formData.societyMode === 'JOIN'
+        ? Number(formData.societyId) : null,
+      createNewSociety: formData.accountType === 'SOCIETY' && formData.societyMode === 'CREATE',
       societyName: formData.accountType === 'SOCIETY' ? formData.societyName || formData.accountName : '',
       storeName: formData.accountType === 'KIRANA_STORE' ? formData.storeName || formData.accountName : ''
     }
 
     try {
       await authAPI.register(payload)
-      toast.success('Registration successful. Please login.')
+      toast.success(formData.accountType === 'SOCIETY' && formData.societyMode === 'JOIN'
+        ? 'Registration successful. Your request was sent to the society admins for approval.'
+        : 'Registration successful. Please login.')
       setTimeout(() => navigate('/login'), 700)
     } catch (error) {
       const errorMsg = error.response?.data?.message || 'Registration failed'
@@ -104,7 +118,7 @@ export const Register = () => {
             </select>
           </div>
 
-          <div style={styles.formGroup}>
+          {formData.accountType !== 'SOCIETY' || formData.societyMode === 'CREATE' ? <div style={styles.formGroup}>
             <RequiredLabel htmlFor="accountName">Account name</RequiredLabel>
             <input
               id="accountName"
@@ -115,13 +129,37 @@ export const Register = () => {
               required
               style={styles.input}
             />
-          </div>
+          </div> : null}
 
           {formData.accountType === 'SOCIETY' && (
-            <div style={styles.formGroup}>
-              <label htmlFor="societyName">Society name</label>
-              <input id="societyName" name="societyName" value={formData.societyName} onChange={handleInputChange} style={styles.input} />
-            </div>
+            <>
+              <div style={styles.formGroup}>
+                <RequiredLabel htmlFor="societyMode">Society registration</RequiredLabel>
+                <select id="societyMode" name="societyMode" value={formData.societyMode} onChange={handleInputChange} style={styles.input}>
+                  <option value="JOIN">Join an existing society</option>
+                  <option value="CREATE">Create my own society</option>
+                </select>
+              </div>
+              {formData.societyMode === 'JOIN' ? (
+                <div style={styles.formGroup}>
+                  <RequiredLabel htmlFor="societyId">Choose society</RequiredLabel>
+                  <select id="societyId" name="societyId" value={formData.societyId} onChange={handleInputChange} required style={styles.input}>
+                    <option value="">Select a society</option>
+                    {societies.map((society) => (
+                      <option key={society.id} value={society.id}>
+                        {society.name}{society.address ? ` — ${society.address}` : ''}
+                      </option>
+                    ))}
+                  </select>
+                  {!societies.length && <small>No existing societies found. Choose “Create my own society”.</small>}
+                </div>
+              ) : (
+                <div style={styles.formGroup}>
+                  <RequiredLabel htmlFor="societyName">Society name</RequiredLabel>
+                  <input id="societyName" name="societyName" value={formData.societyName} onChange={handleInputChange} required style={styles.input} />
+                </div>
+              )}
+            </>
           )}
 
           {formData.accountType === 'KIRANA_STORE' && (
@@ -149,8 +187,8 @@ export const Register = () => {
   )
 }
 
-const resolveRole = (accountType) => {
-  if (accountType === 'SOCIETY') return 'ADMIN'
+const resolveRole = (accountType, societyMode) => {
+  if (accountType === 'SOCIETY') return societyMode === 'JOIN' ? 'MEMBER' : 'ADMIN'
   if (accountType === 'KIRANA_STORE') return 'STORE_OWNER'
   return 'OWNER'
 }

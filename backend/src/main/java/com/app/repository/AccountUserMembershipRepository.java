@@ -11,5 +11,7 @@ import java.util.Optional;
 public interface AccountUserMembershipRepository extends JpaRepository<AccountUserMembership, Long> {
     List<AccountUserMembership> findByUserIdAndActiveTrue(Long userId);
     Optional<AccountUserMembership> findByAccountIdAndUserIdAndActiveTrue(Long accountId, Long userId);
+    Optional<AccountUserMembership> findByAccountIdAndUserId(Long accountId, Long userId);
+    List<AccountUserMembership> findByAccountIdAndActiveFalseOrderByCreatedAtAsc(Long accountId);
     long countByAccountIdAndActiveTrue(Long accountId);
 }

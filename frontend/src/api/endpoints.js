@@ -11,6 +11,13 @@ export const authAPI = {
   validateToken: () => axiosInstance.get('/auth/validate')
 }
 
+export const societyMembershipAPI = {
+  listSocieties: () => axiosInstance.get('/public/societies'),
+  getPending: () => axiosInstance.get('/society/membership-requests'),
+  approve: (requestId) => axiosInstance.post(`/society/membership-requests/${requestId}/approve`),
+  reject: (requestId) => axiosInstance.delete(`/society/membership-requests/${requestId}`)
+}
+
 export const systemAdminAPI = {
   getDashboard: () => axiosInstance.get('/system-admin/dashboard'),
   getUsers: (params) => axiosInstance.get('/system-admin/users', { params }),
