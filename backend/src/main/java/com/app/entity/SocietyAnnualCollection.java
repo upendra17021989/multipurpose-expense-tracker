@@ -19,6 +19,8 @@ public class SocietyAnnualCollection {
     @Column(nullable = false, precision = 15, scale = 2) private BigDecimal amount;
     @Enumerated(EnumType.STRING) @Column(nullable = false) private PaymentMode paymentMode;
     private String referenceNumber;
+    private String transactionId;
+    private String settlementId;
     @Column(length = 500) private String remarks;
     @Builder.Default @Column(nullable = false, updatable = false) private LocalDateTime createdAt = LocalDateTime.now();
 }

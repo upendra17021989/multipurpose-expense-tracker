@@ -2,12 +2,12 @@ import { useEffect, useState } from 'react'
 import { toast } from 'react-toastify'
 import { societyAnnualCollectionAPI } from '../../../api/endpoints'
 
-const blank = (financialYear) => ({ financialYear, collectionType: 'MAINTENANCE', flatId: '', sourceName: '', paymentDate: new Date().toISOString().slice(0, 10), amount: '', paymentMode: 'UPI', referenceNumber: '', remarks: '' })
+const blank = (financialYear) => ({ financialYear, collectionType: 'MAINTENANCE', flatId: '', sourceName: '', paymentDate: new Date().toISOString().slice(0, 10), amount: '', paymentMode: 'UPI', referenceNumber: '', transactionId: '', settlementId: '', remarks: '' })
 
 export const CollectionModal = ({ open, financialYear, flats, collection, onClose, onSaved }) => {
   const [form, setForm] = useState(blank(financialYear))
   const [saving, setSaving] = useState(false)
-  useEffect(() => { if (open) setForm(collection ? { financialYear: collection.financialYear, collectionType: collection.collectionType, flatId: collection.flatId || '', sourceName: collection.sourceName || '', paymentDate: collection.paymentDate, amount: collection.amount, paymentMode: collection.paymentMode, referenceNumber: collection.referenceNumber || '', remarks: collection.remarks || '' } : blank(financialYear)) }, [open, financialYear, collection])
+  useEffect(() => { if (open) setForm(collection ? { financialYear: collection.financialYear, collectionType: collection.collectionType, flatId: collection.flatId || '', sourceName: collection.sourceName || '', paymentDate: collection.paymentDate, amount: collection.amount, paymentMode: collection.paymentMode, referenceNumber: collection.referenceNumber || '', transactionId: collection.transactionId || '', settlementId: collection.settlementId || '', remarks: collection.remarks || '' } : blank(financialYear)) }, [open, financialYear, collection])
   if (!open) return null
   const submit = async (event) => { event.preventDefault(); setSaving(true); try { const payload={ ...form, flatId: form.flatId ? Number(form.flatId) : null, amount: Number(form.amount) }; collection ? await societyAnnualCollectionAPI.update(collection.id,payload) : await societyAnnualCollectionAPI.create(payload); toast.success(collection?'Collection updated':'Collection recorded'); onSaved(); onClose() } catch (error) { toast.error(error.response?.data?.message || 'Unable to save collection') } finally { setSaving(false) } }
   return <div className="modal-backdrop" role="presentation" onMouseDown={() => !saving && onClose()}><section className="expense-modal annual-finance-modal" role="dialog" aria-modal="true" aria-labelledby="collection-modal-title" onMouseDown={(e)=>e.stopPropagation()}>
@@ -20,6 +20,8 @@ export const CollectionModal = ({ open, financialYear, flats, collection, onClos
       <label>Amount<input required type="number" min="0.01" step="0.01" value={form.amount} onChange={(e)=>setForm({...form,amount:e.target.value})}/></label>
       <label>Payment mode<select value={form.paymentMode} onChange={(e)=>setForm({...form,paymentMode:e.target.value})}>{['CASH','BANK','UPI','CARD','NEFT','CHEQUE'].map(x=><option key={x}>{x}</option>)}</select></label>
       <label>Reference number<input value={form.referenceNumber} onChange={(e)=>setForm({...form,referenceNumber:e.target.value})}/></label>
+      <label>Transaction ID<input value={form.transactionId} onChange={(e)=>setForm({...form,transactionId:e.target.value})}/></label>
+      <label>Settlement ID<input value={form.settlementId} onChange={(e)=>setForm({...form,settlementId:e.target.value})}/></label>
       <label>Remarks<input value={form.remarks} onChange={(e)=>setForm({...form,remarks:e.target.value})}/></label>
     </div><div className="expense-modal-actions"><button type="button" onClick={onClose} disabled={saving}>Cancel</button><button className="primary" disabled={saving}>{saving?'Saving...':'Record Collection'}</button></div></form>
   </section></div>

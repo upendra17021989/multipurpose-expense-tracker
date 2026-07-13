@@ -9,5 +9,6 @@ import java.time.LocalDate;
 public class SocietyAnnualCollectionDto {
     private Long id; private Long flatId; private String flatLabel; private String financialYear;
     private SocietyCollectionType collectionType; private String sourceName; private LocalDate paymentDate;
-    private BigDecimal amount; private PaymentMode paymentMode; private String referenceNumber; private String remarks;
+    private BigDecimal amount; private PaymentMode paymentMode; private String referenceNumber;
+    private String transactionId; private String settlementId; private String remarks;
 }

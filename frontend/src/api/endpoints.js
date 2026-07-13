@@ -128,7 +128,14 @@ export const societyAnnualCollectionAPI = {
   summary: (financialYear) => axiosInstance.get('/society/annual-collections/summary', { params: { financialYear } }),
   create: (data) => axiosInstance.post('/society/annual-collections', data),
   update: (id, data) => axiosInstance.put(`/society/annual-collections/${id}`, data),
-  delete: (id) => axiosInstance.delete(`/society/annual-collections/${id}`)
+  delete: (id) => axiosInstance.delete(`/society/annual-collections/${id}`),
+  previewBankBook: (file, financialYear) => {
+    const formData = new FormData()
+    formData.append('file', file)
+    formData.append('financialYear', financialYear)
+    return axiosInstance.post('/society/annual-collections/bank-book/preview', formData, { headers: { 'Content-Type': 'multipart/form-data' } })
+  },
+  importBankBook: (data) => axiosInstance.post('/society/annual-collections/bank-book/import', data)
 }
 
 export const societyStaffAPI = {

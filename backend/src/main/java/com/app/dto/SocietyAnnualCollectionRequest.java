@@ -15,5 +15,7 @@ public class SocietyAnnualCollectionRequest {
     @NotNull @DecimalMin(value = "0.01") private BigDecimal amount;
     @NotNull private PaymentMode paymentMode;
     @Size(max = 100) private String referenceNumber;
+    @Size(max = 255) private String transactionId;
+    @Size(max = 255) private String settlementId;
     @Size(max = 500) private String remarks;
 }

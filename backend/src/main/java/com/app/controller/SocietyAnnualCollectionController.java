@@ -2,16 +2,21 @@ package com.app.controller;
 import com.app.dto.*;
 import com.app.security.UserPrincipal;
 import com.app.service.SocietyAnnualCollectionService;
+import com.app.service.SocietyBankBookImportService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.*;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import java.math.BigDecimal;
 import java.util.*;
 @RestController @RequestMapping("/society/annual-collections") @RequiredArgsConstructor
 public class SocietyAnnualCollectionController {
     private final SocietyAnnualCollectionService service;
+    private final SocietyBankBookImportService bankBookImportService;
+    @PostMapping(value="/bank-book/preview", consumes="multipart/form-data") public SocietyBankBookImportDtos.Preview previewBankBook(@AuthenticationPrincipal UserPrincipal p,@RequestPart("file") MultipartFile file,@RequestParam("financialYear") String financialYear){return bankBookImportService.preview(p.getAccountId(),financialYear,file);}
+    @PostMapping("/bank-book/import") public ResponseEntity<SocietyBankBookImportDtos.Result> importBankBook(@AuthenticationPrincipal UserPrincipal p,@Valid @RequestBody SocietyBankBookImportDtos.ConfirmRequest r){return ResponseEntity.status(HttpStatus.CREATED).body(bankBookImportService.confirm(p.getAccountId(),p.getUserId(),r));}
     @GetMapping public List<SocietyAnnualCollectionDto> list(@AuthenticationPrincipal UserPrincipal p, @RequestParam String financialYear) { return service.list(p.getAccountId(), financialYear); }
     @GetMapping("/summary") public Map<String, BigDecimal> summary(@AuthenticationPrincipal UserPrincipal p, @RequestParam String financialYear) { return Map.of("totalCollected", service.total(p.getAccountId(), financialYear)); }
     @PostMapping public ResponseEntity<SocietyAnnualCollectionDto> create(@AuthenticationPrincipal UserPrincipal p, @Valid @RequestBody SocietyAnnualCollectionRequest r) { return ResponseEntity.status(HttpStatus.CREATED).body(service.create(p.getAccountId(), r)); }

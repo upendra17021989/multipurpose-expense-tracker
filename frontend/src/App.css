@@ -2323,6 +2323,9 @@ textarea:disabled {
 .import-dropzone input { max-width: 320px; }
 .import-summary { display: flex; flex-wrap: wrap; gap: 12px; margin: 16px 0; }
 .import-summary span { padding: 8px 12px; background: var(--surface-muted, #f4f6f8); border-radius: 10px; }
+.bank-book-import-modal { width: min(1180px, calc(100vw - 2rem)); max-height: calc(100vh - 2rem); overflow-y: auto; }
+.bank-book-preview-table select { min-width: 160px; }
+.annual-collections-table th { white-space: nowrap; }
 .import-table-wrap { max-height: 52vh; }
 .import-table-wrap td small { display: block; max-width: 320px; margin-top: 4px; color: var(--muted); }
 .import-table-wrap select { min-width: 170px; }
