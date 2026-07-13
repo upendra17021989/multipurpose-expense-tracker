@@ -1351,6 +1351,57 @@ th.numeric .sortable-header {
   vertical-align: middle;
 }
 
+.shared-expense-description-cell {
+  display: grid;
+  gap: 0.4rem;
+  min-width: 220px;
+}
+
+.shared-expense-items-details {
+  width: fit-content;
+  max-width: 100%;
+}
+
+.shared-expense-items-details summary {
+  color: #2563eb;
+  cursor: pointer;
+  font-size: 0.78rem;
+  font-weight: 800;
+  list-style-position: inside;
+}
+
+.shared-expense-items-details ul {
+  display: grid;
+  gap: 0.35rem;
+  min-width: min(360px, 58vw);
+  margin: 0.45rem 0 0;
+  padding: 0.55rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #f8fafc;
+}
+
+.shared-expense-items-details li {
+  display: grid;
+  grid-template-columns: minmax(100px, 1fr) auto auto;
+  gap: 0.65rem;
+  align-items: center;
+  color: #334155;
+  font-size: 0.82rem;
+}
+
+.shared-expense-items-details small {
+  color: #64748b;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.shared-expense-items-details strong {
+  color: #0f172a;
+  font-size: 0.82rem;
+  text-align: right;
+  white-space: nowrap;
+}
 .reversed-badge {
   display: inline-flex;
   align-items: center;
@@ -3765,3 +3816,4 @@ textarea:disabled {
   .system-admin-stat-grid small { font-size: .72rem; }
   .system-admin-account-row { grid-template-columns: 90px minmax(0, 1fr) 30px; gap: .5rem; font-size: .82rem; }
 }
+

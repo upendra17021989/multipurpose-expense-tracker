@@ -843,7 +843,25 @@ export const SharedExpenseGroup = () => {
                     {x.reversed ? <span className="reversed-badge">{tx('Reversed')}</span> : <input type="checkbox" aria-label={`${tx('Select')} ${x.description}`} checked={selectedExpenseIds.includes(x.id)} onChange={() => toggleExpenseSelection(x.id)} />}
                   </td>
                   <td data-label="Date">{formatDate(x.expenseDate)}</td>
-                  <td data-label="Description">{x.description}</td>
+                  <td data-label="Description">
+                    <div className="shared-expense-description-cell">
+                      <span>{x.description}</span>
+                      {x.items?.length > 0 && (
+                        <details className="shared-expense-items-details">
+                          <summary>{tx('View item details')}</summary>
+                          <ul>
+                            {x.items.map((item, itemIndex) => (
+                              <li key={`${x.id}-item-${itemIndex}`}>
+                                <span>{item.itemName}</span>
+                                <small>{item.unitPrice !== null && item.unitPrice !== undefined && item.unitPrice !== '' ? `${Number(item.quantity || 1)} x ${formatCurrency(item.unitPrice)}` : `${tx('Qty')} ${Number(item.quantity || 1)}`}</small>
+                                <strong>{formatCurrency(item.amount)}</strong>
+                              </li>
+                            ))}
+                          </ul>
+                        </details>
+                      )}
+                    </div>
+                  </td>
                   <td data-label="Category">{x.category || '-'}</td>
                   <td data-label="Paid by">{x.paidBy}</td>
                   <td data-label="Split">{x.splitType}</td>
@@ -963,3 +981,4 @@ const SortableTh = ({ label, sortKey, sort, onSort, className }) => {
     </th>
   )
 }
+
