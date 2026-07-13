@@ -48,6 +48,8 @@ export const SportsExpenses = () => {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [filters, setFilters] = useState({ search: '', eventId: '', paymentMode: '' })
   const [loading, setLoading] = useState(true)
+  const [page, setPage] = useState(1)
+  const [sort, setSort] = useState({ key: 'expenseDate', direction: 'desc' })
 
   const loadData = () => {
     setLoading(true)
@@ -64,15 +66,27 @@ export const SportsExpenses = () => {
 
   const visibleExpenses = useMemo(() => {
     const query = filters.search.trim().toLowerCase()
-    return expenses
+    const filtered = expenses
       .filter((expense) => !filters.eventId || String(expense.sportsEventId || '') === filters.eventId)
       .filter((expense) => !filters.paymentMode || expense.paymentMode === filters.paymentMode)
       .filter((expense) => !query || [expense.category, expense.vendorName, expense.description, expense.eventName]
         .filter(Boolean)
         .some((value) => String(value).toLowerCase().includes(query)))
-  }, [expenses, filters])
+    return sortRows(filtered, sort)
+  }, [expenses, filters, sort])
+
+  useEffect(() => setPage(1), [filters, sort])
+
+  const pageSize = 20
+  const pageCount = Math.max(1, Math.ceil(visibleExpenses.length / pageSize))
+  const currentPage = Math.min(page, pageCount)
+  const pageExpenses = visibleExpenses.slice((currentPage - 1) * pageSize, currentPage * pageSize)
 
   const total = visibleExpenses.reduce((sum, expense) => sum + Number(expense.amount || 0), 0)
+  const toggleSort = (key) => setSort((current) => ({
+    key,
+    direction: current.key === key && current.direction === 'asc' ? 'desc' : 'asc'
+  }))
 
   const updateForm = (field, value) => {
     setForm((current) => ({
@@ -196,16 +210,55 @@ export const SportsExpenses = () => {
         <select value={filters.paymentMode} onChange={(event) => setFilters({ ...filters, paymentMode: event.target.value })}><option value="">All modes</option>{paymentModes.map((mode) => <option key={mode}>{mode}</option>)}</select>
         <strong>{formatCurrency(total)}</strong>
       </section>
-      <div className="table-wrap sports-expense-table-wrap">
+
+      <section className="sports-expense-mobile-sort">
+        <label>Sort by
+          <select value={sort.key} onChange={(event) => setSort({ key: event.target.value, direction: 'asc' })}>
+            <option value="expenseDate">Date</option><option value="eventName">Event</option><option value="category">Category</option><option value="vendorName">Vendor</option><option value="paymentMode">Payment</option><option value="status">Status</option><option value="amount">Amount</option>
+          </select>
+        </label>
+        <button type="button" onClick={() => setSort((current) => ({ ...current, direction: current.direction === 'asc' ? 'desc' : 'asc' }))}>
+          {sort.direction === 'asc' ? 'Ascending' : 'Descending'}
+        </button>
+      </section>
+
+      <div className="personal-expense-mobile-list sports-expense-mobile-list">
+        {pageExpenses.map((expense) => (
+          <details className="personal-expense-row" key={expense.id}>
+            <summary>
+              <span className="personal-expense-row-main">
+                <span className="personal-expense-row-heading"><strong>{expense.category}</strong><strong className="personal-expense-row-amount">{formatCurrency(expense.amount)}</strong></span>
+                <span className="personal-expense-row-description">{expense.description || expense.eventName || 'No description'}</span>
+                <span className="personal-expense-row-meta">{formatDate(expense.expenseDate)} · {expense.paymentMode || '-'}</span>
+              </span>
+              <span className="personal-expense-chevron" aria-hidden="true">⌄</span>
+            </summary>
+            <div className="personal-expense-details">
+              <dl>
+                <div><dt>Date</dt><dd>{formatDate(expense.expenseDate)}</dd></div><div><dt>Event</dt><dd>{expense.eventName || '-'}</dd></div><div><dt>Category</dt><dd>{expense.category}</dd></div><div><dt>Description</dt><dd>{expense.description || '-'}</dd></div><div><dt>Vendor</dt><dd>{expense.vendorName || '-'}</dd></div><div><dt>Payment</dt><dd>{expense.paymentMode}</dd></div><div><dt>Status</dt><dd>{expense.status}</dd></div><div><dt>Amount</dt><dd>{formatCurrency(expense.amount)}</dd></div>
+              </dl>
+              {isSportsAdmin && <div className="table-actions"><button onClick={() => edit(expense)}>Edit</button><button className="danger" onClick={() => remove(expense.id)}>Delete</button></div>}
+            </div>
+          </details>
+        ))}
+        {!loading && !pageExpenses.length && <p className="empty-state">No sports expenses found.</p>}
+      </div>
+
+      <div className="table-wrap sports-expense-table-wrap sports-expense-desktop-table">
         <table className="sports-expense-table">
-          <thead><tr><th>Date</th><th>Event</th><th>Category</th><th>Description</th><th>Vendor</th><th>Payment</th><th>Status</th><th className="numeric">Amount</th>{isSportsAdmin && <th>Actions</th>}</tr></thead>
+          <thead><tr><SortableTh label="Date" sortKey="expenseDate" sort={sort} onSort={toggleSort}/><SortableTh label="Event" sortKey="eventName" sort={sort} onSort={toggleSort}/><SortableTh label="Category" sortKey="category" sort={sort} onSort={toggleSort}/><th>Description</th><SortableTh label="Vendor" sortKey="vendorName" sort={sort} onSort={toggleSort}/><SortableTh label="Payment" sortKey="paymentMode" sort={sort} onSort={toggleSort}/><SortableTh label="Status" sortKey="status" sort={sort} onSort={toggleSort}/><SortableTh label="Amount" sortKey="amount" sort={sort} onSort={toggleSort} className="numeric"/>{isSportsAdmin && <th>Actions</th>}</tr></thead>
           <tbody>
-            {visibleExpenses.map((expense) => <tr key={expense.id}><td>{formatDate(expense.expenseDate)}</td><td>{expense.eventName || '-'}</td><td>{expense.category}</td><td className="description-cell">{expense.description || '-'}</td><td>{expense.vendorName || '-'}</td><td>{expense.paymentMode}</td><td>{expense.status}</td><td className="numeric">{formatCurrency(expense.amount)}</td>{isSportsAdmin && <td className="table-actions"><button onClick={() => edit(expense)}>Edit</button><button className="danger" onClick={() => remove(expense.id)}>Delete</button></td>}</tr>)}
+            {pageExpenses.map((expense) => <tr key={expense.id}><td>{formatDate(expense.expenseDate)}</td><td>{expense.eventName || '-'}</td><td>{expense.category}</td><td className="description-cell">{expense.description || '-'}</td><td>{expense.vendorName || '-'}</td><td>{expense.paymentMode}</td><td>{expense.status}</td><td className="numeric">{formatCurrency(expense.amount)}</td>{isSportsAdmin && <td className="table-actions"><button onClick={() => edit(expense)}>Edit</button><button className="danger" onClick={() => remove(expense.id)}>Delete</button></td>}</tr>)}
             {!loading && visibleExpenses.length === 0 && <tr><td colSpan={isSportsAdmin ? 9 : 8} className="empty-state">No sports expenses found.</td></tr>}
           </tbody>
         </table>
       </div>
+      {visibleExpenses.length > pageSize && <nav className="table-pagination" aria-label="Sports expense pages"><button type="button" disabled={currentPage===1} onClick={()=>setPage(1)}>«</button><button type="button" disabled={currentPage===1} onClick={()=>setPage((value)=>Math.max(1,value-1))}>‹</button><span>Page {currentPage} of {pageCount}</span><button type="button" disabled={currentPage===pageCount} onClick={()=>setPage((value)=>Math.min(pageCount,value+1))}>›</button><button type="button" disabled={currentPage===pageCount} onClick={()=>setPage(pageCount)}>»</button></nav>}
       {loading && <p className="muted">Loading expenses...</p>}
     </Shell>
   )
 }
+
+const sportsExpenseSortAccessors = { expenseDate: (item) => item.expenseDate || '', eventName: (item) => item.eventName || '', category: (item) => item.category || '', vendorName: (item) => item.vendorName || '', paymentMode: (item) => item.paymentMode || '', status: (item) => item.status || '', amount: (item) => Number(item.amount || 0) }
+const sortRows = (rows, sort) => [...rows].sort((a, b) => { const first=sportsExpenseSortAccessors[sort.key](a),second=sportsExpenseSortAccessors[sort.key](b),comparison=typeof first==='number'?first-Number(second||0):String(first).localeCompare(String(second),undefined,{numeric:true,sensitivity:'base'});return comparison*(sort.direction==='asc'?1:-1)||Number(b.id||0)-Number(a.id||0) })
+const SortableTh = ({label,sortKey,sort,onSort,className}) => { const active=sort.key===sortKey;return <th className={className} aria-sort={active?(sort.direction==='asc'?'ascending':'descending'):'none'}><button type="button" className="sortable-header" onClick={()=>onSort(sortKey)}><span>{label}</span><span className="sort-symbol" aria-hidden="true">{active?(sort.direction==='asc'?'↑':'↓'):'↕'}</span></button></th> }
