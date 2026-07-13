@@ -326,6 +326,9 @@ export const Navbar = () => {
                 <Link to="/change-password" onClick={closeMenus}>
                   {tx('Change password')}
                 </Link>
+                <Link to="/society/join" onClick={closeMenus}>
+                  {tx('Join another society')}
+                </Link>
                 <button onClick={handleLogout} className="logout-btn">
                   {tx('Logout')}
                 </button>

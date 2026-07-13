@@ -3,6 +3,7 @@ package com.app.config;
 import com.app.security.JwtAuthenticationFilter;
 import com.app.util.JwtTokenProvider;
 import com.app.repository.UserRepository;
+import com.app.security.SocietyRoleAccessFilter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -27,13 +28,16 @@ public class SecurityConfig {
 
     private final JwtTokenProvider tokenProvider;
     private final UserRepository userRepository;
+    private final SocietyRoleAccessFilter societyRoleAccessFilter;
 
     @Value("${app.cors.allowed-origins}")
     private String allowedOrigins;
 
-    public SecurityConfig(JwtTokenProvider tokenProvider, UserRepository userRepository) {
+    public SecurityConfig(JwtTokenProvider tokenProvider, UserRepository userRepository,
+                          SocietyRoleAccessFilter societyRoleAccessFilter) {
         this.tokenProvider = tokenProvider;
         this.userRepository = userRepository;
+        this.societyRoleAccessFilter = societyRoleAccessFilter;
     }
 
     @Bean
@@ -82,6 +86,7 @@ public class SecurityConfig {
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class);
+        http.addFilterAfter(societyRoleAccessFilter, JwtAuthenticationFilter.class);
 
         return http.build();
     }

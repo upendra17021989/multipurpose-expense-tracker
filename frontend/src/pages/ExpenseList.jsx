@@ -10,6 +10,7 @@ import { useI18n } from '../i18n'
 export const ExpenseList = () => {
   const navigate = useNavigate()
   const currentAccount = useAuthStore((state) => state.currentAccount)
+  const canWrite = currentAccount?.accountType !== 'SOCIETY' || currentAccount?.role !== 'MEMBER'
   const { tx } = useI18n()
   const [expenses, setExpenses] = useState([])
   const [categories, setCategories] = useState([])
@@ -184,7 +185,7 @@ export const ExpenseList = () => {
     <Shell
       title="Expenses"
       eyebrow="Common module"
-      actions={<div className="table-actions">
+      actions={canWrite && <div className="table-actions">
         {currentAccount?.accountType === 'SOCIETY' && <button onClick={() => setImportOpen(true)}>{tx('Import Excel')}</button>}
         <Link className="button-link" to="/expenses/new">{tx('Add Expense')}</Link>
       </div>}
@@ -330,10 +331,13 @@ export const ExpenseList = () => {
                 <td data-label="Status"><span className={`status-pill ${String(expense.status).toLowerCase()}`}>{expense.status}</span></td>
                 <td data-label="Amount" className="numeric">{formatCurrency(expense.amount)}</td>
                 <td data-label="Actions" className="table-actions">
+                  {!canWrite && <span className="muted">View only</span>}
+                  {canWrite && <>
                   <button onClick={() => handleEdit(expense)}>{tx('Edit')}</button>
                   {expense.status === 'SUBMITTED' && <button onClick={() => handleApprove(expense.id)}>{tx('Approve')}</button>}
                   {expense.status === 'SUBMITTED' && <button onClick={() => handleReject(expense.id)}>{tx('Reject')}</button>}
                   <button className="danger" onClick={() => handleDelete(expense.id)}>{tx('Delete')}</button>
+                  </>}
                 </td>
               </tr>
             ))}

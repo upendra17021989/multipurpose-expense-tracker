@@ -10,6 +10,7 @@ export const FestivalCollectionList = () => {
   const { festivalEventId } = useParams()
   const navigate = useNavigate()
   const { currentAccount } = useAuthStore()
+  const canWrite = currentAccount?.role !== 'MEMBER'
   const [festival, setFestival] = useState(null)
   const [collections, setCollections] = useState([])
   const [summary, setSummary] = useState(null)
@@ -116,7 +117,7 @@ export const FestivalCollectionList = () => {
         ['Excess Flats', summary?.excessFlats || 0]
       ]} />
 
-      <form className="inline-form collection-demand-form" onSubmit={generateDemand}>
+      {canWrite && <form className="inline-form collection-demand-form" onSubmit={generateDemand}>
         <label>
           Same Amount For All Flats
           <input type="number" min="0.01" step="0.01" value={expectedAmount} onChange={(event) => setExpectedAmount(event.target.value)} required placeholder="2500" />
@@ -126,7 +127,7 @@ export const FestivalCollectionList = () => {
           <input value={remarks} onChange={(event) => setRemarks(event.target.value)} placeholder="Optional note" />
         </label>
         <button type="submit" className="primary" disabled={generating}>{generating ? 'Generating...' : 'Generate Demand'}</button>
-      </form>
+      </form>}
 
       <section className="toolbar-panel flat-toolbar">
         <input placeholder="Search flat, owner, status" value={filters.search} onChange={(event) => setFilters({ ...filters, search: event.target.value })} />
@@ -161,7 +162,7 @@ export const FestivalCollectionList = () => {
                 <td>{collection.blockName}-{collection.flatNumber}</td>
                 <td>{collection.ownerName}</td>
                 <td className="numeric">
-                  {editingDemandId === collection.id ? (
+                  {canWrite && editingDemandId === collection.id ? (
                     <input className="table-input" type="number" min="0.01" step="0.01" value={demandForm.expectedAmount} onChange={(event) => setDemandForm({ ...demandForm, expectedAmount: event.target.value })} />
                   ) : formatCurrency(collection.expectedAmount)}
                 </td>
@@ -175,13 +176,13 @@ export const FestivalCollectionList = () => {
                       <button className="primary" onClick={() => updateDemand(collection.id)}>Save</button>
                       <button onClick={cancelDemandEdit}>Cancel</button>
                     </>
-                  ) : (
+                  ) : canWrite ? (
                     <>
                       <button onClick={() => startDemandEdit(collection)}>Demand</button>
                       <button onClick={() => navigate(`/society/festival-collections/${festivalEventId}/${collection.id}/payment`)}>Payment</button>
                       <button onClick={() => navigate(`/society/festival-collections/${festivalEventId}/${collection.id}/receipts`)}>Receipts</button>
                     </>
-                  )}
+                  ) : <button onClick={() => navigate(`/society/festival-collections/${festivalEventId}/${collection.id}/receipts`)}>Receipts</button>}
                 </td>
               </tr>
             ))}

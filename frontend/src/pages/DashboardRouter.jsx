@@ -33,6 +33,8 @@ export const DashboardRouter = () => {
 
 export const Shell = ({ title, eyebrow = 'Dashboard', actions, children }) => {
   const { tx } = useI18n()
+  const currentAccount = useAuthStore((state) => state.currentAccount)
+  const isReadOnlySocietyMember = currentAccount?.accountType === 'SOCIETY' && currentAccount?.role === 'MEMBER'
 
   return (
     <div>
@@ -43,8 +45,9 @@ export const Shell = ({ title, eyebrow = 'Dashboard', actions, children }) => {
             <p className="eyebrow">{tx(eyebrow)}</p>
             <h1>{tx(title)}</h1>
           </div>
-          {actions && <div className="header-actions">{actions}</div>}
+          {actions && !isReadOnlySocietyMember && <div className="header-actions">{actions}</div>}
         </div>
+        {isReadOnlySocietyMember && <section className="alert-panel">You have view-only access to this society.</section>}
         {children}
       </main>
     </div>
@@ -292,6 +295,7 @@ const createDashboardExpenseForm = () => ({
 })
 
 const SocietyDashboard = () => {
+  const currentAccount = useAuthStore((state) => state.currentAccount)
   const [expenses, setExpenses] = useState([])
   const [flats, setFlats] = useState([])
 
@@ -318,7 +322,9 @@ const SocietyDashboard = () => {
           ['Active Flats', flats.length]
         ]}
       />
-      <ActionRow actions={[[ 'Add Expense', '/expenses/new' ], [ 'View Expenses', '/expenses' ], [ 'Categories', '/categories' ], [ 'Flat Master', '/society/flats' ], [ 'Festivals', '/society/festivals' ], [ 'Collections', '/society/festival-collections' ]]} />
+      <ActionRow actions={(currentAccount?.role === 'MEMBER'
+        ? [[ 'View Expenses', '/expenses' ], [ 'Categories', '/categories' ], [ 'Flat Master', '/society/flats' ], [ 'Festivals', '/society/festivals' ], [ 'Collections', '/society/festival-collections' ]]
+        : [[ 'Add Expense', '/expenses/new' ], [ 'View Expenses', '/expenses' ], [ 'Categories', '/categories' ], [ 'Flat Master', '/society/flats' ], [ 'Festivals', '/society/festivals' ], [ 'Collections', '/society/festival-collections' ]])} />
       <SocietyMembershipRequests />
     </Shell>
   )
@@ -327,14 +333,18 @@ const SocietyDashboard = () => {
 const SocietyMembershipRequests = () => {
   const currentAccount = useAuthStore((state) => state.currentAccount)
   const [requests, setRequests] = useState([])
+  const [members, setMembers] = useState([])
   const [loading, setLoading] = useState(true)
   const isAdmin = currentAccount?.role === 'ADMIN'
 
   const loadRequests = () => {
     if (!isAdmin) return
     setLoading(true)
-    societyMembershipAPI.getPending()
-      .then((response) => setRequests(response.data || []))
+    Promise.all([societyMembershipAPI.getPending(), societyMembershipAPI.getMembers()])
+      .then(([requestResponse, memberResponse]) => {
+        setRequests(requestResponse.data || [])
+        setMembers(memberResponse.data || [])
+      })
       .catch((error) => toast.error(error.response?.data?.message || 'Unable to load membership requests'))
       .finally(() => setLoading(false))
   }
@@ -345,12 +355,24 @@ const SocietyMembershipRequests = () => {
 
   const respond = async (request, approve) => {
     try {
-      if (approve) await societyMembershipAPI.approve(request.id)
-      else await societyMembershipAPI.reject(request.id)
+      if (approve) {
+        const response = await societyMembershipAPI.approve(request.id)
+        setMembers((items) => [...items, response.data])
+      } else await societyMembershipAPI.reject(request.id)
       setRequests((items) => items.filter((item) => item.id !== request.id))
       toast.success(`${request.name}'s request ${approve ? 'approved' : 'rejected'}`)
     } catch (error) {
       toast.error(error.response?.data?.message || 'Unable to update membership request')
+    }
+  }
+
+  const updateRole = async (member, role) => {
+    try {
+      const response = await societyMembershipAPI.updateMemberRole(member.id, role)
+      setMembers((items) => items.map((item) => item.id === member.id ? response.data : item))
+      toast.success(`${member.name}'s role updated to ${role.toLowerCase()}`)
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Unable to update member role')
     }
   }
 
@@ -369,6 +391,24 @@ const SocietyMembershipRequests = () => {
             <button className="primary" type="button" onClick={() => respond(request, true)}>Approve</button>
             <button type="button" onClick={() => respond(request, false)}>Reject</button>
           </div>
+        </article>
+      ))}
+      <h2>Society members and roles</h2>
+      {!loading && !members.length && <p className="muted">No additional society members.</p>}
+      {members.map((member) => (
+        <article className="shared-invitation-card" key={member.id}>
+          <div>
+            <strong>{member.name}</strong>
+            <small>{member.mobile}{member.email ? ` · ${member.email}` : ''}</small>
+          </div>
+          <label>
+            Access role
+            <select value={member.role} onChange={(event) => updateRole(member, event.target.value)}>
+              <option value="MEMBER">Member</option>
+              <option value="TREASURER">Treasurer</option>
+              <option value="ADMIN">Admin</option>
+            </select>
+          </label>
         </article>
       ))}
     </section>

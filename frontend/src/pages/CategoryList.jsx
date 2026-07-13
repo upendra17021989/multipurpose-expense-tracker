@@ -18,6 +18,7 @@ const defaultCategoryNames = {
 
 export const CategoryList = () => {
   const { currentAccount } = useAuthStore()
+  const canWrite = currentAccount?.accountType !== 'SOCIETY' || currentAccount?.role !== 'MEMBER'
   const [categories, setCategories] = useState([])
   const [editingId, setEditingId] = useState(null)
   const [form, setForm] = useState({ categoryName: '', categoryType: '' })
@@ -105,7 +106,7 @@ export const CategoryList = () => {
 
   return (
     <Shell title="Expense Categories" eyebrow="Master data">
-      {categories.length === 0 && (
+      {categories.length === 0 && canWrite && (
         <section className="empty-panel">
           <p className="muted">No categories found for this account.</p>
           <button className="primary" onClick={seedDefaults} disabled={seeding}>
@@ -114,14 +115,14 @@ export const CategoryList = () => {
         </section>
       )}
 
-      <form className="inline-form" onSubmit={handleSubmit}>
+      {canWrite && <form className="inline-form" onSubmit={handleSubmit}>
         <input placeholder="Category name" value={form.categoryName} onChange={(event) => setForm({ ...form, categoryName: event.target.value })} required />
         <select value={form.categoryType} onChange={(event) => setForm({ ...form, categoryType: event.target.value })}>
           {categoryTypes.map((type) => <option key={type} value={type}>{type}</option>)}
         </select>
         <button className="primary" type="submit">{editingId ? 'Update' : 'Add'} Category</button>
         {editingId && <button type="button" onClick={reset}>Cancel</button>}
-      </form>
+      </form>}
 
       <div className="table-wrap">
         <table>
@@ -142,8 +143,10 @@ export const CategoryList = () => {
                 <td>{category.categoryType}</td>
                 <td>{category.active ? 'Active' : 'Inactive'}</td>
                 <td className="table-actions">
-                  <button onClick={() => edit(category)}>Edit</button>
-                  <button className="danger" onClick={() => remove(category.id)}>Delete</button>
+                  {canWrite ? <>
+                    <button onClick={() => edit(category)}>Edit</button>
+                    <button className="danger" onClick={() => remove(category.id)}>Delete</button>
+                  </> : <span className="muted">View only</span>}
                 </td>
               </tr>
             ))}

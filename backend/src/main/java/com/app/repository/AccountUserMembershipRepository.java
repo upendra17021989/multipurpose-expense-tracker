@@ -13,5 +13,6 @@ public interface AccountUserMembershipRepository extends JpaRepository<AccountUs
     Optional<AccountUserMembership> findByAccountIdAndUserIdAndActiveTrue(Long accountId, Long userId);
     Optional<AccountUserMembership> findByAccountIdAndUserId(Long accountId, Long userId);
     List<AccountUserMembership> findByAccountIdAndActiveFalseOrderByCreatedAtAsc(Long accountId);
+    List<AccountUserMembership> findByAccountIdAndActiveTrueOrderByCreatedAtAsc(Long accountId);
     long countByAccountIdAndActiveTrue(Long accountId);
 }

@@ -9,6 +9,7 @@ import { Shell, SummaryGrid } from '../DashboardRouter'
 export const FestivalCollectionReceipt = () => {
   const { festivalEventId, collectionId } = useParams()
   const { currentAccount } = useAuthStore()
+  const canWrite = currentAccount?.role !== 'MEMBER'
   const [collection, setCollection] = useState(null)
   const [receipts, setReceipts] = useState([])
   const [loading, setLoading] = useState(true)
@@ -40,7 +41,7 @@ export const FestivalCollectionReceipt = () => {
       eyebrow="Society module"
       actions={(
         <>
-          <Link className="button-link" to={`/society/festival-collections/${festivalEventId}/${collectionId}/payment`}>Add Payment</Link>
+          {canWrite && <Link className="button-link" to={`/society/festival-collections/${festivalEventId}/${collectionId}/payment`}>Add Payment</Link>}
           <button onClick={() => window.print()}>Print</button>
         </>
       )}

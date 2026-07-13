@@ -13,7 +13,10 @@ export const authAPI = {
 
 export const societyMembershipAPI = {
   listSocieties: () => axiosInstance.get('/public/societies'),
+  requestToJoin: (societyId) => axiosInstance.post('/society/membership-requests', { societyId }),
   getPending: () => axiosInstance.get('/society/membership-requests'),
+  getMembers: () => axiosInstance.get('/society/members'),
+  updateMemberRole: (membershipId, role) => axiosInstance.patch(`/society/members/${membershipId}/role`, { role }),
   approve: (requestId) => axiosInstance.post(`/society/membership-requests/${requestId}/approve`),
   reject: (requestId) => axiosInstance.delete(`/society/membership-requests/${requestId}`)
 }

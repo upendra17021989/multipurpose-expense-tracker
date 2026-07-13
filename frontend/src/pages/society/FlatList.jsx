@@ -8,6 +8,7 @@ import { Shell, SummaryGrid } from '../DashboardRouter'
 export const FlatList = () => {
   const navigate = useNavigate()
   const { currentAccount } = useAuthStore()
+  const canWrite = currentAccount?.role !== 'MEMBER'
   const [flats, setFlats] = useState([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
@@ -105,7 +106,7 @@ export const FlatList = () => {
     <Shell
       title="Flat Master"
       eyebrow="Society module"
-      actions={<div className="table-actions"><button type="button" onClick={() => setImportOpen(true)}>Import CSV</button><Link className="button-link" to="/society/flats/new">Add Flat</Link></div>}
+      actions={canWrite && <div className="table-actions"><button type="button" onClick={() => setImportOpen(true)}>Import CSV</button><Link className="button-link" to="/society/flats/new">Add Flat</Link></div>}
     >
       <SummaryGrid items={[
         ['Total Flats', flats.length],
@@ -144,8 +145,10 @@ export const FlatList = () => {
                 <td>{flat.residentType}</td>
                 <td>{flat.active ? 'Active' : 'Inactive'}</td>
                 <td className="table-actions">
-                  <button onClick={() => navigate(`/society/flats/${flat.id}/edit`)}>Edit</button>
-                  <button className="danger" onClick={() => remove(flat.id)}>Delete</button>
+                  {canWrite ? <>
+                    <button onClick={() => navigate(`/society/flats/${flat.id}/edit`)}>Edit</button>
+                    <button className="danger" onClick={() => remove(flat.id)}>Delete</button>
+                  </> : <span className="muted">View only</span>}
                 </td>
               </tr>
             ))}
@@ -172,7 +175,7 @@ export const FlatList = () => {
       )}
       {loading && <p className="muted">Loading flats...</p>}
 
-      {importOpen && (
+      {canWrite && importOpen && (
         <div className="modal-backdrop" role="presentation" onMouseDown={() => !importing && setImportOpen(false)}>
           <section className="expense-modal import-modal flat-import-modal" role="dialog" aria-modal="true" aria-labelledby="flat-import-title" onMouseDown={(event) => event.stopPropagation()}>
             <div className="expense-modal-header">

@@ -10,6 +10,7 @@ import com.app.exception.UnauthorizedException;
 import com.app.exception.ValidationException;
 import com.app.repository.AccountRepository;
 import com.app.repository.AccountUserMembershipRepository;
+import com.app.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,6 +23,7 @@ import java.util.List;
 public class SocietyMembershipService {
     private final AccountRepository accountRepository;
     private final AccountUserMembershipRepository membershipRepository;
+    private final UserRepository userRepository;
 
     public List<SocietyOptionDto> listSocieties() {
         return accountRepository.findByAccountTypeAndActiveTrueOrderByAccountNameAsc(AccountType.SOCIETY).stream()
@@ -33,6 +35,49 @@ public class SocietyMembershipService {
         requireAdmin(accountId, adminUserId);
         return membershipRepository.findByAccountIdAndActiveFalseOrderByCreatedAtAsc(accountId).stream()
                 .map(this::toDto).toList();
+    }
+
+    public List<SocietyMembershipRequestDto> members(Long accountId, Long adminUserId) {
+        requireAdmin(accountId, adminUserId);
+        return membershipRepository.findByAccountIdAndActiveTrueOrderByCreatedAtAsc(accountId).stream()
+                .map(this::toDto).toList();
+    }
+
+    @Transactional
+    public SocietyMembershipRequestDto updateRole(Long accountId, Long adminUserId, Long membershipId, UserRole role) {
+        requireAdmin(accountId, adminUserId);
+        if (role != UserRole.ADMIN && role != UserRole.TREASURER && role != UserRole.MEMBER) {
+            throw new ValidationException("Society role must be ADMIN, TREASURER, or MEMBER");
+        }
+        AccountUserMembership membership = membershipRepository.findById(membershipId)
+                .orElseThrow(() -> new ValidationException("Society member not found"));
+        if (!membership.getAccount().getId().equals(accountId) || !Boolean.TRUE.equals(membership.getActive())) {
+            throw new ValidationException("Society member not found");
+        }
+        if (membership.getUser().getId().equals(adminUserId) && role != UserRole.ADMIN) {
+            throw new ValidationException("You cannot remove your own admin access");
+        }
+        membership.setRole(role);
+        membership.setUpdatedAt(LocalDateTime.now());
+        return toDto(membershipRepository.save(membership));
+    }
+
+    @Transactional
+    public SocietyMembershipRequestDto requestMembership(Long societyId, Long userId) {
+        Account society = accountRepository.findById(societyId)
+                .filter(account -> account.getAccountType() == AccountType.SOCIETY && Boolean.TRUE.equals(account.getActive()))
+                .orElseThrow(() -> new ValidationException("Society not found"));
+        if (society.getUser().getId().equals(userId)
+                || membershipRepository.findByAccountIdAndUserId(societyId, userId).isPresent()) {
+            throw new ValidationException("You already belong to, or have requested access to, this society");
+        }
+        AccountUserMembership membership = AccountUserMembership.builder()
+                .account(society)
+                .user(userRepository.findById(userId).orElseThrow(() -> new ValidationException("User not found")))
+                .role(UserRole.MEMBER)
+                .active(false)
+                .build();
+        return toDto(membershipRepository.save(membership));
     }
 
     @Transactional
@@ -73,6 +118,6 @@ public class SocietyMembershipService {
         return SocietyMembershipRequestDto.builder().id(membership.getId())
                 .userId(membership.getUser().getId()).name(membership.getUser().getName())
                 .mobile(membership.getUser().getMobile()).email(membership.getUser().getEmail())
-                .requestedAt(membership.getCreatedAt()).build();
+                .requestedAt(membership.getCreatedAt()).role(membership.getRole()).build();
     }
 }
