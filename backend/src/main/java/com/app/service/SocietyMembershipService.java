@@ -1,15 +1,20 @@
 package com.app.service;
 
+import com.app.dto.ApproveSocietyMembershipRequest;
 import com.app.dto.SocietyMembershipRequestDto;
 import com.app.dto.SocietyOptionDto;
 import com.app.entity.Account;
 import com.app.entity.AccountType;
 import com.app.entity.AccountUserMembership;
+import com.app.entity.Flat;
+import com.app.entity.FlatMember;
 import com.app.entity.UserRole;
 import com.app.exception.UnauthorizedException;
 import com.app.exception.ValidationException;
 import com.app.repository.AccountRepository;
 import com.app.repository.AccountUserMembershipRepository;
+import com.app.repository.FlatMemberRepository;
+import com.app.repository.FlatRepository;
 import com.app.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -24,6 +29,8 @@ public class SocietyMembershipService {
     private final AccountRepository accountRepository;
     private final AccountUserMembershipRepository membershipRepository;
     private final UserRepository userRepository;
+    private final FlatRepository flatRepository;
+    private final FlatMemberRepository flatMemberRepository;
 
     public List<SocietyOptionDto> listSocieties() {
         return accountRepository.findByAccountTypeAndActiveTrueOrderByAccountNameAsc(AccountType.SOCIETY).stream()
@@ -63,7 +70,7 @@ public class SocietyMembershipService {
     }
 
     @Transactional
-    public SocietyMembershipRequestDto requestMembership(Long societyId, Long userId) {
+    public SocietyMembershipRequestDto requestMembership(Long societyId, Long userId, String blockName, String flatNumber, String relation) {
         Account society = accountRepository.findById(societyId)
                 .filter(account -> account.getAccountType() == AccountType.SOCIETY && Boolean.TRUE.equals(account.getActive()))
                 .orElseThrow(() -> new ValidationException("Society not found"));
@@ -71,28 +78,59 @@ public class SocietyMembershipService {
                 || membershipRepository.findByAccountIdAndUserId(societyId, userId).isPresent()) {
             throw new ValidationException("You already belong to, or have requested access to, this society");
         }
+        validateRequestedFlat(blockName, flatNumber, relation);
         AccountUserMembership membership = AccountUserMembership.builder()
                 .account(society)
                 .user(userRepository.findById(userId).orElseThrow(() -> new ValidationException("User not found")))
                 .role(UserRole.MEMBER)
+                .requestedBlockName(clean(blockName))
+                .requestedFlatNumber(clean(flatNumber))
+                .requestedRelation(clean(relation))
                 .active(false)
                 .build();
         return toDto(membershipRepository.save(membership));
     }
 
     @Transactional
-    public SocietyMembershipRequestDto approve(Long accountId, Long adminUserId, Long requestId) {
+    public SocietyMembershipRequestDto approve(Long accountId, Long adminUserId, Long requestId, ApproveSocietyMembershipRequest request) {
         requireAdmin(accountId, adminUserId);
         AccountUserMembership membership = pendingRequest(accountId, requestId);
+        Flat flat = flatRepository.findByAccountIdAndIdAndActiveTrue(accountId, request.getFlatId())
+                .orElseThrow(() -> new ValidationException("Select a valid active flat before approving this member"));
+        String relation = request.getRelation() == null ? "" : request.getRelation().trim();
+        if (relation.isBlank()) {
+            throw new ValidationException("Flat relation is required");
+        }
+
+        FlatMember flatMember = FlatMember.builder()
+                .flat(flat)
+                .memberName(membership.getUser().getName())
+                .mobile(membership.getUser().getMobile())
+                .email(membership.getUser().getEmail())
+                .relation(relation)
+                .active(true)
+                .build();
+        flatMemberRepository.save(flatMember);
+
         membership.setActive(true);
         membership.setUpdatedAt(LocalDateTime.now());
-        return toDto(membershipRepository.save(membership));
+        return toDto(membershipRepository.save(membership), flatMember);
     }
 
     @Transactional
     public void reject(Long accountId, Long adminUserId, Long requestId) {
         requireAdmin(accountId, adminUserId);
         membershipRepository.delete(pendingRequest(accountId, requestId));
+    }
+
+    private void validateRequestedFlat(String blockName, String flatNumber, String relation) {
+        if (clean(blockName) == null) throw new ValidationException("Block is required for society membership request");
+        if (clean(flatNumber) == null) throw new ValidationException("Flat number is required for society membership request");
+        if (clean(relation) == null) throw new ValidationException("Flat relation is required for society membership request");
+    }
+
+    private String clean(String value) {
+        return value == null || value.isBlank() ? null : value.trim();
     }
 
     private AccountUserMembership pendingRequest(Long accountId, Long requestId) {
@@ -115,9 +153,26 @@ public class SocietyMembershipService {
     }
 
     private SocietyMembershipRequestDto toDto(AccountUserMembership membership) {
-        return SocietyMembershipRequestDto.builder().id(membership.getId())
+        return toDto(membership, null);
+    }
+
+    private SocietyMembershipRequestDto toDto(AccountUserMembership membership, FlatMember flatMember) {
+        SocietyMembershipRequestDto.SocietyMembershipRequestDtoBuilder builder = SocietyMembershipRequestDto.builder()
+                .id(membership.getId())
                 .userId(membership.getUser().getId()).name(membership.getUser().getName())
                 .mobile(membership.getUser().getMobile()).email(membership.getUser().getEmail())
-                .requestedAt(membership.getCreatedAt()).role(membership.getRole()).build();
+                .requestedAt(membership.getCreatedAt()).role(membership.getRole())
+                .requestedBlockName(membership.getRequestedBlockName())
+                .requestedFlatNumber(membership.getRequestedFlatNumber())
+                .requestedRelation(membership.getRequestedRelation());
+        if (flatMember != null) {
+            Flat flat = flatMember.getFlat();
+            builder.flatId(flat.getId())
+                    .flatLabel(flat.getBlockName() + "-" + flat.getFlatNumber())
+                    .flatRelation(flatMember.getRelation());
+        }
+        return builder.build();
     }
 }
+
+

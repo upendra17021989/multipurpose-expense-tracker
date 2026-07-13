@@ -15,4 +15,11 @@ public class SocietyMembershipRequestDto {
     private String email;
     private LocalDateTime requestedAt;
     private UserRole role;
+    private String requestedBlockName;
+    private String requestedFlatNumber;
+    private String requestedRelation;
+    private Long flatId;
+    private String flatLabel;
+    private String flatRelation;
 }
+

@@ -31,6 +31,12 @@ public class AccountUserMembership {
     @Column(nullable = false)
     private UserRole role;
 
+    private String requestedBlockName;
+
+    private String requestedFlatNumber;
+
+    private String requestedRelation;
+
     @Column(nullable = false)
     @Builder.Default
     private Boolean active = true;
@@ -43,3 +49,4 @@ public class AccountUserMembership {
     @Builder.Default
     private LocalDateTime updatedAt = LocalDateTime.now();
 }
+

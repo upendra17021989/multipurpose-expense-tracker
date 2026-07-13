@@ -14,11 +14,11 @@ export const authAPI = {
 
 export const societyMembershipAPI = {
   listSocieties: () => axiosInstance.get('/public/societies'),
-  requestToJoin: (societyId) => axiosInstance.post('/society/membership-requests', { societyId }),
+  requestToJoin: (data) => axiosInstance.post('/society/membership-requests', data),
   getPending: () => axiosInstance.get('/society/membership-requests'),
   getMembers: () => axiosInstance.get('/society/members'),
   updateMemberRole: (membershipId, role) => axiosInstance.patch(`/society/members/${membershipId}/role`, { role }),
-  approve: (requestId) => axiosInstance.post(`/society/membership-requests/${requestId}/approve`),
+  approve: (requestId, data) => axiosInstance.post(`/society/membership-requests/${requestId}/approve`, data),
   reject: (requestId) => axiosInstance.delete(`/society/membership-requests/${requestId}`)
 }
 
@@ -259,4 +259,5 @@ export const sportsAPI = {
   getReceipts: (collectionId) => axiosInstance.get(`/sports/collections/${collectionId}/receipts`),
   voidReceipt: (receiptId, data) => axiosInstance.post(`/sports/receipts/${receiptId}/void`, data)
 }
+
 

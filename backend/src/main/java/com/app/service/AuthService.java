@@ -69,7 +69,7 @@ public class AuthService {
         if (request.getAccountType() == AccountType.SOCIETY
                 && request.getSocietyId() != null
                 && !Boolean.TRUE.equals(request.getCreateNewSociety())) {
-            requestSocietyMembership(request.getSocietyId(), user);
+            requestSocietyMembership(request.getSocietyId(), user, request.getBlockName(), request.getFlatNumber(), request.getRelation());
             sharedInvitationService.claimPendingInvitations(user);
             log.info("Society membership requested for account {} by user {}", request.getSocietyId(), user.getId());
             return mapToUserDto(user);
@@ -95,7 +95,7 @@ public class AuthService {
         if (request.getAccountType() == AccountType.SOCIETY
                 && request.getSocietyId() != null
                 && !Boolean.TRUE.equals(request.getCreateNewSociety())) {
-            requestSocietyMembership(request.getSocietyId(), user);
+            requestSocietyMembership(request.getSocietyId(), user, request.getBlockName(), request.getFlatNumber(), request.getRelation());
             sharedInvitationService.claimPendingInvitations(user);
             return buildAccountLoginResponse(user, currentAccountId);
         }
@@ -108,7 +108,7 @@ public class AuthService {
         return buildAccountLoginResponse(user, savedAccount.getId());
     }
 
-    private void requestSocietyMembership(Long societyId, User user) {
+    private void requestSocietyMembership(Long societyId, User user, String blockName, String flatNumber, String relation) {
         Account society = accountRepository.findById(societyId)
                 .filter(account -> account.getAccountType() == AccountType.SOCIETY && Boolean.TRUE.equals(account.getActive()))
                 .orElseThrow(() -> new ValidationException("Society not found"));
@@ -116,8 +116,11 @@ public class AuthService {
                 || membershipRepository.findByAccountIdAndUserId(societyId, user.getId()).isPresent()) {
             throw new ValidationException("You already belong to, or have requested access to, this society");
         }
+        validateRequestedFlat(blockName, flatNumber, relation);
         membershipRepository.save(com.app.entity.AccountUserMembership.builder()
-                .account(society).user(user).role(UserRole.MEMBER).active(false).build());
+                .account(society).user(user).role(UserRole.MEMBER).active(false)
+                .requestedBlockName(clean(blockName)).requestedFlatNumber(clean(flatNumber))
+                .requestedRelation(clean(relation)).build());
     }
 
     public LoginResponse login(LoginRequest request) {
@@ -254,6 +257,15 @@ public class AuthService {
     }
 
 
+    private void validateRequestedFlat(String blockName, String flatNumber, String relation) {
+        if (clean(blockName) == null) throw new ValidationException("Block is required for society membership request");
+        if (clean(flatNumber) == null) throw new ValidationException("Flat number is required for society membership request");
+        if (clean(relation) == null) throw new ValidationException("Flat relation is required for society membership request");
+    }
+
+    private String clean(String value) {
+        return value == null || value.isBlank() ? null : value.trim();
+    }
     private User createUser(RegisterRequest request) {
         if (request.getEmail() != null && !request.getEmail().isBlank() && userRepository.findByEmail(request.getEmail()).isPresent()) {
             throw new ValidationException("Email already registered");
@@ -341,4 +353,5 @@ public class AuthService {
         };
     }
 }
+
 

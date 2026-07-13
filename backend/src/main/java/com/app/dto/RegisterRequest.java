@@ -25,7 +25,11 @@ public class RegisterRequest {
     private String address;
     private String societyName;
     private Long societyId;
+    private String blockName;
+    private String flatNumber;
+    private String relation;
     private Boolean createNewSociety;
     private String storeName;
     private UserRole role;
 }
+

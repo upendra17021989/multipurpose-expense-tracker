@@ -19,6 +19,9 @@ const defaultForm = {
   societyMode: 'CREATE',
   societyId: '',
   societyName: '',
+  blockName: '',
+  flatNumber: '',
+  relation: 'Resident',
   storeName: ''
 }
 
@@ -77,6 +80,9 @@ export const Workspaces = () => {
       societyId: form.accountType === 'SOCIETY' && form.societyMode === 'JOIN' ? Number(form.societyId) : null,
       createNewSociety: form.accountType === 'SOCIETY' && form.societyMode === 'CREATE',
       societyName: form.accountType === 'SOCIETY' ? form.societyName || form.accountName : '',
+      blockName: form.accountType === 'SOCIETY' && form.societyMode === 'JOIN' ? form.blockName.trim() : '',
+      flatNumber: form.accountType === 'SOCIETY' && form.societyMode === 'JOIN' ? form.flatNumber.trim() : '',
+      relation: form.accountType === 'SOCIETY' && form.societyMode === 'JOIN' ? form.relation : '',
       storeName: form.accountType === 'KIRANA_STORE' ? form.storeName || form.accountName : ''
     }
 
@@ -146,15 +152,35 @@ export const Workspaces = () => {
           )}
 
           {form.accountType === 'SOCIETY' && form.societyMode === 'JOIN' ? (
-            <label>
-              Society
-              <select name="societyId" value={form.societyId} onChange={update} required disabled={loadingSocieties}>
-                <option value="">{loadingSocieties ? 'Loading societies...' : 'Select a society'}</option>
-                {availableSocieties.map((society) => (
-                  <option key={society.id} value={society.id}>{society.name}{society.address ? ` - ${society.address}` : ''}</option>
-                ))}
-              </select>
-            </label>
+            <>
+              <label>
+                Society
+                <select name="societyId" value={form.societyId} onChange={update} required disabled={loadingSocieties}>
+                  <option value="">{loadingSocieties ? 'Loading societies...' : 'Select a society'}</option>
+                  {availableSocieties.map((society) => (
+                    <option key={society.id} value={society.id}>{society.name}{society.address ? ` - ${society.address}` : ''}</option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                Block
+                <input name="blockName" value={form.blockName} onChange={update} placeholder="e.g. A" required />
+              </label>
+              <label>
+                Flat number
+                <input name="flatNumber" value={form.flatNumber} onChange={update} placeholder="e.g. 302" required />
+              </label>
+              <label>
+                Relation
+                <select name="relation" value={form.relation} onChange={update} required>
+                  <option value="Resident">Resident</option>
+                  <option value="Owner">Owner</option>
+                  <option value="Tenant">Tenant</option>
+                  <option value="Family member">Family member</option>
+                  <option value="Committee member">Committee member</option>
+                </select>
+              </label>
+            </>
           ) : (
             <label>
               {tx('Workspace name')}
@@ -187,7 +213,7 @@ export const Workspaces = () => {
         )}
 
         <div className="form-actions">
-          <button className="primary" type="submit" disabled={submitting || (form.accountType === 'SOCIETY' && form.societyMode === 'JOIN' && !form.societyId)}>
+          <button className="primary" type="submit" disabled={submitting || (form.accountType === 'SOCIETY' && form.societyMode === 'JOIN' && (!form.societyId || !form.blockName.trim() || !form.flatNumber.trim() || !form.relation))}>
             {submitting ? tx('Adding workspace...') : tx('Add workspace')}
           </button>
         </div>
@@ -211,4 +237,5 @@ const placeholder = (type) => {
   if (type === 'SPORTS') return 'e.g. Sunday Cricket Club'
   return 'e.g. Personal Expenses'
 }
+
 

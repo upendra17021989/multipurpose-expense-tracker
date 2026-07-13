@@ -218,7 +218,7 @@ const PersonalDashboard = () => {
                 <span>{expense.categoryName?.slice(0, 1) || 'Rs'}</span>
                 <div>
                   <strong>{expense.description || expense.categoryName || 'Expense'}</strong>
-                  <small>{formatDate(expense.expenseDate)} · {expense.paymentMode || 'Payment'}</small>
+                  <small>{formatDate(expense.expenseDate)} - {expense.paymentMode || 'Payment'}</small>
                 </div>
                 <b>{formatCurrency(expense.amount)}</b>
               </Link>
@@ -334,16 +334,22 @@ const SocietyMembershipRequests = () => {
   const currentAccount = useAuthStore((state) => state.currentAccount)
   const [requests, setRequests] = useState([])
   const [members, setMembers] = useState([])
+  const [approvalForms, setApprovalForms] = useState({})
+  const [flats, setFlats] = useState([])
   const [loading, setLoading] = useState(true)
   const isAdmin = currentAccount?.role === 'ADMIN'
 
   const loadRequests = () => {
     if (!isAdmin) return
     setLoading(true)
-    Promise.all([societyMembershipAPI.getPending(), societyMembershipAPI.getMembers()])
-      .then(([requestResponse, memberResponse]) => {
-        setRequests(requestResponse.data || [])
+    Promise.all([societyMembershipAPI.getPending(), societyMembershipAPI.getMembers(), societyFlatAPI.getFlats()])
+      .then(([requestResponse, memberResponse, flatResponse]) => {
+        const requestRows = requestResponse.data || []
+        const flatRows = flatResponse.data || []
+        setRequests(requestRows)
         setMembers(memberResponse.data || [])
+        setFlats(flatRows)
+        setApprovalForms(buildApprovalForms(requestRows, flatRows))
       })
       .catch((error) => toast.error(error.response?.data?.message || 'Unable to load membership requests'))
       .finally(() => setLoading(false))
@@ -353,13 +359,52 @@ const SocietyMembershipRequests = () => {
 
   if (!isAdmin) return null
 
+  const buildApprovalForms = (requestRows, flatRows) => requestRows.reduce((forms, request) => {
+    const requestedBlock = request.requestedBlockName?.trim().toLowerCase()
+    const requestedFlat = request.requestedFlatNumber?.trim().toLowerCase()
+    const matchingFlat = requestedBlock && requestedFlat
+      ? flatRows.find((flat) => flat.blockName?.trim().toLowerCase() === requestedBlock && flat.flatNumber?.trim().toLowerCase() === requestedFlat)
+      : null
+    forms[request.id] = {
+      flatId: matchingFlat?.id ? String(matchingFlat.id) : '',
+      relation: request.requestedRelation || 'Resident'
+    }
+    return forms
+  }, {})
+
+  const requestedFlatLabel = (request) => {
+    const parts = [request.requestedBlockName, request.requestedFlatNumber].filter(Boolean)
+    const flat = parts.length ? parts.join('-') : 'Not provided'
+    return `${flat}${request.requestedRelation ? ` as ${request.requestedRelation}` : ''}`
+  }
+
+  const updateApprovalForm = (requestId, field, value) => {
+    setApprovalForms((forms) => ({
+      ...forms,
+      [requestId]: { ...(forms[requestId] || { relation: 'Resident' }), [field]: value }
+    }))
+  }
+
   const respond = async (request, approve) => {
     try {
       if (approve) {
-        const response = await societyMembershipAPI.approve(request.id)
+        const form = approvalForms[request.id] || {}
+        if (!form.flatId) {
+          toast.error('Select a flat before approving this member')
+          return
+        }
+        const response = await societyMembershipAPI.approve(request.id, {
+          flatId: Number(form.flatId),
+          relation: form.relation || 'Resident'
+        })
         setMembers((items) => [...items, response.data])
       } else await societyMembershipAPI.reject(request.id)
       setRequests((items) => items.filter((item) => item.id !== request.id))
+      setApprovalForms((forms) => {
+        const next = { ...forms }
+        delete next[request.id]
+        return next
+      })
       toast.success(`${request.name}'s request ${approve ? 'approved' : 'rejected'}`)
     } catch (error) {
       toast.error(error.response?.data?.message || 'Unable to update membership request')
@@ -379,14 +424,32 @@ const SocietyMembershipRequests = () => {
   return (
     <section className="panel">
       <h2>Society membership requests</h2>
-      {loading && <p className="muted">Checking for new requests…</p>}
+      {loading && <p className="muted">Checking for new requests...</p>}
       {!loading && !requests.length && <p className="muted">No pending membership requests.</p>}
       {requests.map((request) => (
         <article className="shared-invitation-card" key={request.id}>
           <div>
             <strong>{request.name}</strong>
-            <small>{request.mobile}{request.email ? ` · ${request.email}` : ''}</small>
+            <small>{request.mobile}{request.email ? ` - ${request.email}` : ''}</small>
+            <small>Requested flat: {requestedFlatLabel(request)}</small>
           </div>
+          <label>
+            Flat
+            <select value={approvalForms[request.id]?.flatId || ''} onChange={(event) => updateApprovalForm(request.id, 'flatId', event.target.value)}>
+              <option value="">Select flat</option>
+              {flats.map((flat) => <option key={flat.id} value={flat.id}>{flat.blockName}-{flat.flatNumber} ({flat.ownerName})</option>)}
+            </select>
+          </label>
+          <label>
+            Relation
+            <select value={approvalForms[request.id]?.relation || 'Resident'} onChange={(event) => updateApprovalForm(request.id, 'relation', event.target.value)}>
+              <option value="Resident">Resident</option>
+              <option value="Owner">Owner</option>
+              <option value="Tenant">Tenant</option>
+              <option value="Family member">Family member</option>
+              <option value="Committee member">Committee member</option>
+            </select>
+          </label>
           <div className="table-actions">
             <button className="primary" type="button" onClick={() => respond(request, true)}>Approve</button>
             <button type="button" onClick={() => respond(request, false)}>Reject</button>
@@ -399,7 +462,7 @@ const SocietyMembershipRequests = () => {
         <article className="shared-invitation-card" key={member.id}>
           <div>
             <strong>{member.name}</strong>
-            <small>{member.mobile}{member.email ? ` · ${member.email}` : ''}</small>
+            <small>{member.mobile}{member.email ? ` - ${member.email}` : ''}</small>
           </div>
           <label>
             Access role
@@ -505,7 +568,6 @@ const buildExpenseSummary = (expenses) => {
     paymentModes: paymentModes.size || '-'
   }
 }
-
 
 
 

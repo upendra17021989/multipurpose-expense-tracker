@@ -1,5 +1,6 @@
 package com.app.controller;
 
+import com.app.dto.ApproveSocietyMembershipRequest;
 import com.app.dto.SocietyMembershipRequestDto;
 import com.app.dto.SocietyOptionDto;
 import com.app.dto.JoinSocietyRequest;
@@ -30,7 +31,7 @@ public class SocietyMembershipController {
     @PostMapping("/society/membership-requests")
     public SocietyMembershipRequestDto request(@AuthenticationPrincipal UserPrincipal principal,
                                                 @Valid @RequestBody JoinSocietyRequest request) {
-        return service.requestMembership(request.getSocietyId(), principal.getUserId());
+        return service.requestMembership(request.getSocietyId(), principal.getUserId(), request.getBlockName(), request.getFlatNumber(), request.getRelation());
     }
 
     @GetMapping("/society/members")
@@ -46,8 +47,10 @@ public class SocietyMembershipController {
     }
 
     @PostMapping("/society/membership-requests/{id}/approve")
-    public SocietyMembershipRequestDto approve(@AuthenticationPrincipal UserPrincipal principal, @PathVariable Long id) {
-        return service.approve(principal.getAccountId(), principal.getUserId(), id);
+    public SocietyMembershipRequestDto approve(@AuthenticationPrincipal UserPrincipal principal,
+                                                @PathVariable Long id,
+                                                @Valid @RequestBody ApproveSocietyMembershipRequest request) {
+        return service.approve(principal.getAccountId(), principal.getUserId(), id, request);
     }
 
     @DeleteMapping("/society/membership-requests/{id}")
@@ -56,3 +59,4 @@ public class SocietyMembershipController {
         return ResponseEntity.noContent().build();
     }
 }
+

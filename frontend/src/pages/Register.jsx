@@ -32,7 +32,10 @@ export const Register = () => {
     societyName: '',
     storeName: '',
     societyMode: 'JOIN',
-    societyId: ''
+    societyId: '',
+    blockName: '',
+    flatNumber: '',
+    relation: 'Resident'
   })
 
   useEffect(() => {
@@ -64,6 +67,9 @@ export const Register = () => {
         ? Number(formData.societyId) : null,
       createNewSociety: formData.accountType === 'SOCIETY' && formData.societyMode === 'CREATE',
       societyName: formData.accountType === 'SOCIETY' ? formData.societyName || formData.accountName : '',
+      blockName: formData.accountType === 'SOCIETY' && formData.societyMode === 'JOIN' ? formData.blockName.trim() : '',
+      flatNumber: formData.accountType === 'SOCIETY' && formData.societyMode === 'JOIN' ? formData.flatNumber.trim() : '',
+      relation: formData.accountType === 'SOCIETY' && formData.societyMode === 'JOIN' ? formData.relation : '',
       storeName: formData.accountType === 'KIRANA_STORE' ? formData.storeName || formData.accountName : ''
     }
 
@@ -141,18 +147,38 @@ export const Register = () => {
                 </select>
               </div>
               {formData.societyMode === 'JOIN' ? (
-                <div style={styles.formGroup}>
-                  <RequiredLabel htmlFor="societyId">Choose society</RequiredLabel>
-                  <select id="societyId" name="societyId" value={formData.societyId} onChange={handleInputChange} required style={styles.input}>
-                    <option value="">Select a society</option>
-                    {societies.map((society) => (
-                      <option key={society.id} value={society.id}>
-                        {society.name}{society.address ? ` — ${society.address}` : ''}
-                      </option>
-                    ))}
-                  </select>
-                  {!societies.length && <small>No existing societies found. Choose “Create my own society”.</small>}
-                </div>
+                <>
+                  <div style={styles.formGroup}>
+                    <RequiredLabel htmlFor="societyId">Choose society</RequiredLabel>
+                    <select id="societyId" name="societyId" value={formData.societyId} onChange={handleInputChange} required style={styles.input}>
+                      <option value="">Select a society</option>
+                      {societies.map((society) => (
+                        <option key={society.id} value={society.id}>
+                          {society.name}{society.address ? ` - ${society.address}` : ''}
+                        </option>
+                      ))}
+                    </select>
+                    {!societies.length && <small>No existing societies found. Choose Create my own society.</small>}
+                  </div>
+                  <div style={styles.formGroup}>
+                    <RequiredLabel htmlFor="blockName">Block</RequiredLabel>
+                    <input id="blockName" name="blockName" value={formData.blockName} onChange={handleInputChange} placeholder="e.g. A" required style={styles.input} />
+                  </div>
+                  <div style={styles.formGroup}>
+                    <RequiredLabel htmlFor="flatNumber">Flat number</RequiredLabel>
+                    <input id="flatNumber" name="flatNumber" value={formData.flatNumber} onChange={handleInputChange} placeholder="e.g. 302" required style={styles.input} />
+                  </div>
+                  <div style={styles.formGroup}>
+                    <RequiredLabel htmlFor="relation">Relation</RequiredLabel>
+                    <select id="relation" name="relation" value={formData.relation} onChange={handleInputChange} required style={styles.input}>
+                      <option value="Resident">Resident</option>
+                      <option value="Owner">Owner</option>
+                      <option value="Tenant">Tenant</option>
+                      <option value="Family member">Family member</option>
+                      <option value="Committee member">Committee member</option>
+                    </select>
+                  </div>
+                </>
               ) : (
                 <div style={styles.formGroup}>
                   <RequiredLabel htmlFor="societyName">Society name</RequiredLabel>
@@ -274,4 +300,5 @@ const styles = {
     textDecoration: 'none'
   }
 }
+
 
