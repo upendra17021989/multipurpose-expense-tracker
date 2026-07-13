@@ -24,6 +24,7 @@ public class SharedExpenseExportService {
   private final SharedExpenseRepository expenses;
   private final SharedExpensePayerRepository payers;
   private final SharedExpenseShareRepository shares;
+  private final SharedExpenseItemRepository items;
   private final SharedSettlementRepository settlements;
 
   public ExportResult export(Long accountId, Long userId, Long groupId) {
@@ -39,6 +40,7 @@ public class SharedExpenseExportService {
             .toList();
     var payerRows = payers.findByExpenseGroupIdAndExpenseReversedFalse(groupId);
     var shareRows = shares.findByExpenseGroupIdAndExpenseReversedFalse(groupId);
+    var itemRows = items.findByExpenseGroupIdOrderByExpenseExpenseDateDescExpenseIdDescDisplayOrderAscIdAsc(groupId);
     var settlementRows =
         settlements.findByGroupIdAndReversedFalse(groupId);
 
@@ -48,7 +50,7 @@ public class SharedExpenseExportService {
       summary(workbook, styles, group, memberRows, payerRows, shareRows, settlementRows);
       paidByMemberSheet(workbook, styles, memberRows, payerRows);
       categorySummarySheet(workbook, styles, expenseRows);
-      expenseSheet(workbook, styles, expenseRows, payerRows);
+      expenseSheet(workbook, styles, expenseRows, payerRows, itemRows);
       shareSheet(workbook, styles, expenseRows, payerRows, shareRows);
       settlementSheet(workbook, styles, settlementRows);
       memberSheet(workbook, styles, memberRows);
@@ -176,7 +178,8 @@ public class SharedExpenseExportService {
       Workbook workbook,
       Styles styles,
       List<SharedExpense> expenseRows,
-      List<SharedExpensePayer> payerRows) {
+      List<SharedExpensePayer> payerRows,
+      List<SharedExpenseItem> itemRows) {
     Sheet sheet = workbook.createSheet("Expenses");
     header(
         sheet,
@@ -188,7 +191,9 @@ public class SharedExpenseExportService {
         "Paid by",
         "Split type",
         "Amount",
+        "Item details",
         "Status");
+    Map<Long, String> itemDetails = itemDetailsByExpense(itemRows);
     Map<Long, String> paidBy =
         payerRows.stream()
             .collect(
@@ -215,13 +220,38 @@ public class SharedExpenseExportService {
               paidBy.getOrDefault(expense.getId(), ""),
               expense.getSplitType(),
               expense.getTotalAmount(),
+              itemDetails.getOrDefault(expense.getId(), ""),
               expense.getReversed() ? "Reversed" : "Active");
       row.getCell(0).setCellStyle(styles.date);
       row.getCell(5).setCellStyle(styles.money);
     }
-    finish(sheet, 0, 7);
+    finish(sheet, 0, 8);
   }
 
+  private Map<Long, String> itemDetailsByExpense(List<SharedExpenseItem> itemRows) {
+    return itemRows.stream()
+        .collect(
+            Collectors.groupingBy(
+                item -> item.getExpense().getId(),
+                LinkedHashMap::new,
+                Collectors.mapping(this::itemDetail, Collectors.joining("; "))));
+  }
+
+  private String itemDetail(SharedExpenseItem item) {
+    String quantity = item.getQuantity() == null ? "1" : item.getQuantity().stripTrailingZeros().toPlainString();
+    String amount = item.getAmount() == null ? "0.00" : item.getAmount().setScale(2).toPlainString();
+    if (item.getUnitPrice() == null) {
+      return item.getItemName() + " x " + quantity + " (" + amount + ")";
+    }
+    return item.getItemName()
+        + " x "
+        + quantity
+        + " @ "
+        + item.getUnitPrice().setScale(2).toPlainString()
+        + " ("
+        + amount
+        + ")";
+  }
   private void shareSheet(
       Workbook workbook,
       Styles styles,
@@ -416,3 +446,4 @@ public class SharedExpenseExportService {
     }
   }
 }
+

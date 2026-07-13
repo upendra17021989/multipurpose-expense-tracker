@@ -31,6 +31,7 @@ public class SharedExpensePdfExportService {
   private final SharedExpenseRepository expenses;
   private final SharedExpensePayerRepository payers;
   private final SharedExpenseShareRepository shares;
+  private final SharedExpenseItemRepository items;
   private final SharedSettlementRepository settlements;
 
   public ExportResult export(Long accountId, Long userId, Long groupId) {
@@ -49,6 +50,8 @@ public class SharedExpensePdfExportService {
         payers.findByExpenseGroupIdAndExpenseReversedFalse(groupId);
     List<SharedExpenseShare> shareRows =
         shares.findByExpenseGroupIdAndExpenseReversedFalse(groupId);
+    List<SharedExpenseItem> itemRows =
+        items.findByExpenseGroupIdOrderByExpenseExpenseDateDescExpenseIdDescDisplayOrderAscIdAsc(groupId);
     List<SharedSettlement> settlementRows =
         settlements.findByGroupIdAndReversedFalse(groupId);
 
@@ -126,7 +129,8 @@ public class SharedExpensePdfExportService {
 
       document.add(new Paragraph("Expenses").setBold().setFontSize(13));
       Table expenseTable =
-          table("Date", "Description", "Category", "Paid by", "Split", "Amount");
+          table("Date", "Description", "Category", "Paid by", "Split", "Amount", "Item details");
+      Map<Long, String> itemDetails = itemDetailsByExpense(itemRows);
       Map<Long, String> paidBy =
           payerRows.stream()
               .collect(
@@ -148,9 +152,10 @@ public class SharedExpensePdfExportService {
             value(expense.getCategory()),
             paidBy.getOrDefault(expense.getId(), ""),
             expense.getSplitType().name(),
-            money(expense.getTotalAmount()));
+            money(expense.getTotalAmount()),
+            itemDetails.getOrDefault(expense.getId(), ""));
       }
-      emptyRow(expenseTable, expenseRows.isEmpty(), 6, "No expenses");
+      emptyRow(expenseTable, expenseRows.isEmpty(), 7, "No expenses");
       document.add(expenseTable);
 
       document.add(new Paragraph("Expense shares").setBold().setFontSize(13));
@@ -233,6 +238,30 @@ public class SharedExpensePdfExportService {
     return new ExportResult(fileName(group.getName()), output.toByteArray());
   }
 
+  private Map<Long, String> itemDetailsByExpense(List<SharedExpenseItem> itemRows) {
+    return itemRows.stream()
+        .collect(
+            Collectors.groupingBy(
+                item -> item.getExpense().getId(),
+                LinkedHashMap::new,
+                Collectors.mapping(this::itemDetail, Collectors.joining("; "))));
+  }
+
+  private String itemDetail(SharedExpenseItem item) {
+    String quantity = item.getQuantity() == null ? "1" : item.getQuantity().stripTrailingZeros().toPlainString();
+    String amount = money(item.getAmount());
+    if (item.getUnitPrice() == null) {
+      return item.getItemName() + " x " + quantity + " (" + amount + ")";
+    }
+    return item.getItemName()
+        + " x "
+        + quantity
+        + " @ "
+        + money(item.getUnitPrice())
+        + " ("
+        + amount
+        + ")";
+  }
   private Map<Long, BigDecimal> balances(
       List<SharedGroupMember> memberRows,
       List<SharedExpensePayer> payerRows,
@@ -321,3 +350,4 @@ public class SharedExpensePdfExportService {
 
   public record ExportResult(String fileName, byte[] content) {}
 }
+
