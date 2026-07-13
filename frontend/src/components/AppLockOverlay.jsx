@@ -1,4 +1,7 @@
 ﻿import { useAuthStore } from '../store/authStore'
+import { useState } from 'react'
+import { toast } from 'react-toastify'
+import { authAPI } from '../api/endpoints'
 
 export const AppLockOverlay = () => {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated)
@@ -6,6 +9,23 @@ export const AppLockOverlay = () => {
   const unlockApp = useAuthStore((state) => state.unlockApp)
   const logout = useAuthStore((state) => state.logout)
   const user = useAuthStore((state) => state.user)
+  const [isUnlocking, setIsUnlocking] = useState(false)
+
+  const handleUnlock = async () => {
+    if (isUnlocking) return
+
+    setIsUnlocking(true)
+    try {
+      await authAPI.validateToken()
+      unlockApp()
+    } catch (error) {
+      if (error.response?.status !== 401) {
+        toast.error('Unable to verify your session. Please check your connection and try again.')
+      }
+    } finally {
+      setIsUnlocking(false)
+    }
+  }
 
   if (!isAuthenticated || !isAppLocked) return null
 
@@ -19,7 +39,9 @@ export const AppLockOverlay = () => {
           {user?.name ? `${user.name}, y` : 'Y'}our session is still active. Unlock to continue without logging in again.
         </p>
         <div className="app-lock-actions">
-          <button className="primary" type="button" onClick={unlockApp}>Unlock</button>
+          <button className="primary" type="button" onClick={handleUnlock} disabled={isUnlocking}>
+            {isUnlocking ? 'Checking session…' : 'Unlock'}
+          </button>
           <button type="button" onClick={logout}>Log out</button>
         </div>
       </section>

@@ -79,8 +79,18 @@ export const SessionActivityMonitor = () => {
     }
 
     const recordActivity = () => {
+      const lastActivity = Number(localStorage.getItem('lastActivityAt'))
+      if (lastActivity && Date.now() - lastActivity >= INACTIVITY_TIMEOUT_MS) {
+        expireSession()
+        return
+      }
+
       localStorage.setItem('lastActivityAt', String(Date.now()))
       scheduleExpiry()
+    }
+
+    const checkSessionOnResume = () => {
+      if (document.visibilityState === 'visible') scheduleExpiry()
     }
 
     const handleStorage = (event) => {
@@ -95,6 +105,9 @@ export const SessionActivityMonitor = () => {
       window.addEventListener(eventName, recordActivity, { passive: true })
     )
     window.addEventListener('storage', handleStorage)
+    document.addEventListener('visibilitychange', checkSessionOnResume)
+    window.addEventListener('pageshow', scheduleExpiry)
+    window.addEventListener('focus', scheduleExpiry)
 
     return () => {
       window.clearTimeout(timeoutId)
@@ -102,6 +115,9 @@ export const SessionActivityMonitor = () => {
         window.removeEventListener(eventName, recordActivity)
       )
       window.removeEventListener('storage', handleStorage)
+      document.removeEventListener('visibilitychange', checkSessionOnResume)
+      window.removeEventListener('pageshow', scheduleExpiry)
+      window.removeEventListener('focus', scheduleExpiry)
     }
   }, [isAuthenticated, isAppLocked, lockApp, logout, navigate])
 
