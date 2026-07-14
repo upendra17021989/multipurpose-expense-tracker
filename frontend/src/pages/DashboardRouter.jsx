@@ -4,7 +4,7 @@ import { useAuthStore } from '../store/authStore'
 import { formatCurrency, formatDate } from '../utils/format'
 import { useEffect, useMemo, useState } from 'react'
 import { toast } from 'react-toastify'
-import { expenseAPI, expenseCategoryAPI, kiranaProductAPI, personalBudgetAPI, societyFlatAPI, societyMembershipAPI } from '../api/endpoints'
+import { expenseAPI, expenseCategoryAPI, kiranaProductAPI, personalBudgetAPI, societyAnnualCollectionAPI, societyFlatAPI, societyMembershipAPI } from '../api/endpoints'
 import { useI18n } from '../i18n'
 
 const accountLabels = {
@@ -325,30 +325,40 @@ const SocietyDashboard = () => {
       <ActionRow actions={(currentAccount?.role === 'MEMBER'
         ? [[ 'View Expenses', '/expenses' ], [ 'Categories', '/categories' ], [ 'Flat Master', '/society/flats' ], [ 'Festivals', '/society/festivals' ], [ 'Collections', '/society/festival-collections' ]]
         : [[ 'Add Expense', '/expenses/new' ], [ 'View Expenses', '/expenses' ], [ 'Categories', '/categories' ], [ 'Flat Master', '/society/flats' ], [ 'Festivals', '/society/festivals' ], [ 'Collections', '/society/festival-collections' ]])} />
-      <SocietyMembershipRequests />
     </Shell>
   )
 }
 
-const SocietyMembershipRequests = () => {
+export const SocietyMemberDirectory = () => {
   const currentAccount = useAuthStore((state) => state.currentAccount)
   const [requests, setRequests] = useState([])
   const [members, setMembers] = useState([])
   const [approvalForms, setApprovalForms] = useState({})
   const [flats, setFlats] = useState([])
+  const [ledgerRows, setLedgerRows] = useState([])
+  const [ledgerByFlat, setLedgerByFlat] = useState({})
+  const [ledgerPages, setLedgerPages] = useState({})
+  const [flatLedgerPage, setFlatLedgerPage] = useState(1)
+  const [filters, setFilters] = useState({ flat: '', name: '', month: '', year: '' })
+  const [activeTab, setActiveTab] = useState('directory')
+  const [memberPage, setMemberPage] = useState(1)
   const [loading, setLoading] = useState(true)
   const isAdmin = currentAccount?.role === 'ADMIN'
+  const financialYear = (() => { const date = new Date(); const year = date.getMonth() < 3 ? date.getFullYear() - 1 : date.getFullYear(); return `${year}-${year + 1}` })()
 
   const loadRequests = () => {
-    if (!isAdmin) return
     setLoading(true)
-    Promise.all([societyMembershipAPI.getPending(), societyMembershipAPI.getMembers(), societyFlatAPI.getFlats()])
-      .then(([requestResponse, memberResponse, flatResponse]) => {
+    const requests = isAdmin ? societyMembershipAPI.getPending() : Promise.resolve({ data: [] })
+    const flats = isAdmin ? societyFlatAPI.getFlats() : Promise.resolve({ data: [] })
+    const ledger = isAdmin ? Promise.resolve({ data: [] }) : societyAnnualCollectionAPI.ledger(financialYear)
+    Promise.all([requests, societyMembershipAPI.getMembers(), flats, ledger])
+      .then(([requestResponse, memberResponse, flatResponse, ledgerResponse]) => {
         const requestRows = requestResponse.data || []
         const flatRows = flatResponse.data || []
         setRequests(requestRows)
         setMembers(memberResponse.data || [])
         setFlats(flatRows)
+        setLedgerRows(ledgerResponse.data || [])
         setApprovalForms(buildApprovalForms(requestRows, flatRows))
       })
       .catch((error) => toast.error(error.response?.data?.message || 'Unable to load membership requests'))
@@ -357,17 +367,20 @@ const SocietyMembershipRequests = () => {
 
   useEffect(loadRequests, [isAdmin])
 
-  if (!isAdmin) return null
+  const normalizeBlock = (value) => String(value || '').trim().toLowerCase().replace(/\bblock\b/g, '').replace(/[^a-z0-9]/g, '')
+  const normalizeFlat = (value) => String(value || '').trim().toLowerCase().replace(/[^a-z0-9]/g, '')
+  const relationOptions = ['Resident', 'Owner', 'Tenant', 'Family member', 'Committee member']
+  const matchingRelation = (value) => relationOptions.find((option) => option.toLowerCase() === String(value || '').trim().toLowerCase()) || 'Resident'
 
   const buildApprovalForms = (requestRows, flatRows) => requestRows.reduce((forms, request) => {
-    const requestedBlock = request.requestedBlockName?.trim().toLowerCase()
-    const requestedFlat = request.requestedFlatNumber?.trim().toLowerCase()
+    const requestedBlock = normalizeBlock(request.requestedBlockName)
+    const requestedFlat = normalizeFlat(request.requestedFlatNumber)
     const matchingFlat = requestedBlock && requestedFlat
-      ? flatRows.find((flat) => flat.blockName?.trim().toLowerCase() === requestedBlock && flat.flatNumber?.trim().toLowerCase() === requestedFlat)
+      ? flatRows.find((flat) => normalizeBlock(flat.blockName) === requestedBlock && normalizeFlat(flat.flatNumber) === requestedFlat)
       : null
     forms[request.id] = {
       flatId: matchingFlat?.id ? String(matchingFlat.id) : '',
-      relation: request.requestedRelation || 'Resident'
+      relation: matchingRelation(request.requestedRelation)
     }
     return forms
   }, {})
@@ -421,28 +434,121 @@ const SocietyMembershipRequests = () => {
     }
   }
 
+  const memberCard = (member) => (
+    <article className="shared-invitation-card society-member-role-card" key={member.id}>
+      <div className="society-membership-person">
+        <strong>{member.name}</strong>
+        <small>{member.mobile}{member.email ? ` - ${member.email}` : ''}</small>
+        <small>Flat: {requestedFlatLabel(member)}</small>
+      </div>
+      {isAdmin ? <label>
+        Access role
+        <select aria-label={`Access role for ${member.name}`} value={member.role} onChange={(event) => updateRole(member, event.target.value)}>
+          <option value="MEMBER">Member</option>
+          <option value="TREASURER">Treasurer</option>
+          <option value="ADMIN">Admin</option>
+        </select>
+      </label> : <div className="society-member-role-value"><small>Access role</small><strong>{String(member.role || 'MEMBER').toLowerCase()}</strong></div>}
+    </article>
+  )
+
+  const membersForFlat = (flat) => members.filter((member) =>
+    filteredMembers.some((filtered) => filtered.id === member.id) &&
+    normalizeBlock(member.requestedBlockName) === normalizeBlock(flat.blockName) &&
+    normalizeFlat(member.requestedFlatNumber) === normalizeFlat(flat.flatNumber))
+
+  const transactionsForFlat = (flat) => (ledgerByFlat[flat.id] || []).filter((row) => {
+    const date = String(row.paymentDate || '')
+    return (!filters.month || date.slice(5, 7) === filters.month) && (!filters.year || date.slice(0, 4) === filters.year)
+  })
+
+  const financialLedger = (rows, ledgerKey) => {
+    const pageSize = 10
+    const pageCount = Math.max(1, Math.ceil(rows.length / pageSize))
+    const page = Math.min(ledgerPages[ledgerKey] || 1, pageCount)
+    const visibleRows = rows.slice((page - 1) * pageSize, page * pageSize)
+    return <>
+    <div className="table-wrap society-flat-financial-table"><table><thead><tr><th>Date</th><th>Mode</th><th>Payer</th><th>Reference</th><th>Details</th><th className="numeric">Amount</th></tr></thead><tbody>
+      {visibleRows.map((row) => <tr key={row.id}><td>{formatDate(row.paymentDate)}</td><td>{row.paymentMode}</td><td>{row.sourceName || '-'}</td><td>{row.referenceNumber || row.transactionId || '-'}</td><td>{row.remarks || '-'}</td><td className="numeric">{formatCurrency(row.amount)}</td></tr>)}
+      {!rows.length && <tr><td colSpan="6" className="empty-state">No cash or bank book transactions for this flat in {financialYear}.</td></tr>}
+    </tbody></table></div>
+    {pageCount > 1 && <nav className="table-pagination" aria-label="Ledger transaction pages"><button disabled={page === 1} onClick={() => setLedgerPages((pages) => ({ ...pages, [ledgerKey]: 1 }))}>«</button><button disabled={page === 1} onClick={() => setLedgerPages((pages) => ({ ...pages, [ledgerKey]: page - 1 }))}>‹</button><span>Page {page} of {pageCount}</span><button disabled={page === pageCount} onClick={() => setLedgerPages((pages) => ({ ...pages, [ledgerKey]: page + 1 }))}>›</button><button disabled={page === pageCount} onClick={() => setLedgerPages((pages) => ({ ...pages, [ledgerKey]: pageCount }))}>»</button></nav>}
+    <div className="society-flat-ledger-total"><span>{financialYear} collection total</span><strong>{formatCurrency(rows.reduce((sum, row) => sum + Number(row.amount || 0), 0))}</strong></div>
+  </>}
+
+  const years = [...new Set([
+    ...members.map((member) => String(member.requestedAt || '').slice(0, 4)),
+    ...ledgerRows.map((row) => String(row.paymentDate || '').slice(0, 4)),
+    ...Object.values(ledgerByFlat).flat().map((row) => String(row.paymentDate || '').slice(0, 4)),
+    financialYear.slice(0, 4)
+  ].filter(Boolean))].sort().reverse()
+  const filteredMembers = members.filter((member) => {
+    return (!filters.flat || normalizeFlat(member.requestedFlatNumber).includes(normalizeFlat(filters.flat)))
+      && (!filters.name || String(member.name || '').toLowerCase().includes(filters.name.trim().toLowerCase()))
+  })
+  const filteredLedgerRows = ledgerRows.filter((row) => {
+    const date = String(row.paymentDate || '')
+    return (!filters.month || date.slice(5, 7) === filters.month) && (!filters.year || date.slice(0, 4) === filters.year)
+  })
+  const filteredFlats = flats.filter((flat) => {
+    const flatMatches = !filters.flat || normalizeFlat(flat.flatNumber).includes(normalizeFlat(filters.flat))
+    const nameMatches = !filters.name || membersForFlat(flat).length > 0
+    const dateMatches = !(filters.month || filters.year) || ledgerByFlat[flat.id] === undefined || transactionsForFlat(flat).length > 0
+    return flatMatches && nameMatches && dateMatches
+  })
+  const flatPageSize = 5
+  const flatPageCount = Math.max(1, Math.ceil(filteredFlats.length / flatPageSize))
+  const currentFlatPage = Math.min(flatLedgerPage, flatPageCount)
+  const visibleLedgerFlats = filteredFlats.slice((currentFlatPage - 1) * flatPageSize, currentFlatPage * flatPageSize)
+  const memberPageCount = Math.max(1, Math.ceil(filteredMembers.length / 10))
+  const currentMemberPage = Math.min(memberPage, memberPageCount)
+  const visibleMembers = filteredMembers.slice((currentMemberPage - 1) * 10, currentMemberPage * 10)
+  const visibleFlatIds = visibleLedgerFlats.map((flat) => flat.id).join(',')
+
+  useEffect(() => {
+    if (!isAdmin || activeTab !== 'ledger' || !visibleLedgerFlats.length) return
+    const missing = visibleLedgerFlats.filter((flat) => ledgerByFlat[flat.id] === undefined)
+    if (!missing.length) return
+    Promise.all(missing.map((flat) => societyAnnualCollectionAPI.ledger(financialYear, flat.id)
+      .then((response) => [flat.id, response.data || []])))
+      .then((entries) => setLedgerByFlat((current) => ({ ...current, ...Object.fromEntries(entries) })))
+      .catch((error) => toast.error(error.response?.data?.message || 'Unable to load flat ledger'))
+  }, [isAdmin, activeTab, visibleFlatIds, financialYear])
+
   return (
+    <Shell title="Society Member Directory" eyebrow="Society module">
+    <div className="shared-expense-submenu" role="tablist" aria-label="Society directory sections">
+      <button role="tab" aria-selected={activeTab === 'directory'} className={activeTab === 'directory' ? 'active' : ''} onClick={() => setActiveTab('directory')}>Member Directory</button>
+      <button role="tab" aria-selected={activeTab === 'ledger'} className={activeTab === 'ledger' ? 'active' : ''} onClick={() => setActiveTab('ledger')}>Financial Ledger</button>
+    </div>
+    <section className="toolbar-panel society-member-filters">
+      <label>Flat number<input type="search" value={filters.flat} placeholder="Search flat" onChange={(event) => { setFilters((current) => ({ ...current, flat: event.target.value })); setFlatLedgerPage(1) }} /></label>
+      <label>Member name<input type="search" value={filters.name} placeholder="Search name" onChange={(event) => { setFilters((current) => ({ ...current, name: event.target.value })); setFlatLedgerPage(1) }} /></label>
+      <label>Month<select value={filters.month} onChange={(event) => { setFilters((current) => ({ ...current, month: event.target.value })); setFlatLedgerPage(1) }}><option value="">All months</option>{['January','February','March','April','May','June','July','August','September','October','November','December'].map((month, index) => <option key={month} value={String(index + 1).padStart(2, '0')}>{month}</option>)}</select></label>
+      <label>Year<select value={filters.year} onChange={(event) => { setFilters((current) => ({ ...current, year: event.target.value })); setFlatLedgerPage(1) }}><option value="">All years</option>{years.map((year) => <option key={year}>{year}</option>)}</select></label>
+      <button type="button" onClick={() => { setFilters({ flat: '', name: '', month: '', year: '' }); setFlatLedgerPage(1); setLedgerPages({}) }}>Clear filters</button>
+    </section>
     <section className="panel">
-      <h2>Society membership requests</h2>
+      {activeTab === 'directory' && isAdmin && <><h2>Society membership requests</h2>
       {loading && <p className="muted">Checking for new requests...</p>}
       {!loading && !requests.length && <p className="muted">No pending membership requests.</p>}
       {requests.map((request) => (
-        <article className="shared-invitation-card" key={request.id}>
-          <div>
+        <article className="shared-invitation-card society-membership-request" key={request.id}>
+          <div className="society-membership-person">
             <strong>{request.name}</strong>
             <small>{request.mobile}{request.email ? ` - ${request.email}` : ''}</small>
             <small>Requested flat: {requestedFlatLabel(request)}</small>
           </div>
           <label>
             Flat
-            <select value={approvalForms[request.id]?.flatId || ''} onChange={(event) => updateApprovalForm(request.id, 'flatId', event.target.value)}>
+            <select aria-label={`Flat for ${request.name}`} value={approvalForms[request.id]?.flatId || ''} onChange={(event) => updateApprovalForm(request.id, 'flatId', event.target.value)}>
               <option value="">Select flat</option>
               {flats.map((flat) => <option key={flat.id} value={flat.id}>{flat.blockName}-{flat.flatNumber} ({flat.ownerName})</option>)}
             </select>
           </label>
           <label>
             Relation
-            <select value={approvalForms[request.id]?.relation || 'Resident'} onChange={(event) => updateApprovalForm(request.id, 'relation', event.target.value)}>
+            <select aria-label={`Relation for ${request.name}`} value={approvalForms[request.id]?.relation || 'Resident'} onChange={(event) => updateApprovalForm(request.id, 'relation', event.target.value)}>
               <option value="Resident">Resident</option>
               <option value="Owner">Owner</option>
               <option value="Tenant">Tenant</option>
@@ -455,26 +561,21 @@ const SocietyMembershipRequests = () => {
             <button type="button" onClick={() => respond(request, false)}>Reject</button>
           </div>
         </article>
-      ))}
-      <h2>Society members and roles</h2>
-      {!loading && !members.length && <p className="muted">No additional society members.</p>}
-      {members.map((member) => (
-        <article className="shared-invitation-card" key={member.id}>
-          <div>
-            <strong>{member.name}</strong>
-            <small>{member.mobile}{member.email ? ` - ${member.email}` : ''}</small>
-          </div>
-          <label>
-            Access role
-            <select value={member.role} onChange={(event) => updateRole(member, event.target.value)}>
-              <option value="MEMBER">Member</option>
-              <option value="TREASURER">Treasurer</option>
-              <option value="ADMIN">Admin</option>
-            </select>
-          </label>
-        </article>
-      ))}
+      ))}</>}
+      {activeTab === 'directory' && <><h2>Society member directory</h2>
+      {!loading && !filteredMembers.length && <p className="muted">No society members match these filters.</p>}
+      <div className="society-member-directory">{visibleMembers.map(memberCard)}</div>
+      {memberPageCount > 1 && <nav className="table-pagination" aria-label="Member directory pages"><button disabled={currentMemberPage === 1} onClick={() => setMemberPage(1)}>«</button><button disabled={currentMemberPage === 1} onClick={() => setMemberPage((page) => Math.max(1, page - 1))}>‹</button><span>Members page {currentMemberPage} of {memberPageCount}</span><button disabled={currentMemberPage === memberPageCount} onClick={() => setMemberPage((page) => Math.min(memberPageCount, page + 1))}>›</button><button disabled={currentMemberPage === memberPageCount} onClick={() => setMemberPage(memberPageCount)}>»</button></nav>}</>}
+      {activeTab === 'ledger' && <><h2>{isAdmin ? 'Flat financial ledgers' : 'Your flat financial ledger'}</h2>
+      {isAdmin ? <><div className="society-flat-ledger-list">{visibleLedgerFlats.map((flat) => {
+        const transactions = transactionsForFlat(flat)
+        return <section className="society-flat-ledger" key={flat.id}>
+          <header><div><strong>{flat.blockName}-{flat.flatNumber}</strong><small>Flat owner: {flat.ownerName || 'Not recorded'}</small></div><span>{transactions.length} {transactions.length === 1 ? 'transaction' : 'transactions'}</span></header>
+          {financialLedger(transactions, `flat-${flat.id}`)}
+        </section>
+      })}</div>{flatPageCount > 1 && <nav className="table-pagination" aria-label="Flat ledger pages"><button disabled={currentFlatPage === 1} onClick={() => setFlatLedgerPage(1)}>«</button><button disabled={currentFlatPage === 1} onClick={() => setFlatLedgerPage((page) => Math.max(1, page - 1))}>‹</button><span>Flats page {currentFlatPage} of {flatPageCount}</span><button disabled={currentFlatPage === flatPageCount} onClick={() => setFlatLedgerPage((page) => Math.min(flatPageCount, page + 1))}>›</button><button disabled={currentFlatPage === flatPageCount} onClick={() => setFlatLedgerPage(flatPageCount)}>»</button></nav>}</> : financialLedger(filteredLedgerRows, 'my-flat')}</>}
     </section>
+    </Shell>
   )
 }
 

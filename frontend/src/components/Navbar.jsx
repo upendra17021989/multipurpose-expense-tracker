@@ -198,6 +198,11 @@ export const Navbar = () => {
                   </Link>
                 )}
                 {currentAccount?.accountType === 'SOCIETY' && (
+                  <Link to="/society/member-directory" onClick={closeMenus}>
+                    {tx('Member Directory')}
+                  </Link>
+                )}
+                {currentAccount?.accountType === 'SOCIETY' && (
                   <Link to="/society/vendors" onClick={closeMenus}>
                     {tx('Vendors')}
                   </Link>

@@ -3,6 +3,7 @@ package com.app.service;
 import com.app.dto.ApproveSocietyMembershipRequest;
 import com.app.dto.SocietyMembershipRequestDto;
 import com.app.dto.SocietyOptionDto;
+import com.app.dto.SocietyFlatOptionDto;
 import com.app.entity.Account;
 import com.app.entity.AccountType;
 import com.app.entity.AccountUserMembership;
@@ -38,14 +39,25 @@ public class SocietyMembershipService {
                 .toList();
     }
 
+    public List<SocietyFlatOptionDto> listSocietyFlats(Long societyId) {
+        accountRepository.findById(societyId)
+                .filter(account -> account.getAccountType() == AccountType.SOCIETY && Boolean.TRUE.equals(account.getActive()))
+                .orElseThrow(() -> new ValidationException("Society not found"));
+        return flatRepository.findByAccountIdAndActiveTrue(societyId).stream()
+                .sorted(java.util.Comparator.comparing(Flat::getBlockName, String.CASE_INSENSITIVE_ORDER)
+                        .thenComparing(Flat::getFlatNumber, String.CASE_INSENSITIVE_ORDER))
+                .map(flat -> new SocietyFlatOptionDto(flat.getId(), flat.getBlockName(), flat.getFlatNumber()))
+                .toList();
+    }
+
     public List<SocietyMembershipRequestDto> pending(Long accountId, Long adminUserId) {
         requireAdmin(accountId, adminUserId);
         return membershipRepository.findByAccountIdAndActiveFalseOrderByCreatedAtAsc(accountId).stream()
                 .map(this::toDto).toList();
     }
 
-    public List<SocietyMembershipRequestDto> members(Long accountId, Long adminUserId) {
-        requireAdmin(accountId, adminUserId);
+    public List<SocietyMembershipRequestDto> members(Long accountId, Long userId) {
+        requireActiveMember(accountId, userId);
         return membershipRepository.findByAccountIdAndActiveTrueOrderByCreatedAtAsc(accountId).stream()
                 .map(this::toDto).toList();
     }
@@ -113,6 +125,9 @@ public class SocietyMembershipService {
         flatMemberRepository.save(flatMember);
 
         membership.setActive(true);
+        membership.setRequestedBlockName(flat.getBlockName());
+        membership.setRequestedFlatNumber(flat.getFlatNumber());
+        membership.setRequestedRelation(relation);
         membership.setUpdatedAt(LocalDateTime.now());
         return toDto(membershipRepository.save(membership), flatMember);
     }
@@ -150,6 +165,16 @@ public class SocietyMembershipService {
         boolean admin = membershipRepository.findByAccountIdAndUserIdAndActiveTrue(accountId, userId)
                 .map(item -> item.getRole() == UserRole.ADMIN).orElse(false);
         if (!admin) throw new UnauthorizedException("Only society admins can manage membership requests");
+    }
+
+    private void requireActiveMember(Long accountId, Long userId) {
+        Account account = accountRepository.findById(accountId)
+                .filter(item -> item.getAccountType() == AccountType.SOCIETY)
+                .orElseThrow(() -> new ValidationException("Society not found"));
+        if (account.getUser().getId().equals(userId)) return;
+        if (membershipRepository.findByAccountIdAndUserIdAndActiveTrue(accountId, userId).isEmpty()) {
+            throw new UnauthorizedException("Only approved society members can view the member ledger");
+        }
     }
 
     private SocietyMembershipRequestDto toDto(AccountUserMembership membership) {

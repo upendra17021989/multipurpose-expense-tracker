@@ -16,9 +16,34 @@ public class SocietyAnnualCollectionService {
     private final SocietyBankBookTransactionRepository bankBookTransactionRepository;
     private final AccountRepository accountRepository;
     private final FlatRepository flatRepository;
+    private final AccountUserMembershipRepository membershipRepository;
 
     public List<SocietyAnnualCollectionDto> list(Long accountId, String year) {
         return repository.findByAccountIdAndFinancialYearOrderByPaymentDateDescIdDesc(accountId, year).stream().map(this::dto).toList();
+    }
+    public List<SocietyAnnualCollectionDto> ledger(Long accountId, Long userId, String year, Long requestedFlatId) {
+        Account account = accountRepository.findById(accountId).orElseThrow(() -> new ResourceNotFoundException("Account not found"));
+        boolean owner = account.getUser().getId().equals(userId);
+        if (owner) return ledgerRows(accountId, year, requestedFlatId);
+        AccountUserMembership membership = membershipRepository.findByAccountIdAndUserIdAndActiveTrue(accountId, userId)
+                .orElseThrow(() -> new ValidationException("Approved society membership is required"));
+        if (membership.getRole() == UserRole.ADMIN || membership.getRole() == UserRole.TREASURER) {
+            return ledgerRows(accountId, year, requestedFlatId);
+        }
+        String block = normalize(membership.getRequestedBlockName());
+        String number = normalize(membership.getRequestedFlatNumber());
+        Flat assignedFlat = flatRepository.findByAccountIdAndActiveTrue(accountId).stream()
+                .filter(flat -> normalize(flat.getBlockName()).equals(block) && normalize(flat.getFlatNumber()).equals(number))
+                .findFirst().orElseThrow(() -> new ValidationException("Your membership is not assigned to an active flat"));
+        if (requestedFlatId != null && !requestedFlatId.equals(assignedFlat.getId())) {
+            throw new com.app.exception.UnauthorizedException("You can view only your assigned flat ledger");
+        }
+        return ledgerRows(accountId, year, assignedFlat.getId());
+    }
+    private List<SocietyAnnualCollectionDto> ledgerRows(Long accountId, String year, Long flatId) {
+        if (flatId == null) return repository.findByAccountIdAndFinancialYearOrderByPaymentDateDescIdDesc(accountId, year).stream().map(this::dto).toList();
+        flatRepository.findByAccountIdAndIdAndActiveTrue(accountId, flatId).orElseThrow(() -> new ResourceNotFoundException("Flat not found"));
+        return repository.findByAccountIdAndFinancialYearAndFlatIdOrderByPaymentDateDescIdDesc(accountId, year, flatId).stream().map(this::dto).toList();
     }
     @Transactional public SocietyAnnualCollectionDto create(Long accountId, SocietyAnnualCollectionRequest r) {
         Account account = accountRepository.findById(accountId).orElseThrow(() -> new ResourceNotFoundException("Account not found"));
@@ -41,5 +66,6 @@ public class SocietyAnnualCollectionService {
     }
     public BigDecimal total(Long accountId, String year) { return repository.findByAccountIdAndFinancialYearOrderByPaymentDateDescIdDesc(accountId, year).stream().map(SocietyAnnualCollection::getAmount).reduce(BigDecimal.ZERO, BigDecimal::add); }
     private String clean(String s) { return s == null || s.isBlank() ? null : s.trim(); }
+    private String normalize(String value) { return value == null ? "" : value.toLowerCase(java.util.Locale.ROOT).replaceAll("\\bblock\\b", "").replaceAll("[^a-z0-9]", ""); }
     private SocietyAnnualCollectionDto dto(SocietyAnnualCollection x) { Flat f=x.getFlat(); return SocietyAnnualCollectionDto.builder().id(x.getId()).flatId(f==null?null:f.getId()).flatLabel(f==null?null:f.getBlockName()+"-"+f.getFlatNumber()).financialYear(x.getFinancialYear()).collectionType(x.getCollectionType()).sourceName(x.getSourceName()).paymentDate(x.getPaymentDate()).amount(x.getAmount()).paymentMode(x.getPaymentMode()).referenceNumber(x.getReferenceNumber()).transactionId(x.getTransactionId()).settlementId(x.getSettlementId()).remarks(x.getRemarks()).build(); }
 }

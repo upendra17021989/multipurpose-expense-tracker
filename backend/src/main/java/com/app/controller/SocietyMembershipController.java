@@ -3,6 +3,7 @@ package com.app.controller;
 import com.app.dto.ApproveSocietyMembershipRequest;
 import com.app.dto.SocietyMembershipRequestDto;
 import com.app.dto.SocietyOptionDto;
+import com.app.dto.SocietyFlatOptionDto;
 import com.app.dto.JoinSocietyRequest;
 import com.app.dto.UpdateSocietyMemberRoleRequest;
 import com.app.security.UserPrincipal;
@@ -22,6 +23,9 @@ public class SocietyMembershipController {
 
     @GetMapping("/public/societies")
     public List<SocietyOptionDto> societies() { return service.listSocieties(); }
+
+    @GetMapping("/public/societies/{id}/flats")
+    public List<SocietyFlatOptionDto> societyFlats(@PathVariable Long id) { return service.listSocietyFlats(id); }
 
     @GetMapping("/society/membership-requests")
     public List<SocietyMembershipRequestDto> pending(@AuthenticationPrincipal UserPrincipal principal) {

@@ -30,7 +30,9 @@ export const Workspaces = () => {
   const { tx } = useI18n()
   const [form, setForm] = useState(defaultForm)
   const [societies, setSocieties] = useState([])
+  const [societyFlats, setSocietyFlats] = useState([])
   const [loadingSocieties, setLoadingSocieties] = useState(false)
+  const [loadingFlats, setLoadingFlats] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [switchingId, setSwitchingId] = useState(null)
 
@@ -39,6 +41,8 @@ export const Workspaces = () => {
     [accounts]
   )
   const availableSocieties = societies.filter((society) => !joinedSocietyIds.has(society.id))
+  const availableBlocks = useMemo(() => [...new Set(societyFlats.map((flat) => flat.blockName).filter(Boolean))], [societyFlats])
+  const availableFlats = useMemo(() => societyFlats.filter((flat) => flat.blockName === form.blockName), [societyFlats, form.blockName])
 
   useEffect(() => {
     if (form.accountType !== 'SOCIETY' || form.societyMode !== 'JOIN') return
@@ -49,9 +53,41 @@ export const Workspaces = () => {
       .finally(() => setLoadingSocieties(false))
   }, [form.accountType, form.societyMode])
 
+  useEffect(() => {
+    if (form.accountType !== 'SOCIETY' || form.societyMode !== 'JOIN' || !form.societyId) {
+      setSocietyFlats([])
+      return
+    }
+    setLoadingFlats(true)
+    societyMembershipAPI.listSocietyFlats(form.societyId)
+      .then((response) => {
+        const flatRows = response.data || []
+        const firstFlat = flatRows[0]
+        setSocietyFlats(flatRows)
+        setForm((current) => ({
+          ...current,
+          blockName: firstFlat?.blockName || '',
+          flatNumber: firstFlat?.flatNumber || ''
+        }))
+      })
+      .catch(() => {
+        setSocietyFlats([])
+        setForm((current) => ({ ...current, blockName: '', flatNumber: '' }))
+        toast.error('Unable to load society flats')
+      })
+      .finally(() => setLoadingFlats(false))
+  }, [form.accountType, form.societyMode, form.societyId])
+
   const update = (event) => {
     const { name, value } = event.target
-    setForm((current) => ({ ...current, [name]: value }))
+    setForm((current) => {
+      if (name === 'societyId') return { ...current, societyId: value, blockName: '', flatNumber: '' }
+      if (name === 'blockName') {
+        const firstFlat = societyFlats.find((flat) => flat.blockName === value)
+        return { ...current, blockName: value, flatNumber: firstFlat?.flatNumber || '' }
+      }
+      return { ...current, [name]: value }
+    })
   }
 
   const switchWorkspace = async (accountId) => {
@@ -164,11 +200,17 @@ export const Workspaces = () => {
               </label>
               <label>
                 Block
-                <input name="blockName" value={form.blockName} onChange={update} placeholder="e.g. A" required />
+                <select name="blockName" value={form.blockName} onChange={update} required disabled={loadingFlats || !form.societyId}>
+                  <option value="">{loadingFlats ? 'Loading blocks...' : 'Select a block'}</option>
+                  {availableBlocks.map((block) => <option key={block} value={block}>{block}</option>)}
+                </select>
               </label>
               <label>
                 Flat number
-                <input name="flatNumber" value={form.flatNumber} onChange={update} placeholder="e.g. 302" required />
+                <select name="flatNumber" value={form.flatNumber} onChange={update} required disabled={loadingFlats || !form.blockName}>
+                  <option value="">{loadingFlats ? 'Loading flats...' : 'Select a flat'}</option>
+                  {availableFlats.map((flat) => <option key={flat.id} value={flat.flatNumber}>{flat.flatNumber}</option>)}
+                </select>
               </label>
               <label>
                 Relation
@@ -210,6 +252,9 @@ export const Workspaces = () => {
 
         {form.accountType === 'SOCIETY' && form.societyMode === 'JOIN' && !loadingSocieties && !availableSocieties.length && (
           <p className="muted">There are no other societies available to join.</p>
+        )}
+        {form.accountType === 'SOCIETY' && form.societyMode === 'JOIN' && form.societyId && !loadingFlats && !societyFlats.length && (
+          <p className="muted">This society has no active flats available. Ask its administrator to update the flat master.</p>
         )}
 
         <div className="form-actions">

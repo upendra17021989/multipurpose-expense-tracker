@@ -14,6 +14,7 @@ export const authAPI = {
 
 export const societyMembershipAPI = {
   listSocieties: () => axiosInstance.get('/public/societies'),
+  listSocietyFlats: (societyId) => axiosInstance.get(`/public/societies/${societyId}/flats`),
   requestToJoin: (data) => axiosInstance.post('/society/membership-requests', data),
   getPending: () => axiosInstance.get('/society/membership-requests'),
   getMembers: () => axiosInstance.get('/society/members'),
@@ -126,6 +127,7 @@ export const societyFlatAPI = {
 
 export const societyAnnualCollectionAPI = {
   list: (financialYear) => axiosInstance.get('/society/annual-collections', { params: { financialYear } }),
+  ledger: (financialYear, flatId) => axiosInstance.get('/society/annual-collections/ledger', { params: { financialYear, ...(flatId ? { flatId } : {}) } }),
   summary: (financialYear) => axiosInstance.get('/society/annual-collections/summary', { params: { financialYear } }),
   create: (data) => axiosInstance.post('/society/annual-collections', data),
   update: (id, data) => axiosInstance.put(`/society/annual-collections/${id}`, data),

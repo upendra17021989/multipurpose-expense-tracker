@@ -11,7 +11,7 @@ import { ResetPassword } from './pages/ResetPassword'
 import { ProfileSettings } from './pages/ProfileSettings'
 import { ChangePassword } from './pages/ChangePassword'
 import { Workspaces } from './pages/Workspaces'
-import { DashboardRouter } from './pages/DashboardRouter'
+import { DashboardRouter, SocietyMemberDirectory } from './pages/DashboardRouter'
 import { ExpenseList } from './pages/ExpenseList'
 import { ExpenseForm } from './pages/ExpenseForm'
 import { CategoryList } from './pages/CategoryList'
@@ -210,6 +210,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <FlatList />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/society/member-directory"
+            element={
+              <ProtectedRoute>
+                <SocietyMemberDirectory />
               </ProtectedRoute>
             }
           />
