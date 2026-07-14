@@ -4,6 +4,7 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import lombok.*;
+import com.app.entity.PaymentMode;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.*;
@@ -19,6 +20,7 @@ public final class SocietyBankBookImportDtos {
         private int rowNumber; private LocalDate date; private String type; private String flatText; private Long flatId; private String flatLabel;
         private String particulars; private String sourceName; private String transactionId; private String referenceNumber;
         private String voucherNumber; private String settlementId; private BigDecimal debit; private BigDecimal credit; private BigDecimal balance;
+        private PaymentMode paymentMode;
         private String sourceReference; private boolean duplicate; @Builder.Default private List<String> warnings = new ArrayList<>();
         @Builder.Default private List<String> errors = new ArrayList<>();
     }

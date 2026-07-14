@@ -4,6 +4,7 @@ import com.app.dto.SocietyBankBookImportDtos;
 import com.app.entity.Account;
 import com.app.entity.AccountType;
 import com.app.entity.Flat;
+import com.app.entity.PaymentMode;
 import com.app.repository.*;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
@@ -75,5 +76,42 @@ class SocietyBankBookImportServiceTest {
         assertThat(preview.getTotalAmount()).isEqualByComparingTo(new BigDecimal("1500"));
         assertThat(preview.getRows().get(0).getFlatId()).isEqualTo(12L);
         assertThat(preview.getRows().get(0).getDate()).isEqualTo(LocalDate.of(2026, 4, 1));
+    }
+
+    @Test
+    void previewsCashReceiptWithoutBankTransactionColumns() throws Exception {
+        Account account = Account.builder().id(7L).accountType(AccountType.SOCIETY).build();
+        Flat flat = Flat.builder().id(12L).account(account).blockName("L Block").flatNumber("403").ownerName("Niraj Lathiya").build();
+        when(accounts.findById(7L)).thenReturn(Optional.of(account));
+        when(flats.findByAccountIdAndActiveTrue(7L)).thenReturn(List.of(flat));
+        when(transactions.existsByAccountIdAndSourceReferenceAndAnnualCollectionIsNotNull(7L, "CASHBOOK:VOUCHER:CR/1/26-27")).thenReturn(false);
+
+        byte[] bytes;
+        try (Workbook workbook = new XSSFWorkbook(); ByteArrayOutputStream output = new ByteArrayOutputStream()) {
+            var sheet = workbook.createSheet("Cash Book");
+            var header = sheet.createRow(0);
+            String[] columns = {"Date", "Type", "FlatNo.", "Particulars", "Reference Number", "Voucher Number", "Debit", "Credit", "Balance"};
+            for (int index = 0; index < columns.length; index++) header.createCell(index).setCellValue(columns[index]);
+            var row = sheet.createRow(1);
+            row.createCell(0).setCellValue("2026-04-02");
+            row.createCell(1).setCellValue("Cash Reciept");
+            row.createCell(2).setCellValue("L Block-403");
+            row.createCell(3).setCellValue("By Niraj Lathiya Voucher No. CAM/279/26-27\nReceived as cash for pending maintenance");
+            row.createCell(4).setCellValue("CAM/279/26-27");
+            row.createCell(5).setCellValue("CR/1/26-27");
+            row.createCell(6).setCellValue("7,800.00");
+            row.createCell(8).setCellValue("10587 D");
+            workbook.write(output);
+            bytes = output.toByteArray();
+        }
+
+        SocietyBankBookImportDtos.Preview preview = service.preview(7L, "2026-2027",
+                new MockMultipartFile("file", "cash-book.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", bytes));
+
+        assertThat(preview.getReadyRows()).isEqualTo(1);
+        assertThat(preview.getTotalAmount()).isEqualByComparingTo("7800.00");
+        assertThat(preview.getRows().get(0).getPaymentMode()).isEqualTo(PaymentMode.CASH);
+        assertThat(preview.getRows().get(0).getSourceName()).isEqualTo("Niraj Lathiya");
+        assertThat(preview.getRows().get(0).getSourceReference()).isEqualTo("CASHBOOK:VOUCHER:CR/1/26-27");
     }
 }
