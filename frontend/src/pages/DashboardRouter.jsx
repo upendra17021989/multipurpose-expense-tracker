@@ -1,4 +1,4 @@
-import { Link, Navigate } from 'react-router-dom'
+import { Link, Navigate, useLocation } from 'react-router-dom'
 import { Navbar } from '../components/Navbar'
 import { useAuthStore } from '../store/authStore'
 import { formatCurrency, formatDate } from '../utils/format'
@@ -33,8 +33,10 @@ export const DashboardRouter = () => {
 
 export const Shell = ({ title, eyebrow = 'Dashboard', actions, children }) => {
   const { tx } = useI18n()
+  const location = useLocation()
   const currentAccount = useAuthStore((state) => state.currentAccount)
   const isReadOnlySocietyMember = currentAccount?.accountType === 'SOCIETY' && currentAccount?.role === 'MEMBER'
+  const showIndividualBack = currentAccount?.accountType === 'INDIVIDUAL' && !['/home', '/dashboard'].includes(location.pathname)
 
   return (
     <div>
@@ -42,6 +44,7 @@ export const Shell = ({ title, eyebrow = 'Dashboard', actions, children }) => {
       <main className="page-shell">
         <div className="page-header">
           <div>
+            {showIndividualBack && <Link className="page-back-link" to="/home">{tx('Back to dashboard')}</Link>}
             <p className="eyebrow">{tx(eyebrow)}</p>
             <h1>{tx(title)}</h1>
           </div>
@@ -211,12 +214,14 @@ const PersonalDashboard = () => {
           </div>
           <div className="personal-action-grid">
             <DashboardAction onClick={() => setExpenseModalOpen(true)} icon="+" title={tx('Add expense')} text={tx('Record a new payment')} />
-            <DashboardAction to="/expenses" icon="Rs" title={tx('Expense history')} text={tx('Review and edit entries')} />
-            <DashboardAction to="/budget" icon="%" title={tx('Budget')} text={tx('Set month and savings goals')} />
+            <DashboardAction to="/expenses" icon="Rs" title={tx('Expenses')} text={tx('Review and edit entries')} />
+            <DashboardAction to="/categories" icon="Tag" title={tx('Categories')} text={tx('Organize spending')} />
+            <DashboardAction to="/budget" icon="%" title={tx('Budget')} text={tx('Set monthly goals')} />
             <DashboardAction to="/personal/reports" icon="Up" title={tx('Reports')} text={tx('Analyze trends')} />
             <DashboardAction to="/personal/shared-expenses" icon="=" title={tx('Shared expenses')} text={tx('Groups and settlements')} />
-            <DashboardAction to="/personal/documents" icon="Doc" title={tx('My documents')} text={tx('Store receipts and files')} />
-            <DashboardAction to="/personal/todos" icon="✓" title={tx('To-do list')} text={tx('Plan and track personal tasks')} />
+            <DashboardAction to="/personal/friends" icon="Fr" title={tx('Friends')} text={tx('Manage shared contacts')} />
+            <DashboardAction to="/personal/documents" icon="Doc" title={tx('Documents')} text={tx('Store receipts and files')} />
+            <DashboardAction to="/personal/todos" icon="Ok" title={tx('Tasks')} text={tx('Plan personal work')} />
           </div>
         </article>
 
@@ -685,6 +690,5 @@ const buildExpenseSummary = (expenses) => {
     paymentModes: paymentModes.size || '-'
   }
 }
-
 
 

@@ -148,16 +148,7 @@ export const Navbar = () => {
                 {tx('Festivals')}
               </Link>
             )}
-            {currentAccount?.accountType === 'INDIVIDUAL' && (
-              <Link to="/personal/shared-expenses" onClick={closeMenus}>
-                {tx('Shared Expenses')}
-              </Link>
-            )}
-            {currentAccount?.accountType === 'INDIVIDUAL' && (
-              <Link to="/personal/documents" onClick={closeMenus}>
-                {tx('My Documents')}
-              </Link>
-            )}
+
             <div className={`nav-dropdown ${moduleOpen ? 'open' : ''}`}>
               <button
                 type="button"
@@ -183,8 +174,23 @@ export const Navbar = () => {
                   </Link>
                 )}
                 {currentAccount?.accountType === 'INDIVIDUAL' && (
+                  <Link to="/personal/shared-expenses" onClick={closeMenus}>
+                    {tx('Shared Expenses')}
+                  </Link>
+                )}
+                {currentAccount?.accountType === 'INDIVIDUAL' && (
                   <Link to="/personal/friends" onClick={closeMenus}>
                     {tx('Friends')}
+                  </Link>
+                )}
+                {currentAccount?.accountType === 'INDIVIDUAL' && (
+                  <Link to="/personal/documents" onClick={closeMenus}>
+                    {tx('Documents')}
+                  </Link>
+                )}
+                {currentAccount?.accountType === 'INDIVIDUAL' && (
+                  <Link to="/personal/todos" onClick={closeMenus}>
+                    {tx('Tasks')}
                   </Link>
                 )}
                 {currentAccount?.accountType === 'SOCIETY' && (

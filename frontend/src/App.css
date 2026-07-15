@@ -538,6 +538,39 @@ button.danger {
   margin-bottom: 0.35rem;
 }
 
+.page-back-link,
+.page-back-link:visited {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  width: fit-content;
+  margin-bottom: 0.5rem;
+  color: #0f766e;
+  font-size: 0.9rem;
+  font-weight: 750;
+}
+
+.page-back-link::before {
+  content: "";
+  width: 1.45rem;
+  height: 1.45rem;
+  border: 1px solid #b7e4dc;
+  border-radius: 999px;
+  background:
+    linear-gradient(45deg, transparent 45%, #0f766e 45% 56%, transparent 56%) 53% 42% / 0.52rem 0.52rem no-repeat,
+    #f0fdfa;
+  transform: rotate(-135deg);
+}
+
+.page-back-link:hover {
+  color: #115e59;
+}
+
+.page-back-link:hover::before {
+  border-color: #0f766e;
+  background-color: #ccfbf1;
+}
+
 .header-actions,
 .action-row,
 .form-actions,
@@ -4311,4 +4344,5 @@ textarea:disabled {
   .system-admin-stat-grid small { font-size: .72rem; }
   .system-admin-account-row { grid-template-columns: 90px minmax(0, 1fr) 30px; gap: .5rem; font-size: .82rem; }
 }
+
 
