@@ -16,6 +16,7 @@ export const SportsMembers = () => {
   const [loading, setLoading] = useState(true)
   const [lastPassword, setLastPassword] = useState(null)
   const [bulkLogins, setBulkLogins] = useState([])
+  const [membershipRequests, setMembershipRequests] = useState([])
 
   const loadMembers = () => {
     setLoading(true)
@@ -26,6 +27,22 @@ export const SportsMembers = () => {
   }
 
   useEffect(loadMembers, [])
+  useEffect(() => {
+    if (isSportsAdmin) sportsAPI.getMembershipRequests().then((response) => setMembershipRequests(response.data || []))
+      .catch((error) => toast.error(error.response?.data?.message || 'Unable to load join requests'))
+  }, [isSportsAdmin])
+
+  const decideMembership = async (id, approve) => {
+    try {
+      if (approve) await sportsAPI.approveMembership(id)
+      else await sportsAPI.rejectMembership(id)
+      setMembershipRequests((current) => current.filter((item) => item.id !== id))
+      toast.success(approve ? 'Member approved' : 'Join request rejected')
+      if (approve) loadMembers()
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Unable to update join request')
+    }
+  }
 
   const visibleMembers = useMemo(() => {
     const query = search.trim().toLowerCase()
@@ -99,6 +116,26 @@ export const SportsMembers = () => {
   return (
     <Shell title="Sports Members" eyebrow="Sports module">
       <SummaryGrid items={[[ 'Total Members', members.length ], [ 'Shown', visibleMembers.length ]]} />
+      {isSportsAdmin && membershipRequests.length > 0 && <section className="report-panel sports-join-requests">
+        <div className="sports-join-requests-heading">
+          <div><h2>Pending join requests</h2><p className="muted">Review people requesting access to this sports workspace.</p></div>
+          <span className="sports-request-count">{membershipRequests.length}</span>
+        </div>
+        <div className="table-wrap sports-join-requests-table">
+          <table>
+            <thead><tr><th>Name</th><th>Mobile</th><th>Email</th><th>Actions</th></tr></thead>
+            <tbody>{membershipRequests.map((request) => <tr key={request.id}>
+              <td data-label="Name"><strong>{request.name}</strong></td>
+              <td data-label="Mobile">{request.mobile || '-'}</td>
+              <td data-label="Email" className="sports-request-email">{request.email || '-'}</td>
+              <td data-label="Actions" className="table-actions sports-request-actions">
+                <button className="primary" type="button" onClick={() => decideMembership(request.id, true)}>Approve</button>
+                <button className="danger" type="button" onClick={() => decideMembership(request.id, false)}>Reject</button>
+              </td>
+            </tr>)}</tbody>
+          </table>
+        </div>
+      </section>}
       {isSportsAdmin && <form className="inline-form" onSubmit={submit}>
         <input placeholder="Member name" value={form.memberName} onChange={(event) => setForm({ ...form, memberName: event.target.value })} required />
         <input placeholder="Mobile" value={form.mobile} onChange={(event) => setForm({ ...form, mobile: event.target.value })} />

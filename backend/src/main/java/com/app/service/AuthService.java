@@ -100,6 +100,11 @@ public class AuthService {
             return buildAccountLoginResponse(user, currentAccountId);
         }
 
+        if (request.getAccountType() == AccountType.SPORTS && request.getSportsAccountId() != null) {
+            requestSportsMembership(request.getSportsAccountId(), user);
+            return buildAccountLoginResponse(user, currentAccountId);
+        }
+
         Account account = buildInitialAccount(request, user);
         Account savedAccount = accountRepository.save(account);
         expenseCategoryService.seedDefaultCategories(savedAccount);
@@ -121,6 +126,18 @@ public class AuthService {
                 .account(society).user(user).role(UserRole.MEMBER).active(false)
                 .requestedBlockName(clean(blockName)).requestedFlatNumber(clean(flatNumber))
                 .requestedRelation(clean(relation)).build());
+    }
+
+    private void requestSportsMembership(Long sportsAccountId, User user) {
+        Account sportsAccount = accountRepository.findById(sportsAccountId)
+                .filter(account -> account.getAccountType() == AccountType.SPORTS && Boolean.TRUE.equals(account.getActive()))
+                .orElseThrow(() -> new ValidationException("Sports workspace not found"));
+        if (sportsAccount.getUser().getId().equals(user.getId())
+                || membershipRepository.findByAccountIdAndUserId(sportsAccountId, user.getId()).isPresent()) {
+            throw new ValidationException("You already belong to, or have requested access to, this sports workspace");
+        }
+        membershipRepository.save(com.app.entity.AccountUserMembership.builder()
+                .account(sportsAccount).user(user).role(UserRole.MEMBER).active(false).build());
     }
 
     public LoginResponse login(LoginRequest request) {
@@ -343,13 +360,17 @@ public class AuthService {
     }
 
     private UserRole resolveInitialRole(AccountType accountType, UserRole requestedRole) {
+        if (accountType == AccountType.SPORTS) {
+            return UserRole.ADMIN;
+        }
         if (requestedRole != null) {
             return requestedRole;
         }
         return switch (accountType) {
             case SOCIETY -> UserRole.ADMIN;
             case KIRANA_STORE -> UserRole.STORE_OWNER;
-            case INDIVIDUAL, SPORTS -> UserRole.OWNER;
+            case SPORTS -> UserRole.ADMIN;
+            case INDIVIDUAL -> UserRole.OWNER;
         };
     }
 }

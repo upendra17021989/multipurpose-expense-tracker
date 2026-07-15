@@ -215,6 +215,7 @@ export const Register = () => {
 
 const resolveRole = (accountType, societyMode) => {
   if (accountType === 'SOCIETY') return societyMode === 'JOIN' ? 'MEMBER' : 'ADMIN'
+  if (accountType === 'SPORTS') return 'ADMIN'
   if (accountType === 'KIRANA_STORE') return 'STORE_OWNER'
   return 'OWNER'
 }

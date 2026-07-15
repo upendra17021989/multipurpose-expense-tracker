@@ -23,6 +23,10 @@ export const societyMembershipAPI = {
   reject: (requestId) => axiosInstance.delete(`/society/membership-requests/${requestId}`)
 }
 
+export const workspaceAPI = {
+  listSports: () => axiosInstance.get('/public/sports-workspaces')
+}
+
 export const systemAdminAPI = {
   getDashboard: () => axiosInstance.get('/system-admin/dashboard'),
   getUsers: (params) => axiosInstance.get('/system-admin/users', { params }),
@@ -239,6 +243,9 @@ export const attachmentAPI = {
 }
 
 export const sportsAPI = {
+  getMembershipRequests: () => axiosInstance.get('/sports/membership-requests'),
+  approveMembership: (id) => axiosInstance.post(`/sports/membership-requests/${id}/approve`),
+  rejectMembership: (id) => axiosInstance.delete(`/sports/membership-requests/${id}`),
   getMembers: () => axiosInstance.get('/sports/members'),
   createMember: (data) => axiosInstance.post('/sports/members', data),
   generateMemberLogins: () => axiosInstance.post('/sports/members/generate-logins'),

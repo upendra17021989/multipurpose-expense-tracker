@@ -12,6 +12,7 @@ import java.math.BigDecimal;
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.List;
+import com.app.dto.SportsMembershipRequestDto;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -505,6 +506,39 @@ public class SportsService {
         else if (available.compareTo(expected) < 0) collection.setPaymentStatus(PaymentStatus.PARTIAL);
         else if (available.compareTo(expected) == 0) collection.setPaymentStatus(PaymentStatus.PAID);
         else collection.setPaymentStatus(PaymentStatus.EXCESS);
+    }
+
+    public List<SportsMembershipRequestDto> pendingMemberships(Long accountId, Long userId) {
+        requireSportsAdmin(accountId, userId);
+        return membershipRepository.findByAccountIdAndActiveFalseOrderByCreatedAtAsc(accountId).stream()
+                .map(item -> new SportsMembershipRequestDto(item.getId(), item.getUser().getId(), item.getUser().getName(),
+                        item.getUser().getMobile(), item.getUser().getEmail()))
+                .toList();
+    }
+
+    public SportsMembershipRequestDto approveMembership(Long accountId, Long userId, Long membershipId) {
+        requireSportsAdmin(accountId, userId);
+        AccountUserMembership item = membershipRepository.findById(membershipId)
+                .filter(value -> value.getAccount().getId().equals(accountId) && !Boolean.TRUE.equals(value.getActive()))
+                .orElseThrow(() -> new ValidationException("Sports membership request not found"));
+        item.setRole(UserRole.MEMBER);
+        item.setActive(true);
+        membershipRepository.save(item);
+        User member = item.getUser();
+        if (memberRepository.findByAccountIdAndActiveTrue(accountId).stream()
+                .noneMatch(existing -> existing.getMobile() != null && existing.getMobile().equals(member.getMobile()))) {
+            memberRepository.save(SportsMember.builder().account(item.getAccount()).memberName(member.getName())
+                    .mobile(member.getMobile()).email(member.getEmail()).role("MEMBER").active(true).build());
+        }
+        return new SportsMembershipRequestDto(item.getId(), member.getId(), member.getName(), member.getMobile(), member.getEmail());
+    }
+
+    public void rejectMembership(Long accountId, Long userId, Long membershipId) {
+        requireSportsAdmin(accountId, userId);
+        AccountUserMembership item = membershipRepository.findById(membershipId)
+                .filter(value -> value.getAccount().getId().equals(accountId) && !Boolean.TRUE.equals(value.getActive()))
+                .orElseThrow(() -> new ValidationException("Sports membership request not found"));
+        membershipRepository.delete(item);
     }
 
     private void applyOpeningBalance(Long accountId, SportsEvent event, SportsMember member, SportsCollection destination) {

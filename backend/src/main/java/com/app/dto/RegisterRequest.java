@@ -25,6 +25,7 @@ public class RegisterRequest {
     private String address;
     private String societyName;
     private Long societyId;
+    private Long sportsAccountId;
     private String blockName;
     private String flatNumber;
     private String relation;

@@ -9,6 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
+import com.app.dto.SportsMembershipRequestDto;
 
 @RestController
 @RequestMapping("/sports")
@@ -22,6 +23,22 @@ public class SportsController {
     @GetMapping("/members")
     public ResponseEntity<List<MemberDto>> getMembers(@AuthenticationPrincipal UserPrincipal userPrincipal) {
         return ResponseEntity.ok(sportsService.getMembers(userPrincipal.getAccountId()));
+    }
+
+    @GetMapping("/membership-requests")
+    public List<SportsMembershipRequestDto> membershipRequests(@AuthenticationPrincipal UserPrincipal principal) {
+        return sportsService.pendingMemberships(principal.getAccountId(), principal.getUserId());
+    }
+
+    @PostMapping("/membership-requests/{id}/approve")
+    public SportsMembershipRequestDto approveMembership(@AuthenticationPrincipal UserPrincipal principal, @PathVariable Long id) {
+        return sportsService.approveMembership(principal.getAccountId(), principal.getUserId(), id);
+    }
+
+    @DeleteMapping("/membership-requests/{id}")
+    public ResponseEntity<Void> rejectMembership(@AuthenticationPrincipal UserPrincipal principal, @PathVariable Long id) {
+        sportsService.rejectMembership(principal.getAccountId(), principal.getUserId(), id);
+        return ResponseEntity.noContent().build();
     }
 
 

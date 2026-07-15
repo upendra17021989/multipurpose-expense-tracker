@@ -3156,6 +3156,126 @@ textarea:disabled {
 .workspace-card button {
   min-width: 78px;
 }
+
+.sports-join-requests {
+  min-height: 0;
+  margin-bottom: 1rem;
+}
+
+.sports-join-requests-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.85rem;
+}
+
+.sports-join-requests-heading h2,
+.sports-join-requests-heading p {
+  margin: 0;
+}
+
+.sports-join-requests-heading p {
+  margin-top: 0.2rem;
+}
+
+.sports-request-count {
+  display: grid;
+  place-items: center;
+  min-width: 32px;
+  height: 32px;
+  padding: 0 0.6rem;
+  border-radius: 999px;
+  color: #075985;
+  background: #e0f2fe;
+  font-weight: 800;
+}
+
+.sports-join-requests-table table {
+  min-width: 640px;
+}
+
+.sports-join-requests-table th:last-child,
+.sports-join-requests-table td:last-child {
+  width: 190px;
+}
+
+.sports-request-email {
+  overflow-wrap: anywhere;
+}
+
+.sports-request-actions {
+  gap: 0.5rem;
+  white-space: nowrap;
+}
+
+.sports-request-actions button {
+  min-width: 78px;
+}
+
+@media (max-width: 640px) {
+  .sports-join-requests-table {
+    overflow: visible;
+    border: 0;
+    background: transparent;
+  }
+
+  .sports-join-requests-table table {
+    min-width: 0;
+  }
+
+  .sports-join-requests-table thead {
+    display: none;
+  }
+
+  .sports-join-requests-table tbody,
+  .sports-join-requests-table tr,
+  .sports-join-requests-table td {
+    display: block;
+    width: 100%;
+  }
+
+  .sports-join-requests-table tr {
+    margin-bottom: 0.75rem;
+    overflow: hidden;
+    border: 1px solid #d9e2ec;
+    border-radius: 8px;
+    background: #fff;
+  }
+
+  .sports-join-requests-table td {
+    display: grid;
+    grid-template-columns: 78px minmax(0, 1fr);
+    gap: 0.75rem;
+    align-items: center;
+    padding: 0.65rem 0.75rem;
+    text-align: right;
+  }
+
+  .sports-join-requests-table td::before {
+    content: attr(data-label);
+    color: #64748b;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-align: left;
+    text-transform: uppercase;
+  }
+
+  .sports-join-requests-table .sports-request-actions {
+    display: grid;
+    grid-template-columns: 78px minmax(0, 1fr) minmax(0, 1fr);
+    width: 100%;
+  }
+
+  .sports-request-actions::before {
+    grid-column: 1;
+  }
+
+  .sports-request-actions button {
+    min-width: 0;
+    width: 100%;
+  }
+}
 .muted-count {
   background: #f1f5f9;
   color: #64748b;

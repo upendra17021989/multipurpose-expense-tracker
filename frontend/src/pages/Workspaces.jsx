@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { toast } from 'react-toastify'
-import { authAPI, societyMembershipAPI } from '../api/endpoints'
+import { authAPI, societyMembershipAPI, workspaceAPI } from '../api/endpoints'
 import { useAuthStore } from '../store/authStore'
 import { useI18n } from '../i18n'
 import { Shell } from './DashboardRouter'
@@ -17,6 +17,8 @@ const defaultForm = {
   accountName: '',
   address: '',
   societyMode: 'CREATE',
+  sportsMode: 'CREATE',
+  sportsAccountId: '',
   societyId: '',
   societyName: '',
   blockName: '',
@@ -31,6 +33,7 @@ export const Workspaces = () => {
   const [form, setForm] = useState(defaultForm)
   const [societies, setSocieties] = useState([])
   const [societyFlats, setSocietyFlats] = useState([])
+  const [sportsWorkspaces, setSportsWorkspaces] = useState([])
   const [loadingSocieties, setLoadingSocieties] = useState(false)
   const [loadingFlats, setLoadingFlats] = useState(false)
   const [submitting, setSubmitting] = useState(false)
@@ -41,6 +44,8 @@ export const Workspaces = () => {
     [accounts]
   )
   const availableSocieties = societies.filter((society) => !joinedSocietyIds.has(society.id))
+  const joinedSportsIds = useMemo(() => new Set(accounts.filter((account) => account.accountType === 'SPORTS').map((account) => account.id)), [accounts])
+  const availableSports = sportsWorkspaces.filter((workspace) => !joinedSportsIds.has(workspace.id))
   const availableBlocks = useMemo(() => [...new Set(societyFlats.map((flat) => flat.blockName).filter(Boolean))], [societyFlats])
   const availableFlats = useMemo(() => societyFlats.filter((flat) => flat.blockName === form.blockName), [societyFlats, form.blockName])
 
@@ -52,6 +57,13 @@ export const Workspaces = () => {
       .catch(() => toast.error('Unable to load societies'))
       .finally(() => setLoadingSocieties(false))
   }, [form.accountType, form.societyMode])
+
+  useEffect(() => {
+    if (form.accountType !== 'SPORTS' || form.sportsMode !== 'JOIN') return
+    workspaceAPI.listSports()
+      .then((response) => setSportsWorkspaces(response.data || []))
+      .catch(() => toast.error('Unable to load sports workspaces'))
+  }, [form.accountType, form.sportsMode])
 
   useEffect(() => {
     if (form.accountType !== 'SOCIETY' || form.societyMode !== 'JOIN' || !form.societyId) {
@@ -114,6 +126,7 @@ export const Workspaces = () => {
       address: form.address,
       role: resolveRole(form.accountType, form.societyMode),
       societyId: form.accountType === 'SOCIETY' && form.societyMode === 'JOIN' ? Number(form.societyId) : null,
+      sportsAccountId: form.accountType === 'SPORTS' && form.sportsMode === 'JOIN' ? Number(form.sportsAccountId) : null,
       createNewSociety: form.accountType === 'SOCIETY' && form.societyMode === 'CREATE',
       societyName: form.accountType === 'SOCIETY' ? form.societyName || form.accountName : '',
       blockName: form.accountType === 'SOCIETY' && form.societyMode === 'JOIN' ? form.blockName.trim() : '',
@@ -126,8 +139,8 @@ export const Workspaces = () => {
       const response = await authAPI.addWorkspace(payload)
       const { token, user, accounts, currentAccount } = response.data
       setSession(token, user, accounts, currentAccount)
-      toast.success(form.accountType === 'SOCIETY' && form.societyMode === 'JOIN'
-        ? 'Request sent to the society admins for approval.'
+      toast.success((form.accountType === 'SOCIETY' && form.societyMode === 'JOIN') || (form.accountType === 'SPORTS' && form.sportsMode === 'JOIN')
+        ? 'Request sent to the workspace admins for approval.'
         : `Workspace added: ${currentAccount.accountName}`)
       setForm(defaultForm)
     } catch (error) {
@@ -187,6 +200,26 @@ export const Workspaces = () => {
             </label>
           )}
 
+          {form.accountType === 'SPORTS' && (
+            <label>
+              Sports action
+              <select name="sportsMode" value={form.sportsMode} onChange={update}>
+                <option value="CREATE">Create sports workspace</option>
+                <option value="JOIN">Join existing sports workspace</option>
+              </select>
+            </label>
+          )}
+
+          {form.accountType === 'SPORTS' && form.sportsMode === 'JOIN' && (
+            <label>
+              Sports workspace
+              <select name="sportsAccountId" value={form.sportsAccountId} onChange={update} required>
+                <option value="">Select a sports workspace</option>
+                {availableSports.map((workspace) => <option key={workspace.id} value={workspace.id}>{workspace.name}{workspace.address ? ` - ${workspace.address}` : ''}</option>)}
+              </select>
+            </label>
+          )}
+
           {form.accountType === 'SOCIETY' && form.societyMode === 'JOIN' ? (
             <>
               <label>
@@ -223,7 +256,7 @@ export const Workspaces = () => {
                 </select>
               </label>
             </>
-          ) : (
+          ) : !(form.accountType === 'SPORTS' && form.sportsMode === 'JOIN') && (
             <label>
               {tx('Workspace name')}
               <input name="accountName" value={form.accountName} onChange={update} placeholder={placeholder(form.accountType)} required />
@@ -256,9 +289,12 @@ export const Workspaces = () => {
         {form.accountType === 'SOCIETY' && form.societyMode === 'JOIN' && form.societyId && !loadingFlats && !societyFlats.length && (
           <p className="muted">This society has no active flats available. Ask its administrator to update the flat master.</p>
         )}
+        {form.accountType === 'SPORTS' && form.sportsMode === 'JOIN' && !availableSports.length && (
+          <p className="muted">There are no other sports workspaces available to join.</p>
+        )}
 
         <div className="form-actions">
-          <button className="primary" type="submit" disabled={submitting || (form.accountType === 'SOCIETY' && form.societyMode === 'JOIN' && (!form.societyId || !form.blockName.trim() || !form.flatNumber.trim() || !form.relation))}>
+          <button className="primary" type="submit" disabled={submitting || (form.accountType === 'SOCIETY' && form.societyMode === 'JOIN' && (!form.societyId || !form.blockName.trim() || !form.flatNumber.trim() || !form.relation)) || (form.accountType === 'SPORTS' && form.sportsMode === 'JOIN' && !form.sportsAccountId)}>
             {submitting ? tx('Adding workspace...') : tx('Add workspace')}
           </button>
         </div>
@@ -269,6 +305,7 @@ export const Workspaces = () => {
 
 const resolveRole = (accountType, societyMode) => {
   if (accountType === 'SOCIETY') return societyMode === 'JOIN' ? 'MEMBER' : 'ADMIN'
+  if (accountType === 'SPORTS') return 'ADMIN'
   if (accountType === 'KIRANA_STORE') return 'STORE_OWNER'
   return 'OWNER'
 }
