@@ -10,6 +10,7 @@ import { Register } from './pages/Register'
 import { ResetPassword } from './pages/ResetPassword'
 import { ProfileSettings } from './pages/ProfileSettings'
 import { ChangePassword } from './pages/ChangePassword'
+import { UserFeedback } from './pages/UserFeedback'
 import { Workspaces } from './pages/Workspaces'
 import { DashboardRouter, SocietyMemberDirectory } from './pages/DashboardRouter'
 import { ExpenseList } from './pages/ExpenseList'
@@ -59,6 +60,7 @@ import { SportsReports } from './pages/sports/SportsReports'
 import { SystemAdminDashboard } from './pages/system-admin/SystemAdminDashboard'
 import { SystemAdminManagement } from './pages/system-admin/SystemAdminManagement'
 import { SystemAdminAuditLogs } from './pages/system-admin/SystemAdminAuditLogs'
+import { SystemAdminFeedback } from './pages/system-admin/SystemAdminFeedback'
 import { SystemAdminOperations } from './pages/system-admin/SystemAdminOperations'
 import { SystemAdminSettings } from './pages/system-admin/SystemAdminSettings'
 import { ProtectedRoute } from './components/ProtectedRoute'
@@ -95,6 +97,13 @@ function App() {
             }
           />
           <Route
+            path="/feedback"
+            element={
+              <ProtectedRoute>
+                <UserFeedback />
+              </ProtectedRoute>
+            }
+          />          <Route
             path="/workspaces"
             element={
               <ProtectedRoute>
@@ -555,7 +564,7 @@ function App() {
           />
           <Route path="/system-admin/users" element={<ProtectedRoute requireSystemAdmin><SystemAdminManagement mode="users" /></ProtectedRoute>} />
           <Route path="/system-admin/accounts" element={<ProtectedRoute requireSystemAdmin><SystemAdminManagement mode="accounts" /></ProtectedRoute>} />
-          <Route path="/system-admin/audit-logs" element={<ProtectedRoute requireSystemAdmin><SystemAdminAuditLogs /></ProtectedRoute>} />
+          <Route path="/system-admin/feedback" element={<ProtectedRoute requireSystemAdmin><SystemAdminFeedback /></ProtectedRoute>} />`r`n          <Route path="/system-admin/audit-logs" element={<ProtectedRoute requireSystemAdmin><SystemAdminAuditLogs /></ProtectedRoute>} />
           <Route path="/system-admin/health" element={<ProtectedRoute requireSystemAdmin><SystemAdminOperations mode="health" /></ProtectedRoute>} />
           <Route path="/system-admin/storage" element={<ProtectedRoute requireSystemAdmin><SystemAdminOperations mode="storage" /></ProtectedRoute>} />
           <Route path="/system-admin/settings" element={<ProtectedRoute requireSystemAdmin><SystemAdminSettings /></ProtectedRoute>} />
@@ -581,4 +590,6 @@ function App() {
 }
 
 export default App
+
+
 

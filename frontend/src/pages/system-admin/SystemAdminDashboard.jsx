@@ -27,7 +27,7 @@ export const SystemAdminDashboard = () => {
 
   return (
     <Shell title="System Administration" eyebrow="Platform administration">
-      <nav className="system-admin-tabs"><Link className="active" to="/system-admin">Overview</Link><Link to="/system-admin/users">Users</Link><Link to="/system-admin/accounts">Accounts</Link><Link to="/system-admin/audit-logs">Audit Logs</Link><Link to="/system-admin/health">Health</Link><Link to="/system-admin/storage">Storage</Link><Link to="/system-admin/settings">Settings</Link></nav>
+      <nav className="system-admin-tabs"><Link className="active" to="/system-admin">Overview</Link><Link to="/system-admin/users">Users</Link><Link to="/system-admin/accounts">Accounts</Link><Link to="/system-admin/feedback">Feedback</Link><Link to="/system-admin/audit-logs">Audit Logs</Link><Link to="/system-admin/health">Health</Link><Link to="/system-admin/storage">Storage</Link><Link to="/system-admin/settings">Settings</Link></nav>
       {loading && <p className="muted">Loading system statistics...</p>}
       {!loading && data && <>
         <section className="system-admin-stat-grid">
@@ -52,3 +52,4 @@ export const SystemAdminDashboard = () => {
     </Shell>
   )
 }
+

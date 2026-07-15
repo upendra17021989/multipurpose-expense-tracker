@@ -21,6 +21,9 @@ import com.app.service.SystemAdminHealthService;
 import com.app.dto.SystemAdminHealthDtos.*;
 import com.app.service.SystemSettingsService;
 import com.app.dto.SystemSettingsDto;
+import com.app.dto.UserFeedbackDto;
+import com.app.dto.UserFeedbackStatusRequest;
+import com.app.service.UserFeedbackService;
 import jakarta.validation.Valid;
 
 @RestController
@@ -31,15 +34,17 @@ public class SystemAdminController {
     private final SystemAdminAuditService auditService;
     private final SystemAdminHealthService healthService;
     private final SystemSettingsService settingsService;
+    private final UserFeedbackService feedbackService;
 
     public SystemAdminController(SystemAdminDashboardService dashboardService,
             SystemAdminManagementService managementService, SystemAdminAuditService auditService,
-            SystemAdminHealthService healthService, SystemSettingsService settingsService) {
+            SystemAdminHealthService healthService, SystemSettingsService settingsService, UserFeedbackService feedbackService) {
         this.dashboardService = dashboardService;
         this.managementService = managementService;
         this.auditService = auditService;
         this.healthService = healthService;
         this.settingsService = settingsService;
+        this.feedbackService = feedbackService;
     }
 
     @GetMapping("/access")
@@ -89,6 +94,19 @@ public class SystemAdminController {
                 "active=" + request.isActive(), () -> managementService.setAccountActive(id, request.isActive()));
     }
 
+    @GetMapping("/feedback")
+    public Page<UserFeedbackDto> feedback(@RequestParam(required = false) String status,
+            @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "20") int size) {
+        return feedbackService.listForAdmin(status, page, size);
+    }
+
+    @PatchMapping("/feedback/{id}/status")
+    public UserFeedbackDto feedbackStatus(@AuthenticationPrincipal UserPrincipal principal, @PathVariable Long id,
+            @Valid @RequestBody UserFeedbackStatusRequest request, HttpServletRequest http) {
+        return audited(principal, "FEEDBACK_STATUS_CHANGED", "USER_FEEDBACK", id, http,
+                "status=" + request.getStatus(), () -> feedbackService.updateStatus(id, request));
+    }
+
     @GetMapping("/audit-logs")
     public Page<SystemAdminAuditDto> auditLogs(@RequestParam(required = false) String query,
             @RequestParam(required = false) String action, @RequestParam(required = false) String outcome,
@@ -133,3 +151,6 @@ public class SystemAdminController {
         }
     }
 }
+
+
+

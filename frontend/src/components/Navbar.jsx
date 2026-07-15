@@ -193,6 +193,9 @@ export const Navbar = () => {
                     {tx('Tasks')}
                   </Link>
                 )}
+                <Link to="/feedback" onClick={closeMenus}>
+                  {tx('Feedback')}
+                </Link>
                 {currentAccount?.accountType === 'SOCIETY' && (
                   <Link to="/categories" onClick={closeMenus}>
                     {tx('Categories')}
@@ -374,4 +377,5 @@ export const Navbar = () => {
     </nav>
   )
 }
+
 

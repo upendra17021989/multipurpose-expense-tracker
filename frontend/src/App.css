@@ -4344,5 +4344,154 @@ textarea:disabled {
   .system-admin-stat-grid small { font-size: .72rem; }
   .system-admin-account-row { grid-template-columns: 90px minmax(0, 1fr) 30px; gap: .5rem; font-size: .82rem; }
 }
+.feedback-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(320px, 0.85fr);
+  gap: 1rem;
+  align-items: start;
+}
+
+.feedback-form textarea {
+  resize: vertical;
+}
+
+.feedback-history {
+  margin: 0;
+}
+
+.feedback-list {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.feedback-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.45rem 0.75rem;
+  padding: 0.8rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #f8fafc;
+}
+
+.feedback-item strong,
+.feedback-item small {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.feedback-item small {
+  margin-top: 0.15rem;
+  color: #64748b;
+}
+
+.feedback-item b {
+  align-self: start;
+  color: #0f766e;
+}
+
+.feedback-admin-response {
+  padding: 0.55rem 0.65rem;
+  border: 1px solid #b7e4dc;
+  border-radius: 8px;
+  background: #f0fdfa;
+}
+
+.feedback-admin-response strong {
+  color: #0f766e;
+}
+
+.feedback-item p {
+  grid-column: 1 / -1;
+  margin: 0;
+  color: #475569;
+  font-size: 0.9rem;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 860px) {
+  .feedback-layout {
+    grid-template-columns: 1fr;
+  }
+}
+.system-admin-feedback-list {
+  display: grid;
+  gap: .75rem;
+}
+
+.system-admin-feedback-card {
+  display: grid;
+  gap: .65rem;
+  padding: .9rem;
+  border: 1px solid #d9e2ec;
+  border-radius: 9px;
+  background: #fff;
+}
+
+.system-admin-feedback-card header,
+.system-admin-feedback-card footer {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: .75rem;
+}
+
+.system-admin-feedback-card h3,
+.system-admin-feedback-card p {
+  margin: 0;
+}
+
+.system-admin-feedback-card header p,
+.system-admin-feedback-card small,
+.system-admin-feedback-card footer {
+  color: #64748b;
+  font-size: .84rem;
+}
+
+.system-admin-feedback-card > p {
+  color: #334155;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.system-admin-feedback-card footer {
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.system-admin-feedback-card footer b,
+.system-admin-feedback-card footer a {
+  color: #0f766e;
+}
+.system-admin-feedback-resolution {
+  display: grid;
+  grid-template-columns: 180px minmax(0, 1fr) auto;
+  gap: .7rem;
+  align-items: end;
+  padding-top: .7rem;
+  border-top: 1px solid #e5edf5;
+}
+
+.system-admin-feedback-resolution textarea {
+  resize: vertical;
+}
+
+.system-admin-feedback-resolution button {
+  white-space: nowrap;
+}
+
+@media (max-width: 760px) {
+  .system-admin-feedback-resolution {
+    grid-template-columns: 1fr;
+  }
+
+  .system-admin-feedback-resolution button {
+    width: 100%;
+  }
+}
+
 
 

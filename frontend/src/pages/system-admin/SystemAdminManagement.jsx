@@ -32,7 +32,7 @@ export const SystemAdminManagement = ({ mode }) => {
   }
 
   return <Shell title={mode === 'users' ? 'User Management' : 'Account Management'} eyebrow="System administration">
-    <nav className="system-admin-tabs"><Link to="/system-admin">Overview</Link><Link className={mode === 'users' ? 'active' : ''} to="/system-admin/users">Users</Link><Link className={mode === 'accounts' ? 'active' : ''} to="/system-admin/accounts">Accounts</Link><Link to="/system-admin/audit-logs">Audit Logs</Link><Link to="/system-admin/health">Health</Link><Link to="/system-admin/storage">Storage</Link><Link to="/system-admin/settings">Settings</Link></nav>
+    <nav className="system-admin-tabs"><Link to="/system-admin">Overview</Link><Link className={mode === 'users' ? 'active' : ''} to="/system-admin/users">Users</Link><Link className={mode === 'accounts' ? 'active' : ''} to="/system-admin/accounts">Accounts</Link><Link to="/system-admin/feedback">Feedback</Link><Link to="/system-admin/audit-logs">Audit Logs</Link><Link to="/system-admin/health">Health</Link><Link to="/system-admin/storage">Storage</Link><Link to="/system-admin/settings">Settings</Link></nav>
     <section className="panel">
       <div className="system-admin-filters">
         <input placeholder={`Search ${mode}…`} value={filters.query} onChange={(event) => { setPage(0); setFilters({ ...filters, query: event.target.value }) }} />
@@ -59,3 +59,4 @@ export const SystemAdminManagement = ({ mode }) => {
     </section>
   </Shell>
 }
+

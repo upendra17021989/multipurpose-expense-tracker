@@ -45,3 +45,4 @@ export const SystemAdminAuditLogs = () => {
     </section>
   </Shell>
 }
+

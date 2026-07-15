@@ -35,6 +35,8 @@ export const systemAdminAPI = {
   getAccounts: (params) => axiosInstance.get('/system-admin/accounts', { params }),
   setAccountStatus: (id, active) => axiosInstance.patch(`/system-admin/accounts/${id}/status`, { active }),
   getAuditLogs: (params) => axiosInstance.get('/system-admin/audit-logs', { params }),
+  getFeedback: (params) => axiosInstance.get('/system-admin/feedback', { params }),
+  updateFeedbackStatus: (id, data) => axiosInstance.patch(`/system-admin/feedback/${id}/status`, data),
   getHealth: () => axiosInstance.get('/system-admin/health'),
   getStorage: () => axiosInstance.get('/system-admin/storage'),
   getSettings: () => axiosInstance.get('/system-admin/settings'),
@@ -79,6 +81,10 @@ export const personalBudgetAPI = {
 
 export const dailyQuoteAPI = {
   getToday: () => axiosInstance.get('/personal/quote-of-day')
+}
+export const feedbackAPI = {
+  list: () => axiosInstance.get('/feedback'),
+  create: (data) => axiosInstance.post('/feedback', data)
 }
 
 export const personalTodoAPI = {
@@ -280,5 +286,9 @@ export const sportsAPI = {
   getReceipts: (collectionId) => axiosInstance.get(`/sports/collections/${collectionId}/receipts`),
   voidReceipt: (receiptId, data) => axiosInstance.post(`/sports/receipts/${receiptId}/void`, data)
 }
+
+
+
+
 
 

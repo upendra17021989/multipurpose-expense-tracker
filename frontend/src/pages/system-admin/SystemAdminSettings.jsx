@@ -25,7 +25,7 @@ export const SystemAdminSettings = () => {
   }
 
   return <Shell title="System Settings" eyebrow="System administration">
-    <nav className="system-admin-tabs"><Link to="/system-admin">Overview</Link><Link to="/system-admin/users">Users</Link><Link to="/system-admin/accounts">Accounts</Link><Link to="/system-admin/audit-logs">Audit Logs</Link><Link to="/system-admin/health">Health</Link><Link to="/system-admin/storage">Storage</Link><Link className="active" to="/system-admin/settings">Settings</Link></nav>
+    <nav className="system-admin-tabs"><Link to="/system-admin">Overview</Link><Link to="/system-admin/users">Users</Link><Link to="/system-admin/accounts">Accounts</Link><Link to="/system-admin/feedback">Feedback</Link><Link to="/system-admin/audit-logs">Audit Logs</Link><Link to="/system-admin/health">Health</Link><Link to="/system-admin/storage">Storage</Link><Link className="active" to="/system-admin/settings">Settings</Link></nav>
     {loading ? <p className="muted">Loading settings...</p> : <form className="panel system-settings-form" onSubmit={save}>
       <div><h2>Public platform details</h2><p className="muted">Only non-secret display and support information belongs here.</p></div>
       <label>Site name<input required maxLength="80" value={form.siteName} onChange={(event) => setForm({ ...form, siteName: event.target.value })} /></label>
@@ -36,3 +36,4 @@ export const SystemAdminSettings = () => {
     </form>}
   </Shell>
 }
+

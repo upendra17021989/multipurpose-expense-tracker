@@ -11,7 +11,7 @@ const formatBytes = (bytes = 0) => {
   return `${(bytes / (1024 ** index)).toFixed(index ? 1 : 0)} ${units[index]}`
 }
 
-const AdminTabs = ({ mode }) => <nav className="system-admin-tabs"><Link to="/system-admin">Overview</Link><Link to="/system-admin/users">Users</Link><Link to="/system-admin/accounts">Accounts</Link><Link to="/system-admin/audit-logs">Audit Logs</Link><Link className={mode === 'health' ? 'active' : ''} to="/system-admin/health">Health</Link><Link className={mode === 'storage' ? 'active' : ''} to="/system-admin/storage">Storage</Link><Link to="/system-admin/settings">Settings</Link></nav>
+const AdminTabs = ({ mode }) => <nav className="system-admin-tabs"><Link to="/system-admin">Overview</Link><Link to="/system-admin/users">Users</Link><Link to="/system-admin/accounts">Accounts</Link><Link to="/system-admin/feedback">Feedback</Link><Link to="/system-admin/audit-logs">Audit Logs</Link><Link className={mode === 'health' ? 'active' : ''} to="/system-admin/health">Health</Link><Link className={mode === 'storage' ? 'active' : ''} to="/system-admin/storage">Storage</Link><Link to="/system-admin/settings">Settings</Link></nav>
 
 export const SystemAdminOperations = ({ mode }) => {
   const [data, setData] = useState(null)
@@ -50,3 +50,4 @@ const Storage = ({ data }) => <div className="system-admin-operations">
 </div>
 
 const Usage = ({ title, rows = [] }) => <section className="panel storage-usage"><h2>{title}</h2>{rows.length ? rows.map((row) => <div key={row.id}><span>{row.name}</span><small>{row.documentCount} documents</small><strong>{formatBytes(row.bytes)}</strong></div>) : <p className="muted">No document storage in use.</p>}</section>
+

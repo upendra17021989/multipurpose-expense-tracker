@@ -222,6 +222,7 @@ const PersonalDashboard = () => {
             <DashboardAction to="/personal/friends" icon="Fr" title={tx('Friends')} text={tx('Manage shared contacts')} />
             <DashboardAction to="/personal/documents" icon="Doc" title={tx('Documents')} text={tx('Store receipts and files')} />
             <DashboardAction to="/personal/todos" icon="Ok" title={tx('Tasks')} text={tx('Plan personal work')} />
+            <DashboardAction to="/feedback" icon="Fb" title={tx('Feedback')} text={tx('Share ideas and issues')} />
           </div>
         </article>
 
@@ -690,5 +691,6 @@ const buildExpenseSummary = (expenses) => {
     paymentModes: paymentModes.size || '-'
   }
 }
+
 
 
