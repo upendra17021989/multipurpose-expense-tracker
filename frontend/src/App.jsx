@@ -21,6 +21,7 @@ import { SharedExpenseGroups } from './pages/personal/SharedExpenseGroups'
 import { SharedExpenseGroup } from './pages/personal/SharedExpenseGroup'
 import { SharedExpenseFriends } from './pages/personal/SharedExpenseFriends'
 import { MyDocumentsFull as MyDocuments } from './pages/personal/MyDocumentsFull'
+import { PersonalTodos } from './pages/personal/PersonalTodos'
 import { FlatList } from './pages/society/FlatList'
 import { FlatForm } from './pages/society/FlatForm'
 import { VendorList } from './pages/society/VendorList'
@@ -210,6 +211,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <FlatList />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/personal/todos"
+            element={
+              <ProtectedRoute>
+                <PersonalTodos />
               </ProtectedRoute>
             }
           />

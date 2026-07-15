@@ -4,7 +4,7 @@ import { useAuthStore } from '../store/authStore'
 import { formatCurrency, formatDate } from '../utils/format'
 import { useEffect, useMemo, useState } from 'react'
 import { toast } from 'react-toastify'
-import { expenseAPI, expenseCategoryAPI, kiranaProductAPI, personalBudgetAPI, societyAnnualCollectionAPI, societyFlatAPI, societyMembershipAPI } from '../api/endpoints'
+import { dailyQuoteAPI, expenseAPI, expenseCategoryAPI, kiranaProductAPI, personalBudgetAPI, societyAnnualCollectionAPI, societyFlatAPI, societyMembershipAPI } from '../api/endpoints'
 import { useI18n } from '../i18n'
 
 const accountLabels = {
@@ -62,6 +62,7 @@ const PersonalDashboard = () => {
   const [expenseModalOpen, setExpenseModalOpen] = useState(false)
   const [expenseSaving, setExpenseSaving] = useState(false)
   const [expenseForm, setExpenseForm] = useState(createDashboardExpenseForm())
+  const [dailyQuote, setDailyQuote] = useState(null)
   const { tx } = useI18n()
 
   const loadDashboard = () => {
@@ -82,6 +83,9 @@ const PersonalDashboard = () => {
     expenseCategoryAPI.getCategories()
       .then((response) => setCategories(response.data || []))
       .catch(() => toast.error('Unable to load expense categories'))
+    dailyQuoteAPI.getToday()
+      .then((response) => setDailyQuote(response.data || null))
+      .catch(() => setDailyQuote(null))
   }, [])
 
   const summary = useMemo(() => buildExpenseSummary(expenses), [expenses])
@@ -179,6 +183,17 @@ const PersonalDashboard = () => {
         </div>
       </section>
 
+      {dailyQuote && <aside className="personal-daily-quote" aria-label={tx('Quote of the day')}>
+        <span aria-hidden="true">&ldquo;</span>
+        <div>
+          <p>{dailyQuote.quote}</p>
+          <footer>
+            <strong>&mdash; {dailyQuote.author}</strong>
+            {dailyQuote.sourceUrl && <a href={dailyQuote.sourceUrl} target="_blank" rel="noreferrer">Inspired by {dailyQuote.sourceName}</a>}
+          </footer>
+        </div>
+      </aside>}
+
       <section className="personal-dashboard-stats">
         <InsightCard tone="teal" label={tx('Today')} value={formatCurrency(summary.todayTotal)} detail={`${summary.todayCount} ${tx('entries')}`} />
         <InsightCard tone="blue" label={tx('This Month')} value={formatCurrency(summary.monthTotal)} detail={`${summary.monthCount} ${tx('expenses')}`} />
@@ -201,6 +216,7 @@ const PersonalDashboard = () => {
             <DashboardAction to="/personal/reports" icon="Up" title={tx('Reports')} text={tx('Analyze trends')} />
             <DashboardAction to="/personal/shared-expenses" icon="=" title={tx('Shared expenses')} text={tx('Groups and settlements')} />
             <DashboardAction to="/personal/documents" icon="Doc" title={tx('My documents')} text={tx('Store receipts and files')} />
+            <DashboardAction to="/personal/todos" icon="✓" title={tx('To-do list')} text={tx('Plan and track personal tasks')} />
           </div>
         </article>
 

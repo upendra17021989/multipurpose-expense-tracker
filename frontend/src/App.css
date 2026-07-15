@@ -2566,6 +2566,86 @@ textarea:disabled {
   color: #64748b;
 }
 
+.personal-daily-quote {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0.9rem;
+  align-items: start;
+  margin-bottom: 1rem;
+  padding: 1rem 1.15rem;
+  border: 1px solid #dbeafe;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #f8fafc, #eff6ff);
+}
+
+.personal-daily-quote > span {
+  color: #0284c7;
+  font-family: Georgia, serif;
+  font-size: 2.5rem;
+  font-weight: 800;
+  line-height: 0.9;
+}
+
+.personal-daily-quote p {
+  margin: 0;
+  color: #17202a;
+  font-family: Georgia, serif;
+  font-size: 1.05rem;
+  line-height: 1.55;
+}
+
+.personal-daily-quote footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-top: 0.55rem;
+  color: #475569;
+  font-size: 0.78rem;
+}
+
+.personal-daily-quote a {
+  color: #0369a1;
+  font-weight: 700;
+}
+
+.personal-todo-form { margin-bottom: 1rem; }
+.personal-todo-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+.personal-todo-toolbar > div { display: flex; gap: 0.4rem; }
+.personal-todo-toolbar button.active { border-color: #0f766e; color: #0f766e; background: #f0fdfa; font-weight: 800; }
+.personal-todo-list { display: grid; gap: 0.7rem; }
+.personal-todo-item { display: grid; grid-template-columns: 34px minmax(0, 1fr) auto; gap: 0.8rem; align-items: center; padding: 0.9rem; border: 1px solid #d9e2ec; border-radius: 9px; background: #fff; }
+.personal-todo-check { width: 30px; height: 30px; padding: 0; border: 2px solid #94a3b8; border-radius: 50%; color: #fff; background: #fff; font-weight: 900; }
+.personal-todo-item.completed .personal-todo-check { border-color: #0f766e; background: #0f766e; }
+.personal-todo-copy { min-width: 0; }
+.personal-todo-copy > div { display: flex; align-items: center; gap: 0.55rem; }
+.personal-todo-copy p { margin: 0.3rem 0; color: #475569; white-space: pre-wrap; overflow-wrap: anywhere; }
+.personal-todo-copy small { color: #64748b; }
+.personal-todo-copy small.overdue { color: #b91c1c; font-weight: 800; }
+.personal-todo-item.completed .personal-todo-copy strong { color: #64748b; text-decoration: line-through; }
+.personal-todo-priority { padding: 0.16rem 0.42rem; border-radius: 999px; font-size: 0.65rem; font-weight: 850; }
+.personal-todo-priority.low { color: #166534; background: #dcfce7; }
+.personal-todo-priority.medium { color: #92400e; background: #fef3c7; }
+.personal-todo-priority.high { color: #991b1b; background: #fee2e2; }
+
+@media (max-width: 640px) {
+  .personal-todo-item { grid-template-columns: 34px minmax(0, 1fr); }
+  .personal-todo-item > .table-actions { grid-column: 2; display: grid; grid-template-columns: 1fr 1fr; }
+  .personal-todo-toolbar { align-items: stretch; flex-direction: column; }
+  .personal-todo-toolbar > div { display: grid; grid-template-columns: repeat(3, 1fr); }
+}
+
+@media (max-width: 640px) {
+  .personal-daily-quote {
+    padding: 0.85rem;
+  }
+
+  .personal-daily-quote footer {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+
 .shared-invitation-card.society-membership-request {
   grid-template-columns: minmax(190px, 1.1fr) minmax(240px, 1.35fr) minmax(155px, 0.75fr) auto;
   gap: 1rem;

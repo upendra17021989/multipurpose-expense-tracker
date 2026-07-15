@@ -77,6 +77,18 @@ export const personalBudgetAPI = {
   deleteBudget: (budgetId) => axiosInstance.delete(`/personal-budgets/${budgetId}`)
 }
 
+export const dailyQuoteAPI = {
+  getToday: () => axiosInstance.get('/personal/quote-of-day')
+}
+
+export const personalTodoAPI = {
+  list: () => axiosInstance.get('/personal/todos'),
+  create: (data) => axiosInstance.post('/personal/todos', data),
+  update: (id, data) => axiosInstance.put(`/personal/todos/${id}`, data),
+  setCompleted: (id, completed) => axiosInstance.patch(`/personal/todos/${id}/completed`, { completed }),
+  delete: (id) => axiosInstance.delete(`/personal/todos/${id}`)
+}
+
 export const personalDocumentAPI = {
   list: (params = {}) => axiosInstance.get('/personal/documents', { params }),
   get: (documentId) => axiosInstance.get(`/personal/documents/${documentId}`),
