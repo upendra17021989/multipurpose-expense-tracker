@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { toast } from 'react-toastify'
 import { authAPI } from '../api/endpoints'
@@ -23,6 +23,15 @@ export const Login = () => {
   const [loading, setLoading] = useState(false)
   const [pendingSession, setPendingSession] = useState(null)
   const [formData, setFormData] = useState({ mobile: '', password: '' })
+  const [mobileLoginOpen, setMobileLoginOpen] = useState(false)
+
+  useEffect(() => {
+    const closeOnEscape = (event) => {
+      if (event.key === 'Escape') setMobileLoginOpen(false)
+    }
+    window.addEventListener('keydown', closeOnEscape)
+    return () => window.removeEventListener('keydown', closeOnEscape)
+  }, [])
 
   const handleInputChange = (event) => {
     const { name, value } = event.target
@@ -77,6 +86,9 @@ export const Login = () => {
 
   return (
     <main className="auth-page login-experience">
+      <button type="button" className="login-mobile-trigger" onClick={() => setMobileLoginOpen(true)}>
+        Login
+      </button>
       <section className="login-showcase" aria-label="Expense tracker overview">
         <div className="login-brand">
           <span>Expense Tracker</span>
@@ -118,10 +130,12 @@ export const Login = () => {
         </div>
       </section>
 
-      <section className="auth-card login-panel">
+      <div className={`login-panel-shell ${mobileLoginOpen ? 'open' : ''}`} role="presentation" onMouseDown={() => setMobileLoginOpen(false)}>
+      <section className="auth-card login-panel" role="dialog" aria-modal="true" aria-labelledby="login-panel-title" onMouseDown={(event) => event.stopPropagation()}>
+        <button type="button" className="login-mobile-close" aria-label="Close login" title="Close" onClick={() => setMobileLoginOpen(false)}>×</button>
         <div className="login-panel-heading">
           <span>{pendingSession ? 'Account selection' : 'Welcome back'}</span>
-          <h2>{pendingSession ? 'Choose your workspace' : 'Sign in to continue'}</h2>
+          <h2 id="login-panel-title">{pendingSession ? 'Choose your workspace' : 'Sign in to continue'}</h2>
           <p>
             {pendingSession
               ? 'Your mobile number is linked with multiple accounts.'
@@ -203,6 +217,7 @@ export const Login = () => {
           <p>After login, use the account switcher in the top menu when your mobile is linked to multiple workspaces.</p>
         </div>
       </section>
+      </div>
     </main>
   )
 }

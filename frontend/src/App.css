@@ -392,6 +392,15 @@ button.danger {
   padding: clamp(1.25rem, 3vw, 2rem);
 }
 
+.login-panel-shell {
+  display: contents;
+}
+
+.login-mobile-trigger,
+.login-mobile-close {
+  display: none;
+}
+
 .login-panel-heading {
   margin-bottom: 1.2rem;
 }
@@ -2015,11 +2024,58 @@ th.numeric .sortable-header {
     grid-template-columns: 1fr;
     gap: 1rem;
     padding: 1rem;
+    position: relative;
+  }
+
+  .login-mobile-trigger {
+    display: inline-flex;
+    position: absolute;
+    z-index: 3;
+    top: 1.75rem;
+    right: 1.75rem;
+    align-items: center;
+    justify-content: center;
+    min-width: 82px;
+    border-color: #0f766e;
+    background: #0f766e;
+    color: #fff;
+    font-weight: 750;
+  }
+
+  .login-panel-shell {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    inset: 0;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    overflow-y: auto;
+    background: rgba(15, 23, 42, 0.68);
+  }
+
+  .login-panel-shell.open {
+    display: flex;
+  }
+
+  .login-mobile-close {
+    display: inline-grid;
+    position: absolute;
+    top: 0.75rem;
+    right: 0.75rem;
+    place-items: center;
+    width: 36px;
+    min-width: 36px;
+    height: 36px;
+    min-height: 36px;
+    padding: 0;
+    font-size: 1.3rem;
+    line-height: 1;
   }
 
   .login-showcase {
     min-height: 0;
-    padding: 1.25rem;
+    padding: 4.25rem 1.25rem 1.25rem;
   }
 
   .login-brand h1 {
@@ -2037,7 +2093,12 @@ th.numeric .sortable-header {
   }
 
   .login-panel {
+    position: relative;
+    width: min(480px, 100%);
+    max-height: calc(100vh - 2rem);
+    overflow-y: auto;
     align-self: stretch;
+    padding-top: 3.2rem;
   }
 
   .summary-grid,
