@@ -2716,6 +2716,7 @@ textarea:disabled {
 .bank-book-import-modal { width: min(1180px, calc(100vw - 2rem)); max-height: calc(100vh - 2rem); overflow-y: auto; }
 .bank-book-preview-table select { min-width: 160px; }
 .annual-collections-table th { white-space: nowrap; }
+.society-ledger-narration { min-width: 240px; max-width: 420px; white-space: pre-wrap; overflow-wrap: anywhere; }
 .import-table-wrap { max-height: 52vh; }
 .import-table-wrap td small { display: block; max-width: 320px; margin-top: 4px; color: var(--muted); }
 .import-row-status { display: grid; gap: .3rem; min-width: 150px; }

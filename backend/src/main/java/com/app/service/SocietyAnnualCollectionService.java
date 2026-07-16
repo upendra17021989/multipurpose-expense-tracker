@@ -10,6 +10,9 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Service @RequiredArgsConstructor
 public class SocietyAnnualCollectionService {
@@ -21,7 +24,7 @@ public class SocietyAnnualCollectionService {
 
     public List<SocietyAnnualCollectionDto> list(Long accountId, String year) {
         validateFinancialYear(year);
-        return repository.findByAccountIdAndFinancialYearOrderByPaymentDateDescIdDesc(accountId, year).stream().map(this::dto).toList();
+        return dtos(repository.findByAccountIdAndFinancialYearOrderByPaymentDateDescIdDesc(accountId, year));
     }
     public List<SocietyAnnualCollectionDto> ledger(Long accountId, Long userId, String year, Long requestedFlatId) {
         Account account = accountRepository.findById(accountId).orElseThrow(() -> new ResourceNotFoundException("Account not found"));
@@ -43,9 +46,9 @@ public class SocietyAnnualCollectionService {
         return ledgerRows(accountId, year, assignedFlat.getId());
     }
     private List<SocietyAnnualCollectionDto> ledgerRows(Long accountId, String year, Long flatId) {
-        if (flatId == null) return repository.findByAccountIdAndFinancialYearOrderByPaymentDateDescIdDesc(accountId, year).stream().map(this::dto).toList();
+        if (flatId == null) return dtos(repository.findByAccountIdAndFinancialYearOrderByPaymentDateDescIdDesc(accountId, year));
         flatRepository.findByAccountIdAndIdAndActiveTrue(accountId, flatId).orElseThrow(() -> new ResourceNotFoundException("Flat not found"));
-        return repository.findByAccountIdAndFinancialYearAndFlatIdOrderByPaymentDateDescIdDesc(accountId, year, flatId).stream().map(this::dto).toList();
+        return dtos(repository.findByAccountIdAndFinancialYearAndFlatIdOrderByPaymentDateDescIdDesc(accountId, year, flatId));
     }
     @Transactional public SocietyAnnualCollectionDto create(Long accountId, SocietyAnnualCollectionRequest r) {
         validateRequestYear(r);
@@ -86,5 +89,12 @@ public class SocietyAnnualCollectionService {
         return start;
     }
     private String normalize(String value) { return value == null ? "" : value.toLowerCase(java.util.Locale.ROOT).replaceAll("\\bblock\\b", "").replaceAll("[^a-z0-9]", ""); }
-    private SocietyAnnualCollectionDto dto(SocietyAnnualCollection x) { Flat f=x.getFlat(); return SocietyAnnualCollectionDto.builder().id(x.getId()).flatId(f==null?null:f.getId()).flatLabel(f==null?null:f.getBlockName()+"-"+f.getFlatNumber()).financialYear(x.getFinancialYear()).collectionType(x.getCollectionType()).sourceName(x.getSourceName()).paymentDate(x.getPaymentDate()).amount(x.getAmount()).paymentMode(x.getPaymentMode()).referenceNumber(x.getReferenceNumber()).transactionId(x.getTransactionId()).settlementId(x.getSettlementId()).remarks(x.getRemarks()).build(); }
+    private List<SocietyAnnualCollectionDto> dtos(List<SocietyAnnualCollection> collections) {
+        if (collections.isEmpty()) return List.of();
+        Map<Long, SocietyBankBookTransaction> transactions = bankBookTransactionRepository.findByAnnualCollectionIdIn(collections.stream().map(SocietyAnnualCollection::getId).toList()).stream()
+                .collect(Collectors.toMap(transaction -> transaction.getAnnualCollection().getId(), Function.identity(), (first, ignored) -> first));
+        return collections.stream().map(collection -> dto(collection, transactions.get(collection.getId()))).toList();
+    }
+    private SocietyAnnualCollectionDto dto(SocietyAnnualCollection x) { return dto(x, null); }
+    private SocietyAnnualCollectionDto dto(SocietyAnnualCollection x, SocietyBankBookTransaction transaction) { Flat f=x.getFlat(); return SocietyAnnualCollectionDto.builder().id(x.getId()).flatId(f==null?null:f.getId()).flatLabel(f==null?null:f.getBlockName()+"-"+f.getFlatNumber()).financialYear(x.getFinancialYear()).collectionType(x.getCollectionType()).sourceName(x.getSourceName()).paymentDate(x.getPaymentDate()).amount(x.getAmount()).paymentMode(x.getPaymentMode()).referenceNumber(x.getReferenceNumber()).transactionId(x.getTransactionId()).settlementId(x.getSettlementId()).narration(transaction==null?null:transaction.getParticulars()).remarks(x.getRemarks()).build(); }
 }
