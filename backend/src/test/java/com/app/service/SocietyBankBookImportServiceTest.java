@@ -114,4 +114,76 @@ class SocietyBankBookImportServiceTest {
         assertThat(preview.getRows().get(0).getSourceName()).isEqualTo("Niraj Lathiya");
         assertThat(preview.getRows().get(0).getSourceReference()).isEqualTo("CASHBOOK:VOUCHER:CR/1/26-27");
     }
+
+    @Test
+    void previewsHistoricalReceiptWithTwoDigitTextYear() throws Exception {
+        Account account = Account.builder().id(7L).accountType(AccountType.SOCIETY).build();
+        Flat flat = Flat.builder().id(12L).account(account).blockName("A Block").flatNumber("101").ownerName("Historical Owner").build();
+        when(accounts.findById(7L)).thenReturn(Optional.of(account));
+        when(flats.findByAccountIdAndActiveTrue(7L)).thenReturn(List.of(flat));
+
+        byte[] bytes;
+        try (Workbook workbook = new XSSFWorkbook(); ByteArrayOutputStream output = new ByteArrayOutputStream()) {
+            var sheet = workbook.createSheet("2024-2025");
+            var header = sheet.createRow(0);
+            String[] columns = {"Date", "Type", "Flat No.", "Particulars", "Reference Number", "Voucher Number", "Debit", "Credit", "Balance"};
+            for (int index = 0; index < columns.length; index++) header.createCell(index).setCellValue(columns[index]);
+            var row = sheet.createRow(1);
+            row.createCell(0).setCellValue("01-Apr-24");
+            row.createCell(1).setCellValue("Cash Receipt");
+            row.createCell(2).setCellValue("A Block-101");
+            row.createCell(3).setCellValue("By Historical Owner");
+            row.createCell(4).setCellValue("REF-24");
+            row.createCell(5).setCellValue("CR-24");
+            row.createCell(6).setCellValue(1200);
+            row.createCell(8).setCellValue(1200);
+            workbook.write(output);
+            bytes = output.toByteArray();
+        }
+
+        SocietyBankBookImportDtos.Preview preview = service.preview(7L, "2024-2025",
+                new MockMultipartFile("file", "historical.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", bytes));
+
+        assertThat(preview.getReadyRows()).isEqualTo(1);
+        assertThat(preview.getRows().get(0).getDate()).isEqualTo(LocalDate.of(2024, 4, 1));
+    }
+
+    @Test
+    void placeholderTransactionIdsDoNotCollapseHistoricalRows() throws Exception {
+        Account account = Account.builder().id(7L).accountType(AccountType.SOCIETY).build();
+        Flat firstFlat = Flat.builder().id(12L).account(account).blockName("K Block").flatNumber("701").ownerName("First Owner").build();
+        Flat secondFlat = Flat.builder().id(13L).account(account).blockName("K Block").flatNumber("702").ownerName("Second Owner").build();
+        when(accounts.findById(7L)).thenReturn(Optional.of(account));
+        when(flats.findByAccountIdAndActiveTrue(7L)).thenReturn(List.of(firstFlat, secondFlat));
+
+        byte[] bytes;
+        try (Workbook workbook = new XSSFWorkbook(); ByteArrayOutputStream output = new ByteArrayOutputStream()) {
+            var sheet = workbook.createSheet("2024-2025");
+            var header = sheet.createRow(0);
+            String[] columns = {"Date", "Type", "Flat No.", "Particulars", "Txn ID / Cheque No.", "Reference Number", "Voucher Number", "Settlement ID", "Debit", "Credit", "Balance"};
+            for (int index = 0; index < columns.length; index++) header.createCell(index).setCellValue(columns[index]);
+            for (int index = 0; index < 2; index++) {
+                var row = sheet.createRow(index + 1);
+                row.createCell(0).setCellValue("20-Apr-24");
+                row.createCell(1).setCellValue("Bank Reciept");
+                row.createCell(2).setCellValue("K Block-70" + (index + 1));
+                row.createCell(3).setCellValue(index == 0 ? "By First Owner" : "By Second Owner");
+                row.createCell(4).setCellValue("NA");
+                row.createCell(5).setCellValue("CAM/24-25/" + (277 + index));
+                row.createCell(6).setCellValue("BR/" + (index + 1) + "/24-25");
+                row.createCell(7).setCellValue("NA");
+                row.createCell(8).setCellValue(index == 0 ? 19440 : 1800);
+                row.createCell(10).setCellValue(25000);
+            }
+            workbook.write(output);
+            bytes = output.toByteArray();
+        }
+
+        SocietyBankBookImportDtos.Preview preview = service.preview(7L, "2024-2025",
+                new MockMultipartFile("file", "historical-na.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", bytes));
+
+        assertThat(preview.getReadyRows()).isEqualTo(2);
+        assertThat(preview.getRows()).extracting(SocietyBankBookImportDtos.Row::getSourceReference).doesNotHaveDuplicates();
+        assertThat(preview.getRows()).extracting(SocietyBankBookImportDtos.Row::getTransactionId).containsOnly("");
+    }
 }

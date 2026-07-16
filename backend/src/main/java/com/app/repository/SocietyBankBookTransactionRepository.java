@@ -4,8 +4,11 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import java.math.BigDecimal;
+import java.time.LocalDate;
 public interface SocietyBankBookTransactionRepository extends JpaRepository<SocietyBankBookTransaction, Long> {
     boolean existsByAccountIdAndSourceReferenceAndAnnualCollectionIsNotNull(Long accountId, String sourceReference);
+    boolean existsByAccountIdAndTransactionDateAndFlatIdAndDebitAndAnnualCollectionIsNotNull(Long accountId, LocalDate transactionDate, Long flatId, BigDecimal debit);
 
     @Modifying
     @Query("delete from SocietyBankBookTransaction t where t.annualCollection.id = :collectionId")

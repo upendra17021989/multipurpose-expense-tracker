@@ -9,6 +9,7 @@ import { BankBookImportModal } from './BankBookImportModal'
 import { useAuthStore } from '../../../store/authStore'
 
 const currentFinancialYear=()=>{const d=new Date(),y=d.getMonth()<3?d.getFullYear()-1:d.getFullYear();return `${y}-${y+1}`}
+const availableFinancialYears=()=>{const currentStart=Number(currentFinancialYear().slice(0,4));return Array.from({length:currentStart-2024+1},(_,index)=>{const start=currentStart-index;return `${start}-${start+1}`})}
 export const AnnualFinance=()=>{
  const currentAccount=useAuthStore(state=>state.currentAccount),canWrite=currentAccount?.role!=='MEMBER'
  const [financialYear,setFinancialYear]=useState(currentFinancialYear()),[rows,setRows]=useState([]),[flats,setFlats]=useState([]),[expenses,setExpenses]=useState([]),[activeView,setActiveView]=useState('overview'),[collectionSearch,setCollectionSearch]=useState(''),[collectionPage,setCollectionPage]=useState(1),[expensePage,setExpensePage]=useState(1),[modal,setModal]=useState(null)
@@ -21,7 +22,7 @@ export const AnnualFinance=()=>{
  const annualExpenses=useMemo(()=>expenses.filter(x=>x.expenseDate>=yearStart&&x.expenseDate<=yearEnd).sort((a,b)=>String(b.expenseDate).localeCompare(String(a.expenseDate))),[expenses,yearStart,yearEnd]),expenseTotal=annualExpenses.reduce((s,x)=>s+Number(x.amount||0),0),pageCount=Math.max(1,Math.ceil(annualExpenses.length/10)),visibleExpenses=annualExpenses.slice((expensePage-1)*10,expensePage*10)
  const remove=async id=>{if(!window.confirm('Delete this collection entry?'))return;try{await societyAnnualCollectionAPI.delete(id);toast.success('Collection deleted');loadCollections()}catch(error){toast.error(error.response?.data?.message||'Unable to delete collection')}}
  return <Shell title="Annual Finance" eyebrow="Society module" actions={canWrite&&<div className="table-actions"><button onClick={()=>setModal('bankBook')}>Import Cash / Bank Book</button><button onClick={()=>setModal('collection')}>Record Collection</button><button className="primary" onClick={()=>setModal('expense')}>Add Expense</button></div>}>
-  <section className="toolbar-panel"><label>Financial year<input value={financialYear} pattern="\d{4}-\d{4}" onChange={e=>{setFinancialYear(e.target.value);setCollectionPage(1);setExpensePage(1)}}/></label></section>
+  <section className="toolbar-panel"><label>Financial year<select value={financialYear} onChange={e=>{setFinancialYear(e.target.value);setCollectionPage(1);setExpensePage(1)}}>{availableFinancialYears().map(year=><option key={year} value={year}>{year}{year===currentFinancialYear()?' (Current)':''}</option>)}</select></label></section>
   <div className="shared-expense-submenu">{['overview','collections','expenses'].map(x=><button key={x} className={activeView===x?'active':''} onClick={()=>setActiveView(x)}>{x[0].toUpperCase()+x.slice(1)}</button>)}</div>
   <SummaryGrid items={[[ 'Total received',formatCurrency(totals.total) ],[ 'Total expenses',formatCurrency(expenseTotal) ],[ 'Net balance',formatCurrency(totals.total-expenseTotal) ],[ 'Maintenance',formatCurrency(totals.MAINTENANCE||0) ]]}/>
   {activeView==='overview'&&<section className="report-panel"><h2>{financialYear} summary</h2><p className="muted">Collections and expenses from 1 April {financialYear.slice(0,4)} through 31 March {financialYear.slice(5)}.</p></section>}

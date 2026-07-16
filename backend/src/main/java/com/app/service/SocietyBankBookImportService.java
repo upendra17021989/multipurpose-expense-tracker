@@ -19,6 +19,7 @@ import java.util.*;
 public class SocietyBankBookImportService {
     private static final long MAX_FILE_SIZE = 10 * 1024 * 1024;
     private static final DateTimeFormatter TEXT_DATE = new DateTimeFormatterBuilder().parseCaseInsensitive().appendPattern("dd-MMM-uuuu").toFormatter(Locale.ENGLISH);
+    private static final DateTimeFormatter SHORT_TEXT_DATE = new DateTimeFormatterBuilder().parseCaseInsensitive().appendPattern("dd-MMM-yy").toFormatter(Locale.ENGLISH);
     private final AccountRepository accountRepository; private final UserRepository userRepository; private final FlatRepository flatRepository;
     private final SocietyAnnualCollectionRepository collectionRepository; private final SocietyBankBookImportRepository importRepository;
     private final SocietyBankBookTransactionRepository transactionRepository;
@@ -77,13 +78,14 @@ public class SocietyBankBookImportService {
     }
 
     private SocietyBankBookImportDtos.Row parse(Row row,Map<String,Integer> c,DataFormatter f,FormulaEvaluator e,List<Flat> flats,Long accountId,String financialYear){
-        String flatText=text(row,c.get("flat no."),f,e), transactionId=text(row,c.get("txn id / cheque no."),f,e), settlement=text(row,c.get("settlement id"),f,e);
-        String reference=text(row,c.get("reference number"),f,e),voucher=text(row,c.get("voucher number"),f,e),particulars=text(row,c.get("particulars"),f,e);
+        String flatText=text(row,c.get("flat no."),f,e), transactionId=identifier(text(row,c.get("txn id / cheque no."),f,e)), settlement=identifier(text(row,c.get("settlement id"),f,e));
+        String reference=identifier(text(row,c.get("reference number"),f,e)),voucher=identifier(text(row,c.get("voucher number"),f,e)),particulars=text(row,c.get("particulars"),f,e);
         LocalDate date=date(row,c.get("date"),f,e); BigDecimal debit=decimal(row,c.get("debit"),f,e),credit=decimal(row,c.get("credit"),f,e),balance=decimal(row,c.get("balance"),f,e);
         PaymentMode paymentMode=receiptPaymentMode(text(row,c.get("type"),f,e));
         String prefix=paymentMode==PaymentMode.CASH?"CASHBOOK":"BANKBOOK";
         String sourceReference=paymentMode==PaymentMode.CASH&&!voucher.isBlank()?prefix+":VOUCHER:"+voucher.trim().toUpperCase(Locale.ROOT):!transactionId.isBlank()?prefix+":TXN:"+transactionId.trim().toUpperCase(Locale.ROOT):!settlement.isBlank()?prefix+":SETTLEMENT:"+settlement.trim().toUpperCase(Locale.ROOT):prefix+":"+date+":"+normalize(flatText)+":"+debit+":"+reference;
-        Flat flat=matchFlat(flatText,flats); boolean duplicate=transactionRepository.existsByAccountIdAndSourceReferenceAndAnnualCollectionIsNotNull(accountId,sourceReference); List<String>warnings=new ArrayList<>();List<String>errors=new ArrayList<>();
+        Flat flat=matchFlat(flatText,flats); boolean duplicate=transactionRepository.existsByAccountIdAndSourceReferenceAndAnnualCollectionIsNotNull(accountId,sourceReference)
+                || flat != null && date != null && debit != null && transactionRepository.existsByAccountIdAndTransactionDateAndFlatIdAndDebitAndAnnualCollectionIsNotNull(accountId,date,flat.getId(),debit); List<String>warnings=new ArrayList<>();List<String>errors=new ArrayList<>();
         if(date==null)errors.add("Date is missing or invalid"); else if(!inFinancialYear(date,financialYear))errors.add("Date is outside "+financialYear); if(flat==null)warnings.add("Select a matching flat"); if(duplicate)warnings.add("Already imported");
         return SocietyBankBookImportDtos.Row.builder().rowNumber(row.getRowNum()+1).date(date).type(text(row,c.get("type"),f,e)).flatText(flatText)
                 .flatId(flat==null?null:flat.getId()).flatLabel(flat==null?null:flat.getBlockName()+"-"+flat.getFlatNumber()).particulars(particulars).sourceName(sourceName(particulars))
@@ -100,9 +102,10 @@ public class SocietyBankBookImportService {
     private void requireHeaders(Map<String,Integer>h,String...required){List<String>missing=Arrays.stream(required).filter(x->!h.containsKey(x)).toList();if(!missing.isEmpty())throw new ValidationException("Missing required column(s): "+String.join(", ",missing));}
     private String text(Row r,Integer col,DataFormatter f,FormulaEvaluator e){if(col==null)return "";Cell cell=r.getCell(col,Row.MissingCellPolicy.RETURN_BLANK_AS_NULL);return cell==null?"":f.formatCellValue(cell,e).trim();}
     private BigDecimal decimal(Row r,Integer col,DataFormatter f,FormulaEvaluator e){String raw=text(r,col,f,e).replace(",","").replaceAll("(?i)\\s*[DC]$","").trim();if(raw.isBlank())return null;try{return new BigDecimal(raw);}catch(Exception ex){return null;}}
-    private LocalDate date(Row r,Integer col,DataFormatter f,FormulaEvaluator e){if(col==null)return null;Cell cell=r.getCell(col,Row.MissingCellPolicy.RETURN_BLANK_AS_NULL);if(cell==null)return null;try{if(cell.getCellType()==CellType.NUMERIC)return cell.getDateCellValue().toInstant().atZone(ZoneId.systemDefault()).toLocalDate();String value=f.formatCellValue(cell,e).trim();for(DateTimeFormatter format:List.of(TEXT_DATE,DateTimeFormatter.ISO_LOCAL_DATE,DateTimeFormatter.ofPattern("dd/MM/uuuu"),DateTimeFormatter.ofPattern("dd-MM-uuuu"))){try{return LocalDate.parse(value,format);}catch(DateTimeParseException ignored){}}return null;}catch(Exception ex){return null;}}
+    private LocalDate date(Row r,Integer col,DataFormatter f,FormulaEvaluator e){if(col==null)return null;Cell cell=r.getCell(col,Row.MissingCellPolicy.RETURN_BLANK_AS_NULL);if(cell==null)return null;try{if(cell.getCellType()==CellType.NUMERIC)return cell.getDateCellValue().toInstant().atZone(ZoneId.systemDefault()).toLocalDate();String value=f.formatCellValue(cell,e).trim();for(DateTimeFormatter format:List.of(TEXT_DATE,SHORT_TEXT_DATE,DateTimeFormatter.ISO_LOCAL_DATE,DateTimeFormatter.ofPattern("dd/MM/uuuu"),DateTimeFormatter.ofPattern("dd-MM-uuuu"),DateTimeFormatter.ofPattern("dd/MM/yy"),DateTimeFormatter.ofPattern("dd-MM-yy"))){try{return LocalDate.parse(value,format);}catch(DateTimeParseException ignored){}}return null;}catch(Exception ex){return null;}}
     private boolean isEmpty(Row r,DataFormatter f,FormulaEvaluator e){for(Cell cell:r)if(!f.formatCellValue(cell,e).trim().isEmpty())return false;return true;}
     private String normalize(String s){return s==null?"":s.toLowerCase(Locale.ROOT).replaceAll("[^a-z0-9]+","");}
+    private String identifier(String value){String normalized=normalize(value);return normalized.isBlank()||Set.of("na","none","null","notapplicable").contains(normalized)?"":value.trim();}
     private void validateFile(MultipartFile f){if(f==null||f.isEmpty())throw new ValidationException("Select an Excel cash or bank book");if(f.getSize()>MAX_FILE_SIZE)throw new ValidationException("Excel file must be 10 MB or smaller");String n=Optional.ofNullable(f.getOriginalFilename()).orElse("").toLowerCase();if(!n.endsWith(".xlsx")&&!n.endsWith(".xls"))throw new ValidationException("Only .xlsx and .xls files are supported");}
     private void validateYear(String y){if(y==null||!y.matches("\\d{4}-\\d{4}"))throw new ValidationException("Financial year must look like 2026-2027");}
     private boolean inFinancialYear(LocalDate date,String year){int start=Integer.parseInt(year.substring(0,4));return !date.isBefore(LocalDate.of(start,4,1))&&!date.isAfter(LocalDate.of(start+1,3,31));}

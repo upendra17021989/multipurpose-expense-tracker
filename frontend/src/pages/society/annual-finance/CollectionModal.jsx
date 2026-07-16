@@ -2,7 +2,13 @@ import { useEffect, useState } from 'react'
 import { toast } from 'react-toastify'
 import { societyAnnualCollectionAPI } from '../../../api/endpoints'
 
-const blank = (financialYear) => ({ financialYear, collectionType: 'MAINTENANCE', flatId: '', sourceName: '', paymentDate: new Date().toISOString().slice(0, 10), amount: '', paymentMode: 'UPI', referenceNumber: '', transactionId: '', settlementId: '', remarks: '' })
+const yearStart = (financialYear) => `${financialYear.slice(0, 4)}-04-01`
+const yearEnd = (financialYear) => `${financialYear.slice(5)}-03-31`
+const defaultPaymentDate = (financialYear) => {
+  const today = new Date().toISOString().slice(0, 10)
+  return today >= yearStart(financialYear) && today <= yearEnd(financialYear) ? today : yearStart(financialYear)
+}
+const blank = (financialYear) => ({ financialYear, collectionType: 'MAINTENANCE', flatId: '', sourceName: '', paymentDate: defaultPaymentDate(financialYear), amount: '', paymentMode: 'UPI', referenceNumber: '', transactionId: '', settlementId: '', remarks: '' })
 
 export const CollectionModal = ({ open, financialYear, flats, collection, onClose, onSaved }) => {
   const [form, setForm] = useState(blank(financialYear))
@@ -16,7 +22,7 @@ export const CollectionModal = ({ open, financialYear, flats, collection, onClos
       <label>Collection type<select value={form.collectionType} onChange={(e)=>setForm({...form,collectionType:e.target.value,flatId:'',sourceName:''})}><option value="MAINTENANCE">Maintenance</option><option value="ADVERTISEMENT">Advertisement</option><option value="SPONSORSHIP">Sponsorship</option><option value="OTHER">Other</option></select></label>
       {form.collectionType==='MAINTENANCE'&&<label>Flat<select required value={form.flatId} onChange={(e)=>{const flat=flats.find(x=>String(x.id)===e.target.value);setForm({...form,flatId:e.target.value,sourceName:flat?`${flat.blockName}-${flat.flatNumber} / ${flat.ownerName}`:''})}}><option value="">Select flat</option>{flats.map(x=><option key={x.id} value={x.id}>{x.blockName}-{x.flatNumber} — {x.ownerName}</option>)}</select></label>}
       <label>Payer / source<input required value={form.sourceName} onChange={(e)=>setForm({...form,sourceName:e.target.value})}/></label>
-      <label>Payment date<input required type="date" value={form.paymentDate} onChange={(e)=>setForm({...form,paymentDate:e.target.value})}/></label>
+      <label>Payment date<input required type="date" min={yearStart(financialYear)} max={yearEnd(financialYear)} value={form.paymentDate} onChange={(e)=>setForm({...form,paymentDate:e.target.value})}/></label>
       <label>Amount<input required type="number" min="0.01" step="0.01" value={form.amount} onChange={(e)=>setForm({...form,amount:e.target.value})}/></label>
       <label>Payment mode<select value={form.paymentMode} onChange={(e)=>setForm({...form,paymentMode:e.target.value})}>{['CASH','BANK','UPI','CARD','NEFT','CHEQUE'].map(x=><option key={x}>{x}</option>)}</select></label>
       <label>Reference number<input value={form.referenceNumber} onChange={(e)=>setForm({...form,referenceNumber:e.target.value})}/></label>
