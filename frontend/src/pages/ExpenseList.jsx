@@ -312,6 +312,7 @@ export const ExpenseList = () => {
             <tr>
               <SortableTh label="Date" sortKey="expenseDate" sort={sort} onSort={toggleSort} />
               <SortableTh label="Category" sortKey="categoryName" sort={sort} onSort={toggleSort} />
+              {currentAccount?.accountType === 'INDIVIDUAL' && <th>{tx('Item details')}</th>}
               <SortableTh label="Type" sortKey="expenseType" sort={sort} onSort={toggleSort} />
               <SortableTh label="Vendor" sortKey="vendorName" sort={sort} onSort={toggleSort} />
               <SortableTh label="Payment" sortKey="paymentMode" sort={sort} onSort={toggleSort} />
@@ -325,24 +326,43 @@ export const ExpenseList = () => {
               <tr key={expense.id}>
                 <td data-label="Date">{formatDate(expense.expenseDate)}</td>
                 <td data-label="Category">{expense.categoryName || '-'}</td>
+                {currentAccount?.accountType === 'INDIVIDUAL' && (
+                  <td data-label="Item details" className="personal-expense-items-cell">
+                    {expense.items?.length ? (
+                      <details>
+                        <summary>{expense.items.length} {expense.items.length === 1 ? 'item' : 'items'}</summary>
+                        <ul>
+                          {expense.items.map((item) => (
+                            <li key={item.id || `${expense.id}-${item.itemName}`}>
+                              <strong>{item.itemName}</strong>
+                              <small>{formatExpenseItem(item)}</small>
+                            </li>
+                          ))}
+                        </ul>
+                      </details>
+                    ) : <span>{expense.description || '-'}</span>}
+                  </td>
+                )}
                 <td data-label="Type">{expense.expenseType}</td>
                 <td data-label="Vendor">{expense.vendorName || '-'}</td>
                 <td data-label="Payment">{expense.paymentMode}</td>
                 <td data-label="Status"><span className={`status-pill ${String(expense.status).toLowerCase()}`}>{expense.status}</span></td>
                 <td data-label="Amount" className="numeric">{formatCurrency(expense.amount)}</td>
-                <td data-label="Actions" className="table-actions">
-                  {!canWrite && <span className="muted">View only</span>}
-                  {canWrite && <>
-                  <button onClick={() => handleEdit(expense)}>{tx('Edit')}</button>
-                  {expense.status === 'SUBMITTED' && <button onClick={() => handleApprove(expense.id)}>{tx('Approve')}</button>}
-                  {expense.status === 'SUBMITTED' && <button onClick={() => handleReject(expense.id)}>{tx('Reject')}</button>}
-                  <button className="danger" onClick={() => handleDelete(expense.id)}>{tx('Delete')}</button>
-                  </>}
+                <td data-label="Actions" className="personal-expense-actions-cell">
+                  <div className="table-actions">
+                    {!canWrite && <span className="muted">View only</span>}
+                    {canWrite && <>
+                    <button className="table-icon-button" aria-label={tx('Edit')} title={tx('Edit')} onClick={() => handleEdit(expense)}>✎</button>
+                    {expense.status === 'SUBMITTED' && <button onClick={() => handleApprove(expense.id)}>{tx('Approve')}</button>}
+                    {expense.status === 'SUBMITTED' && <button onClick={() => handleReject(expense.id)}>{tx('Reject')}</button>}
+                    <button className="danger table-icon-button" aria-label={tx('Delete')} title={tx('Delete')} onClick={() => handleDelete(expense.id)}>×</button>
+                    </>}
+                  </div>
                 </td>
               </tr>
             ))}
             {!loading && visibleExpenses.length === 0 && (
-              <tr><td colSpan="8" className="empty-state">{tx('No expenses found.')}</td></tr>
+              <tr><td colSpan={currentAccount?.accountType === 'INDIVIDUAL' ? 9 : 8} className="empty-state">{tx('No expenses found.')}</td></tr>
             )}
           </tbody>
         </table>
@@ -409,6 +429,13 @@ const expenseSortAccessors = {
   paymentMode: (expense) => expense.paymentMode || '',
   status: (expense) => expense.status || '',
   amount: (expense) => Number(expense.amount || 0)
+}
+
+const formatExpenseItem = (item) => {
+  const quantity = Number(item.quantity || 1)
+  const quantityLabel = Number.isInteger(quantity) ? quantity : quantity.toFixed(3).replace(/0+$/, '').replace(/\.$/, '')
+  const unitPrice = item.unitPrice == null ? '' : ` at ${formatCurrency(item.unitPrice)}`
+  return `${quantityLabel}${unitPrice} - ${formatCurrency(item.amount)}`
 }
 
 const sortRows = (rows, sort, accessors) => [...rows].sort((a, b) => {

@@ -693,6 +693,236 @@ button.danger {
   background: linear-gradient(135deg, #f0fdfa, #f8fafc 58%, #eff6ff);
 }
 
+.personal-expenses-toolbar {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  padding: 1rem;
+  border: 1px solid #c7ebe4;
+  border-radius: 8px;
+  background: #f0fdfa;
+}
+
+.personal-expenses-toolbar > div,
+.personal-expenses-toolbar label {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.personal-expenses-toolbar span,
+.personal-expense-budget span {
+  color: #64748b;
+  font-size: 0.78rem;
+  font-weight: 750;
+  text-transform: uppercase;
+}
+
+.personal-expenses-toolbar strong {
+  color: #17202a;
+  font-size: 1.35rem;
+}
+
+.personal-expenses-toolbar input {
+  min-width: 180px;
+  background: #fff;
+}
+
+.personal-expense-budget {
+  display: grid;
+  grid-template-columns: minmax(210px, auto) minmax(180px, 1fr) auto;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid #d9e2ec;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.personal-expense-budget > div:first-child {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.personal-expense-budget-track {
+  height: 10px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #e2e8f0;
+}
+
+.personal-expense-budget-track i {
+  display: block;
+  height: 100%;
+  min-width: 2px;
+  border-radius: inherit;
+  background: #0f766e;
+}
+
+.personal-expense-budget a {
+  color: #0f766e;
+  font-weight: 750;
+}
+
+.personal-expenses-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(300px, 0.75fr);
+  align-items: start;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.personal-spend-chart {
+  min-height: 360px;
+}
+
+.personal-expense-categories {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.personal-expense-categories > div {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.3rem 0.75rem;
+  align-items: center;
+}
+
+.personal-expense-categories span {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.personal-expense-categories small {
+  color: #64748b;
+}
+
+.personal-expense-categories i {
+  height: 7px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #e2e8f0;
+}
+
+.personal-expense-categories i b {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: #2563eb;
+}
+
+.personal-expense-categories em {
+  grid-column: 2;
+  grid-row: 1 / 3;
+  color: #17202a;
+  font-style: normal;
+  font-weight: 750;
+}
+
+.personal-expense-items-cell {
+  min-width: 210px;
+}
+
+.personal-expense-table {
+  width: max-content;
+  min-width: 100%;
+  table-layout: auto;
+}
+
+.personal-expense-table th,
+.personal-expense-table .sortable-header,
+.personal-expense-table .sortable-header span {
+  overflow: visible;
+  overflow-wrap: normal;
+  text-overflow: clip;
+  white-space: nowrap;
+  word-break: normal;
+}
+
+.personal-expense-table th,
+.personal-expense-table td {
+  vertical-align: top;
+}
+
+.personal-expense-table th:first-child,
+.personal-expense-table td:first-child {
+  min-width: 118px;
+}
+
+.personal-expense-table th:last-child,
+.personal-expense-table td:last-child {
+  min-width: 170px;
+}
+
+.personal-expense-actions-cell .table-actions {
+  align-items: center;
+  flex-wrap: nowrap;
+}
+
+.personal-expense-actions-cell button {
+  white-space: nowrap;
+}
+
+.personal-expense-actions-cell .table-icon-button {
+  display: inline-grid;
+  place-items: center;
+  width: 36px;
+  min-width: 36px;
+  height: 36px;
+  min-height: 36px;
+  padding: 0;
+  font-size: 1.15rem;
+  line-height: 1;
+}
+
+.personal-expense-items-cell ul {
+  display: grid;
+  gap: 0.4rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.personal-expense-items-cell details {
+  min-width: 0;
+}
+
+.personal-expense-items-cell summary {
+  width: fit-content;
+  cursor: pointer;
+  color: #0f766e;
+  font-weight: 750;
+}
+
+.personal-expense-items-cell details[open] summary {
+  margin-bottom: 0.5rem;
+}
+
+.personal-expense-items-cell > span {
+  display: block;
+  max-width: 260px;
+  overflow-wrap: anywhere;
+  color: #475569;
+}
+
+.personal-expense-items-cell li {
+  display: grid;
+  gap: 0.05rem;
+}
+
+.personal-expense-items-cell strong {
+  color: #17202a;
+  font-size: 0.88rem;
+}
+
+.personal-expense-items-cell small {
+  color: #64748b;
+  white-space: nowrap;
+}
+
 .personal-dashboard-hero-copy {
   display: grid;
   align-content: center;
@@ -1814,6 +2044,7 @@ th.numeric .sortable-header {
   .summary-grid.compact,
   .personal-dashboard-hero,
   .personal-dashboard-layout,
+  .personal-expenses-layout,
   .shared-groups-hero,
   .shared-friends-hero,
   .shared-group-hero,
@@ -1825,6 +2056,10 @@ th.numeric .sortable-header {
   .line-item-row,
   .inline-form,
   .toolbar-panel {
+    grid-template-columns: 1fr;
+  }
+
+  .personal-expense-budget {
     grid-template-columns: 1fr;
   }
 
@@ -1973,6 +2208,16 @@ th.numeric .sortable-header {
 
   .personal-dashboard-hero-copy h2 {
     font-size: 1.3rem;
+  }
+
+  .personal-expenses-toolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .personal-expenses-toolbar input {
+    width: 100%;
+    min-width: 0;
   }
 
   .personal-dashboard-stats {

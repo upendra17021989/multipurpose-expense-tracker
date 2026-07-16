@@ -96,9 +96,6 @@ const PersonalDashboard = () => {
   const remaining = Math.max(budgetAmount - summary.monthTotal, 0)
   const budgetPercent = budgetAmount ? Math.min(Math.round((summary.monthTotal / budgetAmount) * 100), 100) : 0
   const budgetUsed = budgetAmount ? `${budgetPercent}%` : 'Not set'
-  const recentExpenses = useMemo(() => [...expenses]
-    .sort((a, b) => String(b.expenseDate || '').localeCompare(String(a.expenseDate || '')))
-    .slice(0, 5), [expenses])
   const updateExpenseForm = (field, value) => setExpenseForm((current) => ({ ...current, [field]: value }))
   const resetAndCloseExpenseModal = () => {
     setExpenseForm(createDashboardExpenseForm())
@@ -197,15 +194,7 @@ const PersonalDashboard = () => {
         </div>
       </aside>}
 
-      <section className="personal-dashboard-stats">
-        <InsightCard tone="teal" label={tx('Today')} value={formatCurrency(summary.todayTotal)} detail={`${summary.todayCount} ${tx('entries')}`} />
-        <InsightCard tone="blue" label={tx('This Month')} value={formatCurrency(summary.monthTotal)} detail={`${summary.monthCount} ${tx('expenses')}`} />
-        <InsightCard tone="amber" label={tx('Top Category')} value={summary.topCategory || '-'} detail={summary.topCategoryAmount ? formatCurrency(summary.topCategoryAmount) : tx('No spending yet')} />
-        <InsightCard tone="green" label={tx('Savings Target')} value={budget ? formatCurrency(budget.monthlySavingsTarget) : tx('Not set')} detail={tx('Monthly goal')} />
-      </section>
-
-      <section className="personal-dashboard-layout">
-        <article className="personal-dashboard-panel">
+      <section className="personal-dashboard-panel">
           <div className="personal-panel-heading">
             <div>
               <h2>{tx('Quick actions')}</h2>
@@ -213,42 +202,13 @@ const PersonalDashboard = () => {
             </div>
           </div>
           <div className="personal-action-grid">
-            <DashboardAction onClick={() => setExpenseModalOpen(true)} icon="+" title={tx('Add expense')} text={tx('Record a new payment')} />
-            <DashboardAction to="/expenses" icon="Rs" title={tx('Expenses')} text={tx('Review and edit entries')} />
-            <DashboardAction to="/categories" icon="Tag" title={tx('Categories')} text={tx('Organize spending')} />
-            <DashboardAction to="/budget" icon="%" title={tx('Budget')} text={tx('Set monthly goals')} />
-            <DashboardAction to="/personal/reports" icon="Up" title={tx('Reports')} text={tx('Analyze trends')} />
+            <DashboardAction to="/personal/expenses" icon="Rs" title={tx('Personal expenses')} text={tx('Track spending, budgets, and reports')} />
             <DashboardAction to="/personal/shared-expenses" icon="=" title={tx('Shared expenses')} text={tx('Groups and settlements')} />
             <DashboardAction to="/personal/friends" icon="Fr" title={tx('Friends')} text={tx('Manage shared contacts')} />
             <DashboardAction to="/personal/documents" icon="Doc" title={tx('Documents')} text={tx('Store receipts and files')} />
             <DashboardAction to="/personal/todos" icon="Ok" title={tx('Tasks')} text={tx('Plan personal work')} />
             <DashboardAction to="/feedback" icon="Fb" title={tx('Feedback')} text={tx('Share ideas and issues')} />
           </div>
-        </article>
-
-        <article className="personal-dashboard-panel">
-          <div className="personal-panel-heading">
-            <div>
-              <h2>{tx('Recent expenses')}</h2>
-              <p>{tx('Your latest personal spending.')}</p>
-            </div>
-            <Link to="/expenses">{tx('View all')}</Link>
-          </div>
-          <div className="personal-recent-list">
-            {recentExpenses.map((expense) => (
-              <Link className="personal-recent-item" key={expense.id} to={`/expenses/${expense.id}/edit`}>
-                <span>{expense.categoryName?.slice(0, 1) || 'Rs'}</span>
-                <div>
-                  <strong>{expense.description || expense.categoryName || 'Expense'}</strong>
-                  <small>{formatDate(expense.expenseDate)} - {expense.paymentMode || 'Payment'}</small>
-                </div>
-                <b>{formatCurrency(expense.amount)}</b>
-              </Link>
-            ))}
-            {!loading && recentExpenses.length === 0 && <p className="empty-state">{tx('No personal expenses yet. Add one to start seeing activity here.')}</p>}
-            {loading && <p className="muted">{tx('Loading dashboard...')}</p>}
-          </div>
-        </article>
       </section>
 
       <section className="personal-dashboard-panel">
@@ -272,14 +232,6 @@ const PersonalDashboard = () => {
     </Shell>
   )
 }
-
-const InsightCard = ({ tone, label, value, detail }) => (
-  <article className={`personal-insight-card ${tone}`}>
-    <span>{label}</span>
-    <strong>{value}</strong>
-    <small>{detail}</small>
-  </article>
-)
 
 const DashboardAction = ({ to, onClick, icon, title, text }) => {
   const content = (

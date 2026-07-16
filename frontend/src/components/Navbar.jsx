@@ -127,7 +127,7 @@ export const Navbar = () => {
             )}
             {currentAccount?.accountType !== 'SPORTS' &&
               currentAccount?.accountType !== 'SOCIETY' && (
-              <Link to="/expenses" onClick={closeMenus}>
+              <Link to={currentAccount?.accountType === 'INDIVIDUAL' ? '/personal/expenses' : '/expenses'} onClick={closeMenus}>
                 {tx('Expenses')}
               </Link>
             )}

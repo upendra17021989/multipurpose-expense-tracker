@@ -23,6 +23,7 @@ import { SharedExpenseGroup } from './pages/personal/SharedExpenseGroup'
 import { SharedExpenseFriends } from './pages/personal/SharedExpenseFriends'
 import { MyDocumentsFull as MyDocuments } from './pages/personal/MyDocumentsFull'
 import { PersonalTodos } from './pages/personal/PersonalTodos'
+import { PersonalExpenses } from './pages/personal/PersonalExpenses'
 import { FlatList } from './pages/society/FlatList'
 import { FlatForm } from './pages/society/FlatForm'
 import { VendorList } from './pages/society/VendorList'
@@ -164,6 +165,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <BudgetSettings />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/personal/expenses"
+            element={
+              <ProtectedRoute>
+                <PersonalExpenses />
               </ProtectedRoute>
             }
           />
