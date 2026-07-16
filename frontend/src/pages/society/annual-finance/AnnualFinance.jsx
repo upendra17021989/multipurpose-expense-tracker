@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { toast } from 'react-toastify'
 import { expenseAPI, societyAnnualCollectionAPI, societyFlatAPI } from '../../../api/endpoints'
 import { formatCurrency, formatDate } from '../../../utils/format'
@@ -13,7 +13,8 @@ const availableFinancialYears=()=>{const currentStart=Number(currentFinancialYea
 export const AnnualFinance=()=>{
  const currentAccount=useAuthStore(state=>state.currentAccount),canWrite=currentAccount?.role!=='MEMBER'
  const [financialYear,setFinancialYear]=useState(currentFinancialYear()),[rows,setRows]=useState([]),[flats,setFlats]=useState([]),[expenses,setExpenses]=useState([]),[activeView,setActiveView]=useState('overview'),[collectionSearch,setCollectionSearch]=useState(''),[collectionPage,setCollectionPage]=useState(1),[expensePage,setExpensePage]=useState(1),[modal,setModal]=useState(null)
- const loadCollections=()=>societyAnnualCollectionAPI.list(financialYear).then(r=>setRows(r.data||[])).catch(()=>toast.error('Unable to load collections'))
+ const collectionRequest=useRef(0)
+ const loadCollections=()=>{const request=++collectionRequest.current;return societyAnnualCollectionAPI.list(financialYear).then(r=>{if(request===collectionRequest.current)setRows(r.data||[])}).catch(()=>{if(request===collectionRequest.current)toast.error('Unable to load collections')})}
  const loadExpenses=()=>expenseAPI.getExpenses().then(r=>setExpenses(r.data||[])).catch(()=>toast.error('Unable to load expenses'))
  useEffect(()=>{loadCollections();loadExpenses();societyFlatAPI.getFlats().then(r=>setFlats(r.data||[])).catch(()=>{})},[financialYear])
  const totals=useMemo(()=>rows.reduce((a,x)=>{a.total+=Number(x.amount);a[x.collectionType]=(a[x.collectionType]||0)+Number(x.amount);return a},{total:0}),[rows]),yearStart=`${financialYear.slice(0,4)}-04-01`,yearEnd=`${financialYear.slice(5)}-03-31`

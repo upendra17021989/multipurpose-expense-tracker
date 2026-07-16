@@ -1,4 +1,49 @@
 import axiosInstance from './client'
+import { useAuthStore } from '../store/authStore'
+
+const annualCollectionCache = new Map()
+const annualLedgerCache = new Map()
+
+const annualCollectionCacheKey = (financialYear) => {
+  const accountId = useAuthStore.getState().currentAccount?.id || 'no-account'
+  return `${accountId}:${financialYear}`
+}
+
+const cachedAnnualCollections = (financialYear) => {
+  const key = annualCollectionCacheKey(financialYear)
+  if (annualCollectionCache.has(key)) return annualCollectionCache.get(key)
+
+  const request = axiosInstance.get('/society/annual-collections', { params: { financialYear } })
+    .catch((error) => {
+      annualCollectionCache.delete(key)
+      throw error
+    })
+  annualCollectionCache.set(key, request)
+  return request
+}
+
+const invalidateAnnualCollections = (financialYear) => {
+  const accountId = useAuthStore.getState().currentAccount?.id || 'no-account'
+  if (financialYear) {
+    annualCollectionCache.delete(`${accountId}:${financialYear}`)
+    ;[...annualLedgerCache.keys()].filter((key) => key.startsWith(`${accountId}:${financialYear}:`)).forEach((key) => annualLedgerCache.delete(key))
+  } else {
+    ;[annualCollectionCache, annualLedgerCache].forEach((cache) => [...cache.keys()].filter((key) => key.startsWith(`${accountId}:`)).forEach((key) => cache.delete(key)))
+  }
+}
+
+const cachedAnnualLedger = (financialYear, flatId) => {
+  const accountId = useAuthStore.getState().currentAccount?.id || 'no-account'
+  const key = `${accountId}:${financialYear}:${flatId || 'member'}`
+  if (annualLedgerCache.has(key)) return annualLedgerCache.get(key)
+  const request = axiosInstance.get('/society/annual-collections/ledger', { params: { financialYear, ...(flatId ? { flatId } : {}) } })
+    .catch((error) => {
+      annualLedgerCache.delete(key)
+      throw error
+    })
+  annualLedgerCache.set(key, request)
+  return request
+}
 
 export const authAPI = {
   register: (data) => axiosInstance.post('/auth/register', data),
@@ -148,19 +193,31 @@ export const societyFlatAPI = {
 }
 
 export const societyAnnualCollectionAPI = {
-  list: (financialYear) => axiosInstance.get('/society/annual-collections', { params: { financialYear } }),
-  ledger: (financialYear, flatId) => axiosInstance.get('/society/annual-collections/ledger', { params: { financialYear, ...(flatId ? { flatId } : {}) } }),
+  list: cachedAnnualCollections,
+  ledger: cachedAnnualLedger,
   summary: (financialYear) => axiosInstance.get('/society/annual-collections/summary', { params: { financialYear } }),
-  create: (data) => axiosInstance.post('/society/annual-collections', data),
-  update: (id, data) => axiosInstance.put(`/society/annual-collections/${id}`, data),
-  delete: (id) => axiosInstance.delete(`/society/annual-collections/${id}`),
+  create: (data) => axiosInstance.post('/society/annual-collections', data).then((response) => {
+    invalidateAnnualCollections(data.financialYear)
+    return response
+  }),
+  update: (id, data) => axiosInstance.put(`/society/annual-collections/${id}`, data).then((response) => {
+    invalidateAnnualCollections()
+    return response
+  }),
+  delete: (id) => axiosInstance.delete(`/society/annual-collections/${id}`).then((response) => {
+    invalidateAnnualCollections()
+    return response
+  }),
   previewBankBook: (file, financialYear) => {
     const formData = new FormData()
     formData.append('file', file)
     formData.append('financialYear', financialYear)
     return axiosInstance.post('/society/annual-collections/bank-book/preview', formData, { headers: { 'Content-Type': 'multipart/form-data' } })
   },
-  importBankBook: (data) => axiosInstance.post('/society/annual-collections/bank-book/import', data)
+  importBankBook: (data) => axiosInstance.post('/society/annual-collections/bank-book/import', data).then((response) => {
+    invalidateAnnualCollections(data.financialYear)
+    return response
+  })
 }
 
 export const societyStaffAPI = {

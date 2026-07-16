@@ -318,7 +318,12 @@ export const SocietyMemberDirectory = () => {
   const [memberPage, setMemberPage] = useState(1)
   const [loading, setLoading] = useState(true)
   const isAdmin = currentAccount?.role === 'ADMIN'
-  const financialYear = (() => { const date = new Date(); const year = date.getMonth() < 3 ? date.getFullYear() - 1 : date.getFullYear(); return `${year}-${year + 1}` })()
+  const currentFinancialYear = (() => { const date = new Date(); const year = date.getMonth() < 3 ? date.getFullYear() - 1 : date.getFullYear(); return `${year}-${year + 1}` })()
+  const [financialYear, setFinancialYear] = useState(currentFinancialYear)
+  const financialYears = Array.from({ length: Number(currentFinancialYear.slice(0, 4)) - 2024 + 1 }, (_, index) => {
+    const start = Number(currentFinancialYear.slice(0, 4)) - index
+    return `${start}-${start + 1}`
+  })
 
   const loadRequests = () => {
     setLoading(true)
@@ -339,7 +344,7 @@ export const SocietyMemberDirectory = () => {
       .finally(() => setLoading(false))
   }
 
-  useEffect(loadRequests, [isAdmin])
+  useEffect(loadRequests, [isAdmin, financialYear])
 
   const normalizeBlock = (value) => String(value || '').trim().toLowerCase().replace(/\bblock\b/g, '').replace(/[^a-z0-9]/g, '')
   const normalizeFlat = (value) => String(value || '').trim().toLowerCase().replace(/[^a-z0-9]/g, '')
@@ -496,6 +501,7 @@ export const SocietyMemberDirectory = () => {
       <button role="tab" aria-selected={activeTab === 'ledger'} className={activeTab === 'ledger' ? 'active' : ''} onClick={() => setActiveTab('ledger')}>Financial Ledger</button>
     </div>
     <section className="toolbar-panel society-member-filters">
+      {activeTab === 'ledger' && <label>Financial year<select value={financialYear} onChange={(event) => { setFinancialYear(event.target.value); setLedgerByFlat({}); setLedgerRows([]); setLedgerPages({}); setFlatLedgerPage(1); setFilters((current) => ({ ...current, month: '', year: '' })) }}>{financialYears.map((year) => <option key={year} value={year}>{year}{year === currentFinancialYear ? ' (Current)' : ''}</option>)}</select></label>}
       <label>Flat number<input type="search" value={filters.flat} placeholder="Search flat" onChange={(event) => { setFilters((current) => ({ ...current, flat: event.target.value })); setFlatLedgerPage(1) }} /></label>
       <label>Member name<input type="search" value={filters.name} placeholder="Search name" onChange={(event) => { setFilters((current) => ({ ...current, name: event.target.value })); setFlatLedgerPage(1) }} /></label>
       <label>Month<select value={filters.month} onChange={(event) => { setFilters((current) => ({ ...current, month: event.target.value })); setFlatLedgerPage(1) }}><option value="">All months</option>{['January','February','March','April','May','June','July','August','September','October','November','December'].map((month, index) => <option key={month} value={String(index + 1).padStart(2, '0')}>{month}</option>)}</select></label>
