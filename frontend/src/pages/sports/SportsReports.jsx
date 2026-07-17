@@ -6,12 +6,21 @@ import { exportWorkbook, numberValue } from '../../utils/exportExcel'
 import { formatCurrency, formatDate } from '../../utils/format'
 import { Shell, SummaryGrid } from '../DashboardRouter'
 
+const REPORT_SECTIONS = [
+  ['summary', 'Summary'],
+  ['memberTotals', 'Total Collections by Member'],
+  ['collections', 'Event-wise Collection Detail'],
+  ['pendingMembers', 'Pending-member Report'],
+  ['expenses', 'Event Expense Report']
+]
+
 export const SportsReports = () => {
   const { currentAccount } = useAuthStore()
   const [events, setEvents] = useState([])
   const [collections, setCollections] = useState([])
   const [expenses, setExpenses] = useState([])
   const [selectedEventIds, setSelectedEventIds] = useState([])
+  const [selectedSections, setSelectedSections] = useState(() => REPORT_SECTIONS.map(([key]) => key))
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -90,8 +99,12 @@ export const SportsReports = () => {
   }, [collections, events])
 
   const toggleEvent = (eventId) => setSelectedEventIds((current) => current.includes(eventId) ? current.filter((id) => id !== eventId) : [...current, eventId])
+  const toggleSection = (section) => setSelectedSections((current) => current.includes(section) ? current.filter((key) => key !== section) : [...current, section])
+  const includesSection = (section) => selectedSections.includes(section)
 
-  const exportExcel = () => exportWorkbook([
+  const exportExcel = () => {
+    if (!selectedSections.length) return toast.info('Select at least one report section to export')
+    const sheets = [
     { name: 'Summary', rows: [
       { Metric: 'Expected', Amount: report.expected }, { Metric: 'Collected', Amount: report.collected },
       { Metric: 'Closing Due', Amount: report.pending }, { Metric: 'Closing Credit', Amount: report.excess },
@@ -104,23 +117,45 @@ export const SportsReports = () => {
       Date: expense.expenseDate, Category: expense.category, Description: expense.description || '',
       Vendor: expense.vendorName || '', PaymentMode: expense.paymentMode, Status: expense.status, Amount: numberValue(expense.amount)
     })) }
-  ], fileName)
+    ]
+    const sheetKeys = ['summary', 'memberTotals', 'collections', 'pendingMembers', 'expenses']
+    exportWorkbook(sheets.filter((_, index) => includesSection(sheetKeys[index])), fileName)
+  }
+
+  const exportPdf = () => {
+    if (!selectedSections.length) return toast.info('Select at least one report section to print')
+    window.print()
+  }
 
   if (currentAccount?.accountType !== 'SPORTS') return <Shell title="Sports Reports" eyebrow="Sports"><p className="muted">Sports reports are available for sports accounts.</p></Shell>
 
   return (
-    <Shell title="Sports Reports" eyebrow="Sports module" actions={<><button onClick={exportExcel} disabled={!selectedEventIds.length}>Export Excel</button><button className="primary" onClick={() => window.print()} disabled={!selectedEventIds.length}>Export PDF</button></>}>
-      <section className="toolbar-panel flat-toolbar no-print">
+    <Shell title="Sports Reports" eyebrow="Sports module" actions={<><button onClick={exportExcel} disabled={!selectedEventIds.length || !selectedSections.length}>Export selected to Excel</button><button className="primary" onClick={exportPdf} disabled={!selectedEventIds.length || !selectedSections.length}>Print selected / PDF</button></>}>
+      <section className="toolbar-panel flat-toolbar sports-report-event-picker no-print">
+        <strong className="sports-report-filter-title">Choose events</strong>
         <button type="button" onClick={() => setSelectedEventIds(events.map((event) => String(event.id)))}>Select All</button>
         <button type="button" onClick={() => setSelectedEventIds([])}>Clear</button>
         {events.map((event) => <label key={event.id}><input type="checkbox" checked={selectedEventIds.includes(String(event.id))} onChange={() => toggleEvent(String(event.id))} /> {event.eventName} ({event.year})</label>)}
       </section>
+      <section className="toolbar-panel sports-report-content-picker no-print" aria-labelledby="report-content-title">
+        <div className="sports-report-picker-heading">
+          <div><strong id="report-content-title">Choose report content</strong><span>Select what to include in PDF or Excel.</span></div>
+          <div className="table-actions">
+            <button type="button" onClick={() => setSelectedSections(REPORT_SECTIONS.map(([key]) => key))}>Select all</button>
+            <button type="button" onClick={() => setSelectedSections([])}>Clear</button>
+          </div>
+        </div>
+        <div className="sports-report-options">
+          {REPORT_SECTIONS.map(([key, label]) => <label className={includesSection(key) ? 'is-selected' : ''} key={key}><input type="checkbox" checked={includesSection(key)} onChange={() => toggleSection(key)} /><span>{label}</span></label>)}
+        </div>
+        {!selectedSections.length && <p className="sports-report-selection-warning">Select at least one section to enable export.</p>}
+      </section>
       {!!selectedEventIds.length && <h2 className="report-print-title">{reportTitle}</h2>}
-      <SummaryGrid items={[[ 'Expected', formatCurrency(report.expected) ], [ 'Collected', formatCurrency(report.collected) ], [ 'Closing Due', formatCurrency(report.pending) ], [ 'Closing Credit', formatCurrency(report.excess) ], [ 'Event Expenses', formatCurrency(report.expenseTotal) ], [ 'Balance', formatCurrency(report.collected - report.expenseTotal) ], [ 'Members Pending', report.pendingMembers.length ]]} />
-      <ReportTable title="Total Collections by Member" columns={['Member', 'Mobile', 'Events', 'Expected', 'Opening Credit', 'Opening Due', 'Collected', 'Closing Due', 'Closing Credit']} rows={report.memberTotals.map((row) => [row.memberName, row.mobile || '-', row.eventCount, formatCurrency(row.expectedAmount), formatCurrency(row.openingBalance), formatCurrency(row.openingDue), formatCurrency(row.collectedAmount), formatCurrency(row.pendingAmount), formatCurrency(row.excessAmount)])} />
-      <ReportTable title="Event-wise Collection Detail" columns={['Event', 'Member', 'Expected', 'Opening Credit', 'Opening Due', 'Collected', 'Pending', 'Status']} rows={sortedCollections.map((row) => [row.eventName, row.memberName, formatCurrency(row.expectedAmount), formatCurrency(row.openingBalance), formatCurrency(row.openingDue), formatCurrency(row.collectedAmount), formatCurrency(row.pendingAmount), row.paymentStatus])} />
-      <ReportTable title="Pending-member Report" columns={['Member', 'Mobile', 'Expected', 'Collected', 'Closing Due']} rows={report.pendingMembers.map((row) => [row.memberName, row.mobile || '-', formatCurrency(row.expectedAmount), formatCurrency(row.collectedAmount), formatCurrency(row.pendingAmount)])} />
-      <ReportTable title="Event Expense Report" columns={['Date', 'Category', 'Description', 'Vendor', 'Payment', 'Amount']} descriptionColumn={2} rows={report.eventExpenses.map((row) => [formatDate(row.expenseDate), row.category, row.description || '-', row.vendorName || '-', row.paymentMode, formatCurrency(row.amount)])} />
+      {includesSection('summary') && <SummaryGrid items={[[ 'Expected', formatCurrency(report.expected) ], [ 'Collected', formatCurrency(report.collected) ], [ 'Closing Due', formatCurrency(report.pending) ], [ 'Closing Credit', formatCurrency(report.excess) ], [ 'Event Expenses', formatCurrency(report.expenseTotal) ], [ 'Balance', formatCurrency(report.collected - report.expenseTotal) ], [ 'Members Pending', report.pendingMembers.length ]]} />}
+      {includesSection('memberTotals') && <ReportTable title="Total Collections by Member" columns={['Member', 'Mobile', 'Events', 'Expected', 'Opening Credit', 'Opening Due', 'Collected', 'Closing Due', 'Closing Credit']} rows={report.memberTotals.map((row) => [row.memberName, row.mobile || '-', row.eventCount, formatCurrency(row.expectedAmount), formatCurrency(row.openingBalance), formatCurrency(row.openingDue), formatCurrency(row.collectedAmount), formatCurrency(row.pendingAmount), formatCurrency(row.excessAmount)])} />}
+      {includesSection('collections') && <ReportTable title="Event-wise Collection Detail" columns={['Event', 'Member', 'Expected', 'Opening Credit', 'Opening Due', 'Collected', 'Pending', 'Status']} rows={sortedCollections.map((row) => [row.eventName, row.memberName, formatCurrency(row.expectedAmount), formatCurrency(row.openingBalance), formatCurrency(row.openingDue), formatCurrency(row.collectedAmount), formatCurrency(row.pendingAmount), row.paymentStatus])} />}
+      {includesSection('pendingMembers') && <ReportTable title="Pending-member Report" columns={['Member', 'Mobile', 'Expected', 'Collected', 'Closing Due']} rows={report.pendingMembers.map((row) => [row.memberName, row.mobile || '-', formatCurrency(row.expectedAmount), formatCurrency(row.collectedAmount), formatCurrency(row.pendingAmount)])} />}
+      {includesSection('expenses') && <ReportTable title="Event Expense Report" columns={['Date', 'Category', 'Description', 'Vendor', 'Payment', 'Amount']} descriptionColumn={2} rows={report.eventExpenses.map((row) => [formatDate(row.expenseDate), row.category, row.description || '-', row.vendorName || '-', row.paymentMode, formatCurrency(row.amount)])} />}
       {!selectedEventIds.length && !loading && <p className="empty-state">Select one or more events to generate reports.</p>}
       {loading && <p className="muted">Loading reports...</p>}
     </Shell>
@@ -131,4 +166,15 @@ const collectionRow = (row) => ({ Member: row.memberName, Mobile: row.mobile || 
 
 const memberTotalRow = (row) => ({ Member: row.memberName, Mobile: row.mobile || '', Events: row.eventCount, Expected: row.expectedAmount, OpeningCredit: row.openingBalance, OpeningDue: row.openingDue, Collected: row.collectedAmount, ClosingDue: row.pendingAmount, ClosingCredit: row.excessAmount, Refunded: row.refundedAmount })
 
-const ReportTable = ({ title, columns, rows, descriptionColumn = -1 }) => <section className="report-panel sports-report-section"><h2>{title}</h2><div className="table-wrap"><table><thead><tr>{columns.map((column) => <th key={column}>{column}</th>)}</tr></thead><tbody>{rows.map((row, index) => <tr key={index}>{row.map((value, cell) => <td className={cell === descriptionColumn ? 'description-cell' : undefined} key={cell}>{value}</td>)}</tr>)}{rows.length === 0 && <tr><td colSpan={columns.length} className="empty-state">No data available.</td></tr>}</tbody></table></div></section>
+const ReportTable = ({ title, columns, rows, descriptionColumn = -1 }) => {
+  const [expandedRows, setExpandedRows] = useState([])
+  const collectedColumn = columns.indexOf('Collected')
+  const descriptionPreviewColumn = columns.indexOf('Description')
+  const amountPreviewColumn = columns.indexOf('Amount')
+  const toggleRow = (index) => setExpandedRows((current) => current.includes(index) ? current.filter((item) => item !== index) : [...current, index])
+
+  return <section className="report-panel sports-report-section"><h2>{title}</h2><div className="table-wrap"><table><thead><tr>{columns.map((column) => <th key={column}>{column}</th>)}</tr></thead><tbody>{rows.map((row, index) => {
+    const expanded = expandedRows.includes(index)
+    return <tr className={expanded ? 'is-expanded' : ''} key={index}>{row.map((value, cell) => <td data-label={columns[cell]} className={cell === descriptionColumn ? 'description-cell' : undefined} key={cell}>{cell === 0 ? <><span className="sports-report-row-primary">{value}</span>{descriptionPreviewColumn > -1 && <span className="sports-report-row-description">{row[descriptionPreviewColumn]}</span>}{collectedColumn > -1 && <span className="sports-report-row-collected"><small>Collected</small>{row[collectedColumn]}</span>}{amountPreviewColumn > -1 && <span className="sports-report-row-collected"><small>Amount</small>{row[amountPreviewColumn]}</span>}<button className="sports-report-row-toggle no-print" type="button" onClick={() => toggleRow(index)} aria-expanded={expanded} aria-label={`${expanded ? 'Collapse' : 'Expand'} ${value} details`}>{expanded ? 'Hide' : 'View'} <span aria-hidden="true">{expanded ? '−' : '+'}</span></button></> : value}</td>)}</tr>
+  })}{rows.length === 0 && <tr className="sports-report-empty-row"><td colSpan={columns.length} className="empty-state">No data available.</td></tr>}</tbody></table></div></section>
+}

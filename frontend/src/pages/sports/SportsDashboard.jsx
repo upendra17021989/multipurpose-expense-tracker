@@ -14,6 +14,7 @@ export const SportsDashboard = () => {
   const [expenses, setExpenses] = useState([])
   const [collectionSummaries, setCollectionSummaries] = useState([])
   const [loading, setLoading] = useState(true)
+  const [showDetails, setShowDetails] = useState(false)
 
   useEffect(() => {
     Promise.all([sportsAPI.getMembers(), sportsAPI.getEvents(), sportsAPI.getExpenses()])
@@ -53,6 +54,8 @@ export const SportsDashboard = () => {
   }), [events, collectionSummaries, expenses])
 
   const recentExpenses = useMemo(() => [...expenses].sort((a, b) => String(b.expenseDate || '').localeCompare(String(a.expenseDate || ''))).slice(0, 5), [expenses])
+  const collectionRate = summary.expected ? Math.min(100, Math.round((summary.collected / summary.expected) * 100)) : 0
+  const featuredEvent = eventRows.find((event) => event.status === 'ACTIVE') || eventRows[0]
 
   if (currentAccount?.accountType !== 'SPORTS') {
     return <Shell title="Sports Module" eyebrow="Sports"><p className="muted">Sports module is available for sports accounts.</p></Shell>
@@ -60,7 +63,31 @@ export const SportsDashboard = () => {
 
   return (
     <Shell title="Sports Management" eyebrow="Sports module" actions={isSportsAdmin ? <Link className="button-link" to="/sports/events">Add Event</Link> : null}>
-      <SummaryGrid items={[
+      <section className="sports-mobile-overview" aria-label="Sports overview">
+        <div className="sports-mobile-balance">
+          <div>
+            <span>Available balance</span>
+            <strong>{formatCurrency(summary.balance)}</strong>
+          </div>
+          <div className="sports-rate-badge" aria-label={`${collectionRate}% collected`}>{collectionRate}%</div>
+        </div>
+        <div className="sports-progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow={collectionRate}>
+          <span style={{ width: `${collectionRate}%` }} />
+        </div>
+        <div className="sports-mobile-metrics">
+          <div><strong>{summary.activeEvents}</strong><span>Active events</span></div>
+          <div><strong>{summary.members}</strong><span>Members</span></div>
+          <div><strong>{formatCurrency(summary.pending)}</strong><span>Pending</span></div>
+          <div><strong>{summary.pendingMembers}</strong><span>Members due</span></div>
+        </div>
+        {featuredEvent && (
+          <Link className="sports-featured-event" to={`/sports/collections?eventId=${featuredEvent.id}`}>
+            <span><small>{featuredEvent.status === 'ACTIVE' ? 'Active now' : 'Latest event'}</small><strong>{featuredEvent.eventName}</strong></span>
+            <span aria-hidden="true">View →</span>
+          </Link>
+        )}
+      </section>
+      <div className="sports-desktop-summary"><SummaryGrid items={[
         ['Members', summary.members],
         ['Events', summary.events],
         ['Active Events', summary.activeEvents],
@@ -70,18 +97,22 @@ export const SportsDashboard = () => {
         ['Members Pending', summary.pendingMembers],
         ['Expenses', formatCurrency(summary.expenses)],
         ['Balance', formatCurrency(summary.balance)]
-      ]} />
-      <ActionRow actions={[
+      ]} /></div>
+      <div className="sports-dashboard-actions"><ActionRow actions={[
         ['Members', '/sports/members'],
         ['Events', '/sports/events'],
         ['Expenses', '/sports/expenses'],
         ['Collections', '/sports/collections'],
         ['Reports', '/sports/reports']
-      ]} />
+      ]} /></div>
+      <button className="sports-details-toggle" type="button" onClick={() => setShowDetails((value) => !value)} aria-expanded={showDetails} aria-controls="sports-dashboard-details">
+        {showDetails ? 'Hide dashboard details' : 'View dashboard details'} <span aria-hidden="true">{showDetails ? '↑' : '↓'}</span>
+      </button>
+      <div id="sports-dashboard-details" className={`sports-dashboard-details${showDetails ? ' is-open' : ''}`}>
       <section className="report-grid">
         <article className="report-panel">
           <h2>Collection Overview</h2>
-          <SummaryGrid items={[[ 'Collection Rate', summary.expected ? `${Math.round((summary.collected / summary.expected) * 100)}%` : '0%' ], [ 'Still Pending', formatCurrency(summary.pending) ], [ 'Available Balance', formatCurrency(summary.balance) ]]} />
+          <SummaryGrid items={[[ 'Collection Rate', `${collectionRate}%` ], [ 'Still Pending', formatCurrency(summary.pending) ], [ 'Available Balance', formatCurrency(summary.balance) ]]} />
           <p className="muted">Across {summary.events} events and {summary.members} members.</p>
         </article>
         <article className="report-panel">
@@ -98,6 +129,7 @@ export const SportsDashboard = () => {
             {!loading && !eventRows.length && <tr><td colSpan="8" className="empty-state">No events available yet.</td></tr>}
           </tbody>
         </table>
+      </div>
       </div>
       {loading && <p className="muted">Loading sports dashboard...</p>}
     </Shell>
