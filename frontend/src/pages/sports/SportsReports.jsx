@@ -88,6 +88,10 @@ export const SportsReports = () => {
   const allSelected = events.length > 0 && selectedEventIds.length === events.length
   const reportTitle = allSelected ? 'All Events' : `${selectedEventIds.length} Selected Events`
   const fileName = `sports-report-${allSelected ? 'all-events' : `${selectedEventIds.length}-events`}`
+  const selectedEvents = useMemo(() => {
+    const selected = new Set(selectedEventIds)
+    return events.filter((event) => selected.has(String(event.id)))
+  }, [events, selectedEventIds])
   const sortedCollections = useMemo(() => {
     const eventDates = new Map(events.map((event) => [String(event.id), event.startDate || '']))
     return [...collections].sort((a, b) => {
@@ -102,7 +106,7 @@ export const SportsReports = () => {
   const toggleSection = (section) => setSelectedSections((current) => current.includes(section) ? current.filter((key) => key !== section) : [...current, section])
   const includesSection = (section) => selectedSections.includes(section)
 
-  const exportExcel = () => {
+  const exportExcel = async () => {
     if (!selectedSections.length) return toast.info('Select at least one report section to export')
     const sheets = [
     { name: 'Summary', rows: [
@@ -119,7 +123,11 @@ export const SportsReports = () => {
     })) }
     ]
     const sheetKeys = ['summary', 'memberTotals', 'collections', 'pendingMembers', 'expenses']
-    exportWorkbook(sheets.filter((_, index) => includesSection(sheetKeys[index])), fileName)
+    try {
+      await exportWorkbook(sheets.filter((_, index) => includesSection(sheetKeys[index])), fileName)
+    } catch (error) {
+      toast.error(error?.message || 'Unable to export sports report')
+    }
   }
 
   const exportPdf = () => {
@@ -151,11 +159,18 @@ export const SportsReports = () => {
         {!selectedSections.length && <p className="sports-report-selection-warning">Select at least one section to enable export.</p>}
       </section>
       {!!selectedEventIds.length && <h2 className="report-print-title">{reportTitle}</h2>}
+      {!!selectedEvents.length && <section className="sports-report-print-events" aria-label="Events included in report">
+        <h3>Events included</h3>
+        <div>{selectedEvents.map((event) => <article key={event.id}>
+          <strong>{event.eventName}</strong>
+          <span>{event.year}{event.startDate ? ` · ${formatDate(event.startDate)}` : ''}</span>
+        </article>)}</div>
+      </section>}
       {includesSection('summary') && <SummaryGrid items={[[ 'Expected', formatCurrency(report.expected) ], [ 'Collected', formatCurrency(report.collected) ], [ 'Closing Due', formatCurrency(report.pending) ], [ 'Closing Credit', formatCurrency(report.excess) ], [ 'Event Expenses', formatCurrency(report.expenseTotal) ], [ 'Balance', formatCurrency(report.collected - report.expenseTotal) ], [ 'Members Pending', report.pendingMembers.length ]]} />}
-      {includesSection('memberTotals') && <ReportTable title="Total Collections by Member" columns={['Member', 'Mobile', 'Events', 'Expected', 'Opening Credit', 'Opening Due', 'Collected', 'Closing Due', 'Closing Credit']} rows={report.memberTotals.map((row) => [row.memberName, row.mobile || '-', row.eventCount, formatCurrency(row.expectedAmount), formatCurrency(row.openingBalance), formatCurrency(row.openingDue), formatCurrency(row.collectedAmount), formatCurrency(row.pendingAmount), formatCurrency(row.excessAmount)])} />}
-      {includesSection('collections') && <ReportTable title="Event-wise Collection Detail" columns={['Event', 'Member', 'Expected', 'Opening Credit', 'Opening Due', 'Collected', 'Pending', 'Status']} rows={sortedCollections.map((row) => [row.eventName, row.memberName, formatCurrency(row.expectedAmount), formatCurrency(row.openingBalance), formatCurrency(row.openingDue), formatCurrency(row.collectedAmount), formatCurrency(row.pendingAmount), row.paymentStatus])} />}
-      {includesSection('pendingMembers') && <ReportTable title="Pending-member Report" columns={['Member', 'Mobile', 'Expected', 'Collected', 'Closing Due']} rows={report.pendingMembers.map((row) => [row.memberName, row.mobile || '-', formatCurrency(row.expectedAmount), formatCurrency(row.collectedAmount), formatCurrency(row.pendingAmount)])} />}
-      {includesSection('expenses') && <ReportTable title="Event Expense Report" columns={['Date', 'Category', 'Description', 'Vendor', 'Payment', 'Amount']} descriptionColumn={2} rows={report.eventExpenses.map((row) => [formatDate(row.expenseDate), row.category, row.description || '-', row.vendorName || '-', row.paymentMode, formatCurrency(row.amount)])} />}
+      {includesSection('memberTotals') && <ReportTable title="Total Collections by Member" columns={['Member', 'Mobile', 'Events', 'Expected', 'Opening Credit', 'Opening Due', 'Collected', 'Closing Due', 'Closing Credit']} rows={report.memberTotals.map((row) => [row.memberName, row.mobile || '-', row.eventCount, formatCurrency(row.expectedAmount), formatCurrency(row.openingBalance), formatCurrency(row.openingDue), formatCurrency(row.collectedAmount), formatCurrency(row.pendingAmount), formatCurrency(row.excessAmount)])} footerRow={['Totals', '', sumField(report.memberTotals, 'eventCount'), formatCurrency(sumField(report.memberTotals, 'expectedAmount')), formatCurrency(sumField(report.memberTotals, 'openingBalance')), formatCurrency(sumField(report.memberTotals, 'openingDue')), formatCurrency(sumField(report.memberTotals, 'collectedAmount')), formatCurrency(sumField(report.memberTotals, 'pendingAmount')), formatCurrency(sumField(report.memberTotals, 'excessAmount'))]} />}
+      {includesSection('collections') && <ReportTable title="Event-wise Collection Detail" columns={['Event', 'Member', 'Expected', 'Opening Credit', 'Opening Due', 'Collected', 'Pending', 'Status']} rows={sortedCollections.map((row) => [row.eventName, row.memberName, formatCurrency(row.expectedAmount), formatCurrency(row.openingBalance), formatCurrency(row.openingDue), formatCurrency(row.collectedAmount), formatCurrency(row.pendingAmount), row.paymentStatus])} footerRow={['Totals', '', formatCurrency(sumField(sortedCollections, 'expectedAmount')), formatCurrency(sumField(sortedCollections, 'openingBalance')), formatCurrency(sumField(sortedCollections, 'openingDue')), formatCurrency(sumField(sortedCollections, 'collectedAmount')), formatCurrency(sumField(sortedCollections, 'pendingAmount')), '']} />}
+      {includesSection('pendingMembers') && <ReportTable title="Pending-member Report" columns={['Member', 'Mobile', 'Expected', 'Collected', 'Closing Due']} rows={report.pendingMembers.map((row) => [row.memberName, row.mobile || '-', formatCurrency(row.expectedAmount), formatCurrency(row.collectedAmount), formatCurrency(row.pendingAmount)])} footerRow={['Totals', '', formatCurrency(sumField(report.pendingMembers, 'expectedAmount')), formatCurrency(sumField(report.pendingMembers, 'collectedAmount')), formatCurrency(sumField(report.pendingMembers, 'pendingAmount'))]} />}
+      {includesSection('expenses') && <ReportTable title="Event Expense Report" columns={['Date', 'Category', 'Description', 'Vendor', 'Payment', 'Amount']} descriptionColumn={2} rows={report.eventExpenses.map((row) => [formatDate(row.expenseDate), row.category, row.description || '-', row.vendorName || '-', row.paymentMode, formatCurrency(row.amount)])} footerRow={['Totals', '', '', '', '', formatCurrency(sumField(report.eventExpenses, 'amount'))]} />}
       {!selectedEventIds.length && !loading && <p className="empty-state">Select one or more events to generate reports.</p>}
       {loading && <p className="muted">Loading reports...</p>}
     </Shell>
@@ -166,7 +181,9 @@ const collectionRow = (row) => ({ Member: row.memberName, Mobile: row.mobile || 
 
 const memberTotalRow = (row) => ({ Member: row.memberName, Mobile: row.mobile || '', Events: row.eventCount, Expected: row.expectedAmount, OpeningCredit: row.openingBalance, OpeningDue: row.openingDue, Collected: row.collectedAmount, ClosingDue: row.pendingAmount, ClosingCredit: row.excessAmount, Refunded: row.refundedAmount })
 
-const ReportTable = ({ title, columns, rows, descriptionColumn = -1 }) => {
+const sumField = (rows, field) => rows.reduce((total, row) => total + numberValue(row[field]), 0)
+
+const ReportTable = ({ title, columns, rows, footerRow, descriptionColumn = -1 }) => {
   const [expandedRows, setExpandedRows] = useState([])
   const collectedColumn = columns.indexOf('Collected')
   const descriptionPreviewColumn = columns.indexOf('Description')
@@ -176,5 +193,5 @@ const ReportTable = ({ title, columns, rows, descriptionColumn = -1 }) => {
   return <section className="report-panel sports-report-section"><h2>{title}</h2><div className="table-wrap"><table><thead><tr>{columns.map((column) => <th key={column}>{column}</th>)}</tr></thead><tbody>{rows.map((row, index) => {
     const expanded = expandedRows.includes(index)
     return <tr className={expanded ? 'is-expanded' : ''} key={index}>{row.map((value, cell) => <td data-label={columns[cell]} className={cell === descriptionColumn ? 'description-cell' : undefined} key={cell}>{cell === 0 ? <><span className="sports-report-row-primary">{value}</span>{descriptionPreviewColumn > -1 && <span className="sports-report-row-description">{row[descriptionPreviewColumn]}</span>}{collectedColumn > -1 && <span className="sports-report-row-collected"><small>Collected</small>{row[collectedColumn]}</span>}{amountPreviewColumn > -1 && <span className="sports-report-row-collected"><small>Amount</small>{row[amountPreviewColumn]}</span>}<button className="sports-report-row-toggle no-print" type="button" onClick={() => toggleRow(index)} aria-expanded={expanded} aria-label={`${expanded ? 'Collapse' : 'Expand'} ${value} details`}>{expanded ? 'Hide' : 'View'} <span aria-hidden="true">{expanded ? '−' : '+'}</span></button></> : value}</td>)}</tr>
-  })}{rows.length === 0 && <tr className="sports-report-empty-row"><td colSpan={columns.length} className="empty-state">No data available.</td></tr>}</tbody></table></div></section>
+  })}{rows.length === 0 && <tr className="sports-report-empty-row"><td colSpan={columns.length} className="empty-state">No data available.</td></tr>}</tbody>{rows.length > 0 && footerRow && <tfoot><tr>{footerRow.map((value, index) => <td data-label={columns[index]} key={columns[index]}>{value}</td>)}</tr></tfoot>}</table></div></section>
 }

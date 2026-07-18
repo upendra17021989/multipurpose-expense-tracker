@@ -2671,6 +2671,65 @@ th.numeric .sortable-header {
     break-after: avoid;
     page-break-after: avoid;
   }
+
+  .sports-report-print-events {
+    display: block !important;
+    margin: 0 0 8px;
+    break-inside: avoid;
+  }
+
+  .sports-report-print-events h3 {
+    margin: 0 0 4px;
+    font-size: 9pt;
+  }
+
+  .sports-report-print-events > div {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  .sports-report-print-events article {
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+    padding: 3px 6px;
+    border: 1px solid #cbd5e1;
+    border-radius: 4px;
+    background: #f8fafc;
+    font-size: 7.5pt;
+    line-height: 1.2;
+  }
+
+  .sports-report-print-events span {
+    color: #475569;
+    white-space: nowrap;
+  }
+
+  .report-print-title ~ .summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(105px, 1fr));
+    gap: 4px;
+    margin: 0 0 10px;
+  }
+
+  .report-print-title ~ .summary-grid .summary-card {
+    min-height: 0;
+    padding: 4px 6px;
+    border-radius: 4px;
+    background: #f8fafc;
+    gap: 2px;
+  }
+
+  .report-print-title ~ .summary-grid .summary-card span {
+    font-size: 7.5pt;
+    line-height: 1.15;
+  }
+
+  .report-print-title ~ .summary-grid .summary-card strong {
+    font-size: 9pt;
+    line-height: 1.15;
+  }
 }
 
 button:disabled,
@@ -4805,6 +4864,8 @@ textarea:disabled {
 .sports-report-options label.is-selected { color: #115e59; border-color: #5eead4; background: #f0fdfa; }
 .sports-report-options input { margin: 0; accent-color: #0f766e; }
 .sports-report-selection-warning { margin: .7rem 0 0; color: #b45309; font-size: .86rem; font-weight: 600; }
+.sports-report-print-events { display: none; }
+.sports-report-section tfoot td { border-top: 2px solid #cbd5e1; background: #f8fafc; font-weight: 750; }
 .sports-report-row-toggle, .sports-report-row-collected, .sports-report-row-description { display: none; }
 
 @media screen and (max-width: 768px) {
@@ -4830,9 +4891,9 @@ textarea:disabled {
   }
   .sports-report-event-picker input { width: 16px; height: 16px; margin: 0; accent-color: #0f766e; }
   .report-print-title { margin: 1rem 0 .65rem; font-size: 1.1rem; }
-  .report-print-title + .summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .6rem; }
-  .report-print-title + .summary-grid .summary-card { min-height: 82px; padding: .75rem; }
-  .report-print-title + .summary-grid .summary-card:last-child { grid-column: 1 / -1; }
+  .report-print-title ~ .summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .6rem; }
+  .report-print-title ~ .summary-grid .summary-card { min-height: 82px; padding: .75rem; }
+  .report-print-title ~ .summary-grid .summary-card:last-child { grid-column: 1 / -1; }
   .sports-report-section {
     min-height: 0; margin-bottom: .85rem; padding: .85rem; border-radius: 14px;
     box-shadow: 0 5px 18px rgb(15 23 42 / 6%);
@@ -4875,6 +4936,14 @@ textarea:disabled {
     content: attr(data-label); color: #64748b; font-size: .7rem; font-weight: 800;
     letter-spacing: .03em; text-align: left; text-transform: uppercase;
   }
+  .sports-report-section tfoot { display: block; margin-top: .65rem; }
+  .sports-report-section tfoot tr { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); margin: 0; padding: .35rem; background: #f8fafc; }
+  .sports-report-section tfoot td, .sports-report-section tfoot td:first-child {
+    display: grid; min-height: 0; padding: .45rem; grid-template-columns: 1fr; gap: .15rem;
+    align-items: start; border: 0; background: transparent; text-align: left;
+  }
+  .sports-report-section tfoot td:empty { display: none; }
+  .sports-report-section tfoot td:first-child::before { content: 'Report'; }
   .sports-report-row-toggle {
     display: inline-flex; min-height: 32px; width: auto; align-items: center; gap: .35rem;
     flex: 0 0 auto; padding: .3rem .55rem; color: #0f766e; border: 1px solid #99f6e4;

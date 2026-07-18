@@ -18,6 +18,8 @@
   "dependencies": {
     "@capacitor/android": "^8.4.1",
     "@capacitor/core": "^8.4.1",
+    "@capacitor/filesystem": "^8.0.0",
+    "@capacitor/share": "^8.0.0",
     "axios": "^1.6.0",
     "date-fns": "^2.30.0",
     "pdfkit": "^0.13.0",
