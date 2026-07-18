@@ -7,6 +7,9 @@ import com.app.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
@@ -25,6 +28,14 @@ public class SocietyAnnualCollectionService {
     public List<SocietyAnnualCollectionDto> list(Long accountId, String year) {
         validateFinancialYear(year);
         return dtos(repository.findByAccountIdAndFinancialYearOrderByPaymentDateDescIdDesc(accountId, year));
+    }
+    public Page<SocietyAnnualCollectionDto> page(Long accountId, String year, String search, int page, int size) {
+        validateFinancialYear(year);
+        int safeSize = Math.min(Math.max(size, 1), 100);
+        Page<SocietyAnnualCollection> collections = repository.search(accountId, year, search == null ? "" : search.trim(),
+                PageRequest.of(Math.max(page, 0), safeSize, Sort.by(Sort.Order.desc("paymentDate"), Sort.Order.desc("id"))));
+        List<SocietyAnnualCollectionDto> content = dtos(collections.getContent());
+        return new org.springframework.data.domain.PageImpl<>(content, collections.getPageable(), collections.getTotalElements());
     }
     public List<SocietyAnnualCollectionDto> ledger(Long accountId, Long userId, String year, Long requestedFlatId) {
         Account account = accountRepository.findById(accountId).orElseThrow(() -> new ResourceNotFoundException("Account not found"));
@@ -71,7 +82,8 @@ public class SocietyAnnualCollectionService {
         x.setFlat(flat); x.setFinancialYear(r.getFinancialYear()); x.setCollectionType(r.getCollectionType()); x.setSourceName(r.getSourceName().trim()); x.setPaymentDate(r.getPaymentDate()); x.setAmount(r.getAmount()); x.setPaymentMode(r.getPaymentMode()); x.setReferenceNumber(clean(r.getReferenceNumber())); x.setTransactionId(clean(r.getTransactionId())); x.setSettlementId(clean(r.getSettlementId())); x.setRemarks(clean(r.getRemarks()));
         return dto(repository.save(x));
     }
-    public BigDecimal total(Long accountId, String year) { return repository.findByAccountIdAndFinancialYearOrderByPaymentDateDescIdDesc(accountId, year).stream().map(SocietyAnnualCollection::getAmount).reduce(BigDecimal.ZERO, BigDecimal::add); }
+    public BigDecimal total(Long accountId, String year) { validateFinancialYear(year); return repository.sumByAccountAndYear(accountId, year); }
+    public BigDecimal total(Long accountId, String year, SocietyCollectionType type) { validateFinancialYear(year); return repository.sumByAccountAndYearAndType(accountId, year, type); }
     private String clean(String s) { return s == null || s.isBlank() ? null : s.trim(); }
     private void validateRequestYear(SocietyAnnualCollectionRequest request) {
         int start = validateFinancialYear(request.getFinancialYear());

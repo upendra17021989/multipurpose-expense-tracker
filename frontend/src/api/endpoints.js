@@ -1,34 +1,14 @@
 import axiosInstance from './client'
 import { useAuthStore } from '../store/authStore'
 
-const annualCollectionCache = new Map()
 const annualLedgerCache = new Map()
-
-const annualCollectionCacheKey = (financialYear) => {
-  const accountId = useAuthStore.getState().currentAccount?.id || 'no-account'
-  return `${accountId}:${financialYear}`
-}
-
-const cachedAnnualCollections = (financialYear) => {
-  const key = annualCollectionCacheKey(financialYear)
-  if (annualCollectionCache.has(key)) return annualCollectionCache.get(key)
-
-  const request = axiosInstance.get('/society/annual-collections', { params: { financialYear } })
-    .catch((error) => {
-      annualCollectionCache.delete(key)
-      throw error
-    })
-  annualCollectionCache.set(key, request)
-  return request
-}
 
 const invalidateAnnualCollections = (financialYear) => {
   const accountId = useAuthStore.getState().currentAccount?.id || 'no-account'
   if (financialYear) {
-    annualCollectionCache.delete(`${accountId}:${financialYear}`)
     ;[...annualLedgerCache.keys()].filter((key) => key.startsWith(`${accountId}:${financialYear}:`)).forEach((key) => annualLedgerCache.delete(key))
   } else {
-    ;[annualCollectionCache, annualLedgerCache].forEach((cache) => [...cache.keys()].filter((key) => key.startsWith(`${accountId}:`)).forEach((key) => cache.delete(key)))
+    ;[...annualLedgerCache.keys()].filter((key) => key.startsWith(`${accountId}:`)).forEach((key) => annualLedgerCache.delete(key))
   }
 }
 
@@ -193,7 +173,7 @@ export const societyFlatAPI = {
 }
 
 export const societyAnnualCollectionAPI = {
-  list: cachedAnnualCollections,
+  list: (financialYear, page = 0, size = 10, search = '') => axiosInstance.get('/society/annual-collections', { params: { financialYear, page, size, search } }),
   ledger: cachedAnnualLedger,
   summary: (financialYear) => axiosInstance.get('/society/annual-collections/summary', { params: { financialYear } }),
   create: (data) => axiosInstance.post('/society/annual-collections', data).then((response) => {
