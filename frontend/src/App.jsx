@@ -12,7 +12,7 @@ import { ProfileSettings } from './pages/ProfileSettings'
 import { ChangePassword } from './pages/ChangePassword'
 import { UserFeedback } from './pages/UserFeedback'
 import { Workspaces } from './pages/Workspaces'
-import { DashboardRouter, SocietyMemberDirectory } from './pages/DashboardRouter'
+import { DashboardRouter, SocietyFinancialLedger, SocietyMemberDirectory } from './pages/DashboardRouter'
 import { ExpenseList } from './pages/ExpenseList'
 import { ExpenseForm } from './pages/ExpenseForm'
 import { CategoryList } from './pages/CategoryList'
@@ -345,6 +345,7 @@ function App() {
             }
           />
           <Route path="/society/annual-finance" element={<ProtectedRoute><AnnualFinance /></ProtectedRoute>} />
+          <Route path="/society/financial-ledger" element={<ProtectedRoute><SocietyFinancialLedger /></ProtectedRoute>} />
           <Route path="/society/join" element={<ProtectedRoute><JoinSociety /></ProtectedRoute>} />
           <Route path="/society/annual-collections" element={<Navigate to="/society/annual-finance" replace />} />
           <Route

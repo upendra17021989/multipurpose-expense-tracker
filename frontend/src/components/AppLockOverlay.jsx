@@ -19,9 +19,13 @@ export const AppLockOverlay = () => {
       await authAPI.validateToken()
       unlockApp()
     } catch (error) {
-      if (error.response?.status !== 401) {
-        toast.error('Unable to verify your session. Please check your connection and try again.')
-      }
+      if ([401, 403].includes(error.response?.status)) {
+        // Older backend deployments may report an unauthenticated request as
+        // 403. In either case, do not unlock into a page whose APIs cannot use
+        // the stored token.
+        logout()
+        toast.info('Your session has expired. Please log in again.')
+      } else toast.error('Unable to verify your session. Please check your connection and try again.')
     } finally {
       setIsUnlocking(false)
     }

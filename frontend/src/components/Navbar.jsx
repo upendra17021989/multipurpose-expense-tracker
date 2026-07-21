@@ -144,6 +144,11 @@ export const Navbar = () => {
               </Link>
             )}
             {currentAccount?.accountType === 'SOCIETY' && (
+              <Link to="/society/financial-ledger" onClick={closeMenus}>
+                {tx('Financial Ledger')}
+              </Link>
+            )}
+            {currentAccount?.accountType === 'SOCIETY' && (
               <Link to="/society/festivals" onClick={closeMenus}>
                 {tx('Festivals')}
               </Link>

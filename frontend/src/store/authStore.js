@@ -6,6 +6,8 @@ const saveSession = (token, user, accounts, currentAccount) => {
   localStorage.setItem('accounts', JSON.stringify(accounts))
   localStorage.setItem('currentAccount', JSON.stringify(currentAccount))
   if (currentAccount?.id) localStorage.setItem('lastWorkspaceId', String(currentAccount.id))
+  localStorage.removeItem('appLocked')
+  localStorage.removeItem('appLockedAt')
   localStorage.setItem('lastActivityAt', String(Date.now()))
 }
 
@@ -25,13 +27,14 @@ export const useAuthStore = create((set) => ({
       token,
       user,
       accounts,
-      currentAccount: selectedAccount
+      currentAccount: selectedAccount,
+      isAppLocked: false
     })
   },
 
   setSession: (token, user, accounts, currentAccount) => {
     saveSession(token, user, accounts, currentAccount)
-    set({ token, user, accounts, currentAccount, isAuthenticated: true })
+    set({ token, user, accounts, currentAccount, isAuthenticated: true, isAppLocked: false })
   },
 
   selectAccount: (account) => {
