@@ -144,11 +144,6 @@ export const Navbar = () => {
               </Link>
             )}
             {currentAccount?.accountType === 'SOCIETY' && (
-              <Link to="/society/financial-ledger" onClick={closeMenus}>
-                {tx('Financial Ledger')}
-              </Link>
-            )}
-            {currentAccount?.accountType === 'SOCIETY' && (
               <Link to="/society/festivals" onClick={closeMenus}>
                 {tx('Festivals')}
               </Link>
@@ -214,6 +209,16 @@ export const Navbar = () => {
                 {currentAccount?.accountType === 'SOCIETY' && (
                   <Link to="/society/member-directory" onClick={closeMenus}>
                     {tx('Member Directory')}
+                  </Link>
+                )}
+                {currentAccount?.accountType === 'SOCIETY' && (
+                  <Link to="/society/financial-ledger" onClick={closeMenus}>
+                    {tx('Financial Ledger')}
+                  </Link>
+                )}
+                {currentAccount?.accountType === 'SOCIETY' && (
+                  <Link to="/society/journal-book" onClick={closeMenus}>
+                    {tx('Journal Book')}
                   </Link>
                 )}
                 {currentAccount?.accountType === 'SOCIETY' && (

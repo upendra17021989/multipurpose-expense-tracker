@@ -446,12 +446,21 @@ export const SocietyMemberDirectory = ({ view = 'directory' }) => {
     const page = Math.min(ledgerPages[ledgerKey] || 1, pageCount)
     const visibleRows = rows.slice((page - 1) * pageSize, page * pageSize)
     return <>
-    <div className="table-wrap society-flat-financial-table"><table><thead><tr><th>Date</th><th>Mode</th><th>Payer</th><th>Reference</th><th>UTR / Transaction ID</th><th>Settlement ID</th><th>Narration</th><th>Details</th><th className="numeric">Amount</th></tr></thead><tbody>
-      {visibleRows.map((row) => <tr key={row.id}><td>{formatDate(row.paymentDate)}</td><td>{row.paymentMode}</td><td>{row.sourceName || '-'}</td><td>{row.referenceNumber || '-'}</td><td>{row.transactionId || '-'}</td><td>{row.settlementId || '-'}</td><td className="society-ledger-narration">{row.narration || '-'}</td><td>{row.remarks || '-'}</td><td className="numeric">{formatCurrency(row.amount)}</td></tr>)}
-      {!rows.length && <tr><td colSpan="9" className="empty-state">No cash or bank book transactions for this flat in {financialYear}.</td></tr>}
+    <div className="table-wrap society-flat-financial-table"><table><thead><tr><th>Date</th><th>Entry</th><th>Voucher / Reference</th><th>Particulars</th><th>Mode / Transaction ID</th><th className="numeric">Charge / Debit</th><th className="numeric">Payment / Credit</th><th className="numeric">Balance</th></tr></thead><tbody>
+      {visibleRows.map((row) => <tr key={row.entryKey || row.id}>
+        <td>{formatDate(row.paymentDate)}</td>
+        <td>{row.entryType === 'JOURNAL' ? row.voucherType || 'Journal' : 'Payment'}</td>
+        <td><strong>{row.voucherNumber || row.referenceNumber || '-'}</strong>{row.voucherNumber && row.referenceNumber && <small className="journal-line-note">{row.referenceNumber}</small>}</td>
+        <td className="society-ledger-narration"><strong>{row.ledgerName || row.sourceName || '-'}</strong>{(row.narration || row.remarks) && <small className="journal-line-note">{row.narration || row.remarks}</small>}</td>
+        <td>{row.paymentMode || '-'}{row.transactionId && <small className="journal-line-note">{row.transactionId}</small>}</td>
+        <td className="numeric">{Number(row.debit) ? formatCurrency(row.debit) : '-'}</td>
+        <td className="numeric">{Number(row.credit) ? formatCurrency(row.credit) : '-'}</td>
+        <td className="numeric"><strong>{formatCurrency(row.runningBalance || 0)}</strong></td>
+      </tr>)}
+      {!rows.length && <tr><td colSpan="8" className="empty-state">No journal or payment transactions for this flat in {financialYear}.</td></tr>}
     </tbody></table></div>
     {pageCount > 1 && <nav className="table-pagination" aria-label="Ledger transaction pages"><button disabled={page === 1} onClick={() => setLedgerPages((pages) => ({ ...pages, [ledgerKey]: 1 }))}>«</button><button disabled={page === 1} onClick={() => setLedgerPages((pages) => ({ ...pages, [ledgerKey]: page - 1 }))}>‹</button><span>Page {page} of {pageCount}</span><button disabled={page === pageCount} onClick={() => setLedgerPages((pages) => ({ ...pages, [ledgerKey]: page + 1 }))}>›</button><button disabled={page === pageCount} onClick={() => setLedgerPages((pages) => ({ ...pages, [ledgerKey]: pageCount }))}>»</button></nav>}
-    <div className="society-flat-ledger-total"><span>{financialYear} collection total</span><strong>{formatCurrency(rows.reduce((sum, row) => sum + Number(row.amount || 0), 0))}</strong></div>
+    <div className="society-flat-ledger-total"><span>{financialYear} charges</span><strong>{formatCurrency(rows.reduce((sum, row) => sum + Number(row.debit || 0), 0))}</strong><span>Payments / credits</span><strong>{formatCurrency(rows.reduce((sum, row) => sum + Number(row.credit || 0), 0))}</strong><span>Outstanding balance</span><strong>{formatCurrency(rows.length ? rows[rows.length - 1].runningBalance || 0 : 0)}</strong></div>
   </>}
 
   const years = [...new Set([

@@ -38,6 +38,7 @@ import { FestivalCollectionForm } from './pages/society/FestivalCollectionForm'
 import { FestivalCollectionReceipt } from './pages/society/FestivalCollectionReceipt'
 import { AnnualFinance } from './pages/society/annual-finance/AnnualFinance'
 import { JoinSociety } from './pages/society/JoinSociety'
+import { JournalBook } from './pages/society/JournalBook'
 import { ProductList } from './pages/kirana/ProductList'
 import { ProductForm } from './pages/kirana/ProductForm'
 import { SupplierList } from './pages/kirana/SupplierList'
@@ -346,6 +347,7 @@ function App() {
           />
           <Route path="/society/annual-finance" element={<ProtectedRoute><AnnualFinance /></ProtectedRoute>} />
           <Route path="/society/financial-ledger" element={<ProtectedRoute><SocietyFinancialLedger /></ProtectedRoute>} />
+          <Route path="/society/journal-book" element={<ProtectedRoute><JournalBook /></ProtectedRoute>} />
           <Route path="/society/join" element={<ProtectedRoute><JoinSociety /></ProtectedRoute>} />
           <Route path="/society/annual-collections" element={<Navigate to="/society/annual-finance" replace />} />
           <Route

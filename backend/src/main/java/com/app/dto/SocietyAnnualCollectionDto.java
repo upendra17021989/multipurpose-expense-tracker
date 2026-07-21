@@ -11,4 +11,6 @@ public class SocietyAnnualCollectionDto {
     private SocietyCollectionType collectionType; private String sourceName; private LocalDate paymentDate;
     private BigDecimal amount; private PaymentMode paymentMode; private String referenceNumber;
     private String transactionId; private String settlementId; private String narration; private String remarks;
+    private String entryKey; private String entryType; private String voucherType; private String voucherNumber;
+    private String ledgerName; private BigDecimal debit; private BigDecimal credit; private BigDecimal runningBalance;
 }

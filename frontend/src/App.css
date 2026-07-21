@@ -5015,3 +5015,21 @@ textarea:disabled {
 
 
 
+.journal-line-note,
+.journal-preview-table td small {
+  display: block;
+  margin-top: 0.25rem;
+  color: var(--text-muted, #64748b);
+}
+
+.journal-import-modal {
+  width: min(1180px, 96vw);
+}
+
+.journal-preview-table {
+  max-height: 55vh;
+}
+
+.journal-preview-table select {
+  min-width: 220px;
+}

@@ -13,6 +13,8 @@ import org.springframework.data.domain.Sort;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -24,6 +26,7 @@ public class SocietyAnnualCollectionService {
     private final AccountRepository accountRepository;
     private final FlatRepository flatRepository;
     private final AccountUserMembershipRepository membershipRepository;
+    private final SocietyJournalLineRepository journalLineRepository;
 
     public List<SocietyAnnualCollectionDto> list(Long accountId, String year) {
         validateFinancialYear(year);
@@ -57,9 +60,28 @@ public class SocietyAnnualCollectionService {
         return ledgerRows(accountId, year, assignedFlat.getId());
     }
     private List<SocietyAnnualCollectionDto> ledgerRows(Long accountId, String year, Long flatId) {
-        if (flatId == null) return dtos(repository.findByAccountIdAndFinancialYearOrderByPaymentDateDescIdDesc(accountId, year));
-        flatRepository.findByAccountIdAndIdAndActiveTrue(accountId, flatId).orElseThrow(() -> new ResourceNotFoundException("Flat not found"));
-        return dtos(repository.findByAccountIdAndFinancialYearAndFlatIdOrderByPaymentDateDescIdDesc(accountId, year, flatId));
+        if (flatId != null) flatRepository.findByAccountIdAndIdAndActiveTrue(accountId, flatId).orElseThrow(() -> new ResourceNotFoundException("Flat not found"));
+        List<SocietyAnnualCollection> collections = flatId == null
+                ? repository.findByAccountIdAndFinancialYearOrderByPaymentDateDescIdDesc(accountId, year)
+                : repository.findByAccountIdAndFinancialYearAndFlatIdOrderByPaymentDateDescIdDesc(accountId, year, flatId);
+        List<SocietyAnnualCollectionDto> rows = new ArrayList<>(dtos(collections).stream().map(row -> {
+            row.setEntryKey("COLLECTION-" + row.getId()); row.setEntryType("PAYMENT"); row.setCredit(row.getAmount()); row.setDebit(BigDecimal.ZERO);
+            return row;
+        }).toList());
+        journalLineRepository.ledgerLines(accountId, year, flatId).forEach(line -> {
+            SocietyJournalEntry entry = line.getJournalEntry(); Flat flat = line.getFlat();
+            rows.add(SocietyAnnualCollectionDto.builder().id(line.getId()).entryKey("JOURNAL-" + line.getId()).entryType("JOURNAL")
+                    .flatId(flat == null ? null : flat.getId()).flatLabel(flat == null ? null : flat.getBlockName()+"-"+flat.getFlatNumber())
+                    .financialYear(year).sourceName(line.getLedgerName()).paymentDate(entry.getEntryDate()).amount(line.getDebit().signum()>0?line.getDebit():line.getCredit())
+                    .referenceNumber(entry.getReferenceNumber()).voucherType(entry.getVoucherType()).voucherNumber(entry.getVoucherNumber())
+                    .ledgerName(line.getLedgerName()).narration(entry.getNarration()).remarks(line.getParticulars()).debit(line.getDebit()).credit(line.getCredit()).build());
+        });
+        rows.sort(Comparator.comparing(SocietyAnnualCollectionDto::getPaymentDate)
+                .thenComparing(row -> "JOURNAL".equals(row.getEntryType()) ? 0 : 1)
+                .thenComparing(SocietyAnnualCollectionDto::getEntryKey));
+        BigDecimal balance = BigDecimal.ZERO;
+        for (SocietyAnnualCollectionDto row : rows) { balance = balance.add(value(row.getDebit())).subtract(value(row.getCredit())); row.setRunningBalance(balance); }
+        return rows;
     }
     @Transactional public SocietyAnnualCollectionDto create(Long accountId, SocietyAnnualCollectionRequest r) {
         validateRequestYear(r);
@@ -101,6 +123,7 @@ public class SocietyAnnualCollectionService {
         return start;
     }
     private String normalize(String value) { return value == null ? "" : value.toLowerCase(java.util.Locale.ROOT).replaceAll("\\bblock\\b", "").replaceAll("[^a-z0-9]", ""); }
+    private BigDecimal value(BigDecimal value) { return value == null ? BigDecimal.ZERO : value; }
     private List<SocietyAnnualCollectionDto> dtos(List<SocietyAnnualCollection> collections) {
         if (collections.isEmpty()) return List.of();
         Map<Long, SocietyBankBookTransaction> transactions = bankBookTransactionRepository.findByAnnualCollectionIdIn(collections.stream().map(SocietyAnnualCollection::getId).toList()).stream()

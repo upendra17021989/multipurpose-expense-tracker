@@ -200,6 +200,19 @@ export const societyAnnualCollectionAPI = {
   })
 }
 
+export const societyJournalAPI = {
+  list: (financialYear, page = 0, size = 20, search = '') => axiosInstance.get('/society/journal-book', { params: { financialYear, page, size, search } }),
+  preview: (file, financialYear) => {
+    const formData = new FormData()
+    formData.append('file', file)
+    return axiosInstance.post('/society/journal-book/preview', formData, { params: { financialYear }, headers: { 'Content-Type': 'multipart/form-data' } })
+  },
+  import: (financialYear, vouchers) => axiosInstance.post('/society/journal-book/import', { financialYear, vouchers }).then((response) => {
+    invalidateAnnualCollections(financialYear)
+    return response
+  })
+}
+
 export const societyStaffAPI = {
   getStaff: () => axiosInstance.get('/society/staff'),
   getStaffMember: (staffId) => axiosInstance.get(`/society/staff/${staffId}`),
