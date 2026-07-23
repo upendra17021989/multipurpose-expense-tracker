@@ -121,7 +121,7 @@ export const SportsDashboard = () => {
           {!recentExpenses.length && <p className="empty-state">No expenses recorded.</p>}
         </article>
       </section>
-      <div className="table-wrap">
+      <div className="table-wrap sports-dashboard-table-wrap">
         <table>
           <thead><tr><th>Event</th><th>Status</th><th className="numeric">Expected</th><th className="numeric">Collected</th><th className="numeric">Pending</th><th className="numeric">Expenses</th><th className="numeric">Balance</th><th>Pending Members</th></tr></thead>
           <tbody>
