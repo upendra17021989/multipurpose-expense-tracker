@@ -61,6 +61,8 @@ export const SharedExpenseGroup = () => {
     items: []
   })
   const [itemizedExpense, setItemizedExpense] = useState(false)
+  const [showPayerModal, setShowPayerModal] = useState(false)
+  const [showParticipantModal, setShowParticipantModal] = useState(false)
   const [settle, setSettle] = useState({
     paidByMemberId: '',
     paidToMemberId: '',
@@ -724,61 +726,125 @@ export const SharedExpenseGroup = () => {
               <button type="button" onClick={() => setExpense({ ...expense, items: [...expense.items, { itemName: '', quantity: 1, unitPrice: '', amount: '' }] })}>+ {tx('Add another item')}</button>
             </>}
           </section>
-          <h3>{tx('Who paid?')}</h3>
-          <div className="participant-grid">
-            {active.map((x) => (
-              <label key={x.id}>
-                {x.memberName}
-                <input
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  placeholder={tx('Paid amount')}
-                  value={expense.payers[x.id] || ''}
-                  onChange={(e) =>
-                    setExpense({
-                      ...expense,
-                      payers: { ...expense.payers, [x.id]: e.target.value }
-                    })
-                  }
-                />
-              </label>
+          <div className="section-heading-row">
+            <h3>{tx('Who paid?')}</h3>
+            <button type="button" className="secondary" onClick={() => setShowPayerModal(true)}>
+              {tx('Review summary')}
+            </button>
+          </div>
+          <div className="summary-chip-row">
+            {active.filter((x) => expense.payers[x.id] || '').map((x) => (
+              <span key={x.id} className="summary-chip">
+                {x.memberName}: {expense.payers[x.id]}
+              </span>
             ))}
+            {!active.some((x) => expense.payers[x.id] || '') && <span className="summary-chip muted">{tx('No amounts set')}</span>}
           </div>
           <div className="section-heading-row">
             <h3>{tx('Who shares it?')}</h3>
-            <button type="button" onClick={toggleAllParticipants}>
-              {allParticipantsSelected ? tx('Clear all') : tx('Select all')}
-            </button>
+            <div className="section-heading-actions">
+              <button type="button" className="secondary" onClick={() => setShowParticipantModal(true)}>
+                {tx('Review summary')}
+              </button>
+              <button type="button" onClick={toggleAllParticipants}>
+                {allParticipantsSelected ? tx('Clear all') : tx('Select all')}
+              </button>
+            </div>
           </div>
-          <div className="participant-grid">
-            {active.map((x) => (
-              <label key={x.id}>
-                <input
-                  type="checkbox"
-                  checked={expense.participantIds.includes(x.id)}
-                  onChange={() => toggle(x.id)}
-                />
+          <div className="summary-chip-row">
+            {active.filter((x) => expense.participantIds.includes(x.id)).map((x) => (
+              <span key={x.id} className="summary-chip">
                 {x.memberName}
-                {expense.splitType === 'EXACT' &&
-                  expense.participantIds.includes(x.id) && (
-                    <input
-                      type="number"
-                      min="0.01"
-                      step="0.01"
-                      placeholder={tx('Share')}
-                      value={expense.shares[x.id] || ''}
-                      onChange={(e) =>
-                        setExpense({
-                          ...expense,
-                          shares: { ...expense.shares, [x.id]: e.target.value }
-                        })
-                      }
-                    />
-                  )}
-              </label>
+              </span>
             ))}
+            {!active.some((x) => expense.participantIds.includes(x.id)) && <span className="summary-chip muted">{tx('No participants selected')}</span>}
           </div>
+          {showPayerModal && (
+            <div className="modal-backdrop" role="presentation" onMouseDown={() => setShowPayerModal(false)}>
+              <section className="expense-modal shared-expense-summary-modal" role="dialog" aria-modal="true" aria-labelledby="payer-summary-title" onMouseDown={(event) => event.stopPropagation()}>
+                <div className="expense-modal-header">
+                  <div>
+                    <h2 id="payer-summary-title">{tx('Who paid?')}</h2>
+                    <p className="muted">{tx('Review payer amounts before saving the expense.')}</p>
+                  </div>
+                  <button type="button" className="modal-close" aria-label={tx('Close')} onClick={() => setShowPayerModal(false)}>×</button>
+                </div>
+                <div className="expense-modal-form">
+                  {active.map((x) => (
+                    <label key={x.id} className="summary-modal-field">
+                      <span>{x.memberName}</span>
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        placeholder={tx('Paid amount')}
+                        value={expense.payers[x.id] || ''}
+                        onChange={(e) =>
+                          setExpense({
+                            ...expense,
+                            payers: { ...expense.payers, [x.id]: e.target.value }
+                          })
+                        }
+                      />
+                    </label>
+                  ))}
+                </div>
+                <div className="expense-modal-actions">
+                  <button type="button" onClick={() => setShowPayerModal(false)}>{tx('Close')}</button>
+                </div>
+              </section>
+            </div>
+          )}
+          {showParticipantModal && (
+            <div className="modal-backdrop" role="presentation" onMouseDown={() => setShowParticipantModal(false)}>
+              <section className="expense-modal shared-expense-summary-modal" role="dialog" aria-modal="true" aria-labelledby="participant-summary-title" onMouseDown={(event) => event.stopPropagation()}>
+                <div className="expense-modal-header">
+                  <div>
+                    <h2 id="participant-summary-title">{tx('Who shares it?')}</h2>
+                    <p className="muted">{tx('Review who is part of this expense split.')}</p>
+                  </div>
+                  <button type="button" className="modal-close" aria-label={tx('Close')} onClick={() => setShowParticipantModal(false)}>×</button>
+                </div>
+                <div className="expense-modal-form">
+                  <div className="section-heading-row">
+                    <strong>{tx('Participants')}</strong>
+                    <button type="button" onClick={toggleAllParticipants}>
+                      {allParticipantsSelected ? tx('Clear all') : tx('Select all')}
+                    </button>
+                  </div>
+                  {active.map((x) => (
+                    <label key={x.id} className="summary-modal-field summary-modal-checkbox">
+                      <input
+                        type="checkbox"
+                        checked={expense.participantIds.includes(x.id)}
+                        onChange={() => toggle(x.id)}
+                      />
+                      <span>{x.memberName}</span>
+                      {expense.splitType === 'EXACT' &&
+                        expense.participantIds.includes(x.id) && (
+                          <input
+                            type="number"
+                            min="0.01"
+                            step="0.01"
+                            placeholder={tx('Share')}
+                            value={expense.shares[x.id] || ''}
+                            onChange={(e) =>
+                              setExpense({
+                                ...expense,
+                                shares: { ...expense.shares, [x.id]: e.target.value }
+                              })
+                            }
+                          />
+                        )}
+                    </label>
+                  ))}
+                </div>
+                <div className="expense-modal-actions">
+                  <button type="button" onClick={() => setShowParticipantModal(false)}>{tx('Close')}</button>
+                </div>
+              </section>
+            </div>
+          )}
           <button className="primary" disabled={submitting !== null}>
             {submitting === 'expense' ? tx('Adding...') : tx('Add expense')}
           </button>
