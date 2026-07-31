@@ -729,7 +729,7 @@ export const SharedExpenseGroup = () => {
           <div className="section-heading-row">
             <h3>{tx('Who paid?')}</h3>
             <button type="button" className="secondary" onClick={() => setShowPayerModal(true)}>
-              {tx('Review summary')}
+              {tx('Set payer amounts')}
             </button>
           </div>
           <div className="summary-chip-row">
@@ -744,7 +744,7 @@ export const SharedExpenseGroup = () => {
             <h3>{tx('Who shares it?')}</h3>
             <div className="section-heading-actions">
               <button type="button" className="secondary" onClick={() => setShowParticipantModal(true)}>
-                {tx('Review summary')}
+                {tx('Choose participants')}
               </button>
               <button type="button" onClick={toggleAllParticipants}>
                 {allParticipantsSelected ? tx('Clear all') : tx('Select all')}
