@@ -1,0 +1,16 @@
+.git
+.agents
+.codex
+node_modules
+frontend
+scripts
+backend/target
+backend/uploads
+backend/logs
+*.sql
+*.pptx
+*.md
+.env
+.env.*
+backend/.env
+backend/.env.*

@@ -58,6 +58,19 @@ multipurpose-expense-tracker/
 - **UI Notifications**: React Toastify
 - **Data Visualization**: Recharts
 
+## Deploy Backend to Cloud Run
+
+The repository-level `Dockerfile` builds the Spring Boot API from the `backend`
+directory, which lets Cloud Run source deployments build from the repository
+root.
+
+```bash
+gcloud run deploy expense-tracker-api --source . --region YOUR_REGION
+```
+
+Deploy the frontend separately to a static hosting provider and configure it to
+use the deployed Cloud Run service URL.
+
 ## Setup Instructions
 
 ### Prerequisites
