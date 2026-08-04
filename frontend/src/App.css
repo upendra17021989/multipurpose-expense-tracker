@@ -5160,3 +5160,13 @@ textarea:disabled {
 .journal-preview-table select {
   min-width: 220px;
 }
+
+.shared-balance-board article > button { padding: .4rem .65rem; border-color: #99f6e4; background: #f0fdfa; color: #0f766e; font-size: .78rem; font-weight: 800; }
+.shared-history-toolbar { display: grid; grid-template-columns: minmax(220px, 1fr) auto auto; gap: .75rem; align-items: end; margin-bottom: 1rem; padding: .75rem; border: 1px solid #dbe7e5; border-radius: 12px; background: #f8fffe; }
+.shared-history-search { display: grid; gap: .3rem; color: #475569; font-size: .76rem; font-weight: 800; }
+.shared-history-search input { margin: 0; }
+.shared-history-status { display: flex; gap: .35rem; }
+.shared-history-status button { min-height: 40px; padding: .45rem .7rem; border-color: #cbd5e1; background: #fff; color: #475569; font-weight: 700; }
+.shared-history-status button.active { border-color: #0f766e; background: #0f766e; color: #fff; }
+.shared-history-toolbar > strong { padding-bottom: .65rem; color: #64748b; white-space: nowrap; }
+@media (max-width: 700px) { .shared-balance-board article > button { grid-column: 2; justify-self: start; } .shared-history-toolbar { grid-template-columns: 1fr; align-items: stretch; } .shared-history-status { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); } .shared-history-toolbar > strong { padding: 0; } }

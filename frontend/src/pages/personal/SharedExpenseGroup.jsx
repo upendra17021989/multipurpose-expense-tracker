@@ -41,6 +41,8 @@ export const SharedExpenseGroup = () => {
   const [insightDates, setInsightDates] = useState({ from: '', to: '' })
   const [expensePage, setExpensePage] = useState(1)
   const [expenseSort, setExpenseSort] = useState({ key: 'expenseDate', direction: 'desc' })
+  const [expenseQuery, setExpenseQuery] = useState('')
+  const [expenseStatus, setExpenseStatus] = useState('active')
   const [selectedExpenseIds, setSelectedExpenseIds] = useState([])
   const [reversingExpenses, setReversingExpenses] = useState(false)
   const [member, setMember] = useState({
@@ -198,6 +200,26 @@ export const SharedExpenseGroup = () => {
       'Settlement recorded'
     ).then((saved) => saved && setSettle({ ...settle, amount: '', notes: '' }))
   }
+  const prepareSettlement = (balanceItem) => {
+    const balance = Number(balanceItem.balance || 0)
+    if (!balance) return
+    const counterpart = (group.balances || [])
+      .filter((item) => Number(item.balance || 0) * balance < 0)
+      .sort((a, b) => Math.abs(Number(b.balance || 0)) - Math.abs(Number(a.balance || 0)))[0]
+    if (!counterpart) {
+      toast.info('No matching member balance is available to settle')
+      return
+    }
+    setSettle((current) => ({
+      ...current,
+      paidByMemberId: String(balance < 0 ? balanceItem.memberId : counterpart.memberId),
+      paidToMemberId: String(balance > 0 ? balanceItem.memberId : counterpart.memberId),
+      amount: Math.min(Math.abs(balance), Math.abs(Number(counterpart.balance || 0))).toFixed(2)
+    }))
+    openSection('members')
+    toast.info('Settlement details are ready to review')
+  }
+
   const reverseSelectedExpenses = async () => {
     if (!selectedExpenseIds.length || reversingExpenses) return
     if (!window.confirm(`Reverse ${selectedExpenseIds.length} selected expense(s)? Their balances will be removed.`)) return
@@ -327,7 +349,15 @@ export const SharedExpenseGroup = () => {
       </Shell>
     )
   const expensePageSize = 10
-  const sortedExpenses = sortRows(group.expenses || [], expenseSort, sharedExpenseSortAccessors)
+  const normalizedExpenseQuery = expenseQuery.trim().toLowerCase()
+  const filteredExpenses = (group.expenses || []).filter((item) => {
+    if (expenseStatus === 'active' && item.reversed) return false
+    if (expenseStatus === 'reversed' && !item.reversed) return false
+    if (!normalizedExpenseQuery) return true
+    return [item.description, item.category, item.paidBy, item.splitType, item.expenseDate]
+      .some((value) => String(value || '').toLowerCase().includes(normalizedExpenseQuery))
+  })
+  const sortedExpenses = sortRows(filteredExpenses, expenseSort, sharedExpenseSortAccessors)
   const expensePageCount = Math.max(
     1,
     Math.ceil(sortedExpenses.length / expensePageSize)
@@ -475,6 +505,7 @@ export const SharedExpenseGroup = () => {
                 <small>{tx(balance > 0 ? 'Gets back' : balance < 0 ? 'Needs to pay' : 'All settled')}</small>
               </div>
               <b>{balance > 0 ? formatCurrency(balance) : balance < 0 ? formatCurrency(-balance) : tx('Settled')}</b>
+              {!!balance && group.active && <button type="button" onClick={() => prepareSettlement(x)}>{tx('Settle')}</button>}
             </article>
           )
         })}
@@ -858,6 +889,18 @@ export const SharedExpenseGroup = () => {
           </button>
         </div>
         <div className="shared-history-mobile-list">
+        <div className="shared-history-toolbar">
+          <label className="shared-history-search">
+            <span>{tx('Search expenses')}</span>
+            <input type="search" placeholder={tx('Description, category, payer...')} value={expenseQuery} onChange={(event) => { setExpenseQuery(event.target.value); setExpensePage(1) }} />
+          </label>
+          <div className="shared-history-status" aria-label={tx('Expense status')}>
+            {[['active', 'Active'], ['all', 'All'], ['reversed', 'Reversed']].map(([value, label]) => (
+              <button key={value} type="button" className={expenseStatus === value ? 'active' : ''} onClick={() => { setExpenseStatus(value); setExpensePage(1); setSelectedExpenseIds([]) }}>{tx(label)}</button>
+            ))}
+          </div>
+          <strong>{filteredExpenses.length} {tx(filteredExpenses.length === 1 ? 'expense' : 'expenses')}</strong>
+        </div>
           {visibleExpenses.map((x) => (
             <details className="personal-expense-row shared-history-row" key={x.id}>
               <summary>
@@ -887,7 +930,7 @@ export const SharedExpenseGroup = () => {
               </div>
             </details>
           ))}
-          {!group.expenses?.length && <p className="empty-state">{tx('No expenses yet.')}</p>}
+          {!visibleExpenses.length && <p className="empty-state">{tx(normalizedExpenseQuery ? 'No matching expenses.' : 'No expenses yet.')}</p>}
         </div>
         <div className="table-wrap shared-expense-history-wrap shared-history-desktop-table">
           <table className="shared-expense-history">
@@ -934,8 +977,8 @@ export const SharedExpenseGroup = () => {
                   <td data-label="Amount">{formatCurrency(x.totalAmount)}</td>
                 </tr>
               ))}
-              {!group.expenses?.length && (
-                <tr><td colSpan="7" className="empty-state">{tx('No expenses yet.')}</td></tr>
+              {!visibleExpenses.length && (
+                <tr><td colSpan="7" className="empty-state">{tx(normalizedExpenseQuery ? 'No matching expenses.' : 'No expenses yet.')}</td></tr>
               )}
             </tbody>
           </table>
