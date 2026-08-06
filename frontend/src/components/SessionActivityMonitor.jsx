@@ -2,6 +2,7 @@
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'react-toastify'
 import { useAuthStore } from '../store/authStore'
+import { isMobileOrTabletDevice } from '../utils/device'
 
 const DEFAULT_TIMEOUT_MS = 30 * 60 * 1000
 const configuredTimeout = Number(import.meta.env.VITE_INACTIVITY_TIMEOUT_MS)
@@ -17,16 +18,6 @@ const activityEvents = [
   'scroll',
   'touchstart'
 ]
-
-const isMobileAppExperience = () => {
-  if (typeof window === 'undefined') return false
-  const userAgent = window.navigator.userAgent || ''
-  const isAndroid = /Android/i.test(userAgent)
-  const isCapacitor = Boolean(window.Capacitor)
-  const isStandalone = window.matchMedia?.('(display-mode: standalone)').matches
-  const isSmallTouchScreen = window.matchMedia?.('(max-width: 820px) and (pointer: coarse)').matches
-  return isAndroid || isCapacitor || isStandalone || isSmallTouchScreen
-}
 
 export const SessionActivityMonitor = () => {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated)
@@ -53,7 +44,7 @@ export const SessionActivityMonitor = () => {
     let timeoutId
 
     const expireSession = () => {
-      if (isMobileAppExperience()) {
+      if (isMobileOrTabletDevice()) {
         lockApp()
         toast.info('App locked due to inactivity. Unlock to continue.')
         return

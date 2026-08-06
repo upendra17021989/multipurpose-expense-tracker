@@ -71,6 +71,14 @@ gcloud run deploy expense-tracker-api --source . --region YOUR_REGION
 Deploy the frontend separately to a static hosting provider and configure it to
 use the deployed Cloud Run service URL.
 
+### Cloud Build Trigger
+
+Use `cloudbuild.yaml` as the trigger configuration file. Before running the
+trigger, create the Artifact Registry Docker repository specified by
+`_REPOSITORY` and update `_REGION`, `_REPOSITORY`, and `_SERVICE` for your
+environment. The trigger service account needs Artifact Registry Writer, Cloud
+Run Admin, and Service Account User roles.
+
 ## Setup Instructions
 
 ### Prerequisites

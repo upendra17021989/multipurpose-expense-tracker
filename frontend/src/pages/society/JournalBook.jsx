@@ -22,6 +22,8 @@ export const JournalBook = () => {
   const [importOpen, setImportOpen] = useState(false)
   const [preview, setPreview] = useState(null)
   const [flats, setFlats] = useState([])
+  const [flatsLoading, setFlatsLoading] = useState(false)
+  const [flatsError, setFlatsError] = useState('')
   const [working, setWorking] = useState(false)
   const years = useMemo(() => {
     const start = Number(currentYear().slice(0, 4))
@@ -38,9 +40,25 @@ export const JournalBook = () => {
 
   useEffect(load, [financialYear, page, search])
   useEffect(() => {
-    if (!canImport) return
-    societyFlatAPI.getFlats().then((response) => setFlats(response.data || [])).catch(() => {})
-  }, [canImport])
+    if (!canImport || !importOpen || !account?.id) return
+
+    let active = true
+    setFlats([])
+    setFlatsError('')
+    setFlatsLoading(true)
+    societyFlatAPI.getFlats()
+      .then((response) => {
+        if (active) setFlats(Array.isArray(response.data) ? response.data : [])
+      })
+      .catch((error) => {
+        if (active) setFlatsError(error.response?.data?.message || 'Unable to load member / unit details')
+      })
+      .finally(() => {
+        if (active) setFlatsLoading(false)
+      })
+
+    return () => { active = false }
+  }, [account?.id, canImport, importOpen])
 
   const previewFile = async (event) => {
     const file = event.target.files?.[0]
@@ -103,9 +121,10 @@ export const JournalBook = () => {
         <div className="table-wrap journal-preview-table"><table><thead><tr><th>Voucher</th><th>Date</th><th>Ledger</th><th>Member / Unit</th><th className="numeric">Debit</th><th className="numeric">Credit</th><th>Status</th></tr></thead><tbody>
           {preview.vouchers.map((voucher, vi) => voucher.lines.map((line, li) => <tr key={`${vi}-${li}`} className={voucher.duplicate || voucher.errors?.length || line.errors?.length ? 'import-row-warning' : ''}>
             {li === 0 && <><td rowSpan={voucher.lines.length}>{voucher.voucherNumber || 'Missing'}<small>{voucher.voucherType}</small></td><td rowSpan={voucher.lines.length}>{voucher.date ? formatDate(voucher.date) : '-'}</td></>}
-            <td>{line.ledgerName}</td><td>{Number(line.debit) > 0 ? <select value={line.flatId || ''} onChange={(event) => setLineFlat(vi, li, event.target.value)}><option value="">Select member / unit</option>{flats.map((flat) => <option key={flat.id} value={flat.id}>{flat.blockName}-{flat.flatNumber} — {flat.ownerName}</option>)}</select> : '-'}</td>
+            <td>{line.ledgerName}</td><td>{Number(line.debit) > 0 ? <select value={line.flatId || ''} onChange={(event) => setLineFlat(vi, li, event.target.value)} disabled={flatsLoading || Boolean(flatsError)}><option value="">{flatsLoading ? 'Loading members / units...' : flatsError ? 'Member / unit details unavailable' : flats.length ? 'Select member / unit' : 'No active members / units found'}</option>{flats.map((flat) => <option key={flat.id} value={flat.id}>{flat.blockName}-{flat.flatNumber} — {flat.ownerName}</option>)}</select> : '-'}</td>
             <td className="numeric">{Number(line.debit) ? formatCurrency(line.debit) : '-'}</td><td className="numeric">{Number(line.credit) ? formatCurrency(line.credit) : '-'}</td><td>{voucher.duplicate ? 'Duplicate' : [...(voucher.errors || []), ...(line.errors || [])].join('; ') || 'Ready'}</td>
           </tr>))}</tbody></table></div>
+        {flatsError && <p className="form-error" role="alert">{flatsError}. Close and reopen the import to retry.</p>}
         <div className="expense-modal-actions"><button onClick={() => setPreview(null)} disabled={working}>Choose another file</button><button className="primary" onClick={confirmImport} disabled={working || !readyVouchers.length}>{working ? 'Posting...' : `Post ${readyVouchers.length} vouchers`}</button></div></>}
     </section></div>}
   </Shell>

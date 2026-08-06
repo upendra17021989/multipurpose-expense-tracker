@@ -74,6 +74,24 @@ class SocietyJournalServiceTest {
         assertThat(preview.getVouchers().get(0).getLines().get(0).getFlatId()).isEqualTo(20L);
     }
 
+    @Test
+    void readsLedgerAndMatchesFlatFromTowerFlatColumns() throws Exception {
+        Account account = Account.builder().id(3L).accountType(AccountType.SOCIETY).build();
+        Flat flat = Flat.builder().id(103L).account(account).blockName("H Block").flatNumber("103").ownerName("Mukesh solanki").active(true).build();
+        when(accounts.findById(3L)).thenReturn(Optional.of(account));
+        when(flats.findByAccountIdAndActiveTrue(3L)).thenReturn(List.of(flat));
+        when(journals.existsByAccountIdAndFinancialYearAndVoucherNumberIgnoreCase(3L, "2026-2027", "IN/1715/26-27")).thenReturn(false);
+
+        SocietyJournalDtos.Preview preview = service.preview(3L, "2026-2027", sampleWorkbook());
+
+        SocietyJournalDtos.Voucher voucher = preview.getVouchers().get(0);
+        assertThat(preview.getReadyVouchers()).isEqualTo(1);
+        assertThat(voucher.getLines().get(0).getLedgerName()).isEqualTo("Mukesh solanki");
+        assertThat(voucher.getLines().get(0).getFlatId()).isEqualTo(103L);
+        assertThat(voucher.getLines().get(1).getLedgerName()).isEqualTo("Common Area Maintenance Charges");
+        assertThat(voucher.getNarration()).isEqualTo("Maintenance Bill for the Period of August 2026");
+    }
+
     private MockMultipartFile workbook(boolean includeCredit) throws Exception {
         return workbook(includeCredit, "L-103");
     }
@@ -93,5 +111,23 @@ class SocietyJournalServiceTest {
             workbook.write(output); bytes = output.toByteArray();
         }
         return new MockMultipartFile("file", "journal.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", bytes);
+    }
+
+    private MockMultipartFile sampleWorkbook() throws Exception {
+        byte[] bytes;
+        try (Workbook workbook = new XSSFWorkbook(); ByteArrayOutputStream output = new ByteArrayOutputStream()) {
+            var sheet = workbook.createSheet("Journal");
+            var header = sheet.createRow(0);
+            String[] headings = {"#", "Tower/Flat", "Date", "Ledger Name", "Particulars", "Reference No.", "Voucher Type", "Voucher No (Voucher Type)", "Debit", "Credit", "GST No"};
+            for (int index = 0; index < headings.length; index++) header.createCell(index).setCellValue(headings[index]);
+            var debit = sheet.createRow(1);
+            debit.createCell(0).setCellValue(1); debit.createCell(1).setCellValue("H Block-103"); debit.createCell(2).setCellValue("01-Aug-2026");
+            debit.createCell(3).setCellValue("Mukesh solanki"); debit.createCell(4).setCellValue("Maintenance Bill for the Period of August 2026");
+            debit.createCell(5).setCellValue("CAM/1529/26-27"); debit.createCell(6).setCellValue("Invoice"); debit.createCell(7).setCellValue("IN/1715/26-27"); debit.createCell(8).setCellValue(1800);
+            var credit = sheet.createRow(2);
+            credit.createCell(4).setCellValue("Common Area Maintenance Charges"); credit.createCell(9).setCellValue(1800);
+            workbook.write(output); bytes = output.toByteArray();
+        }
+        return new MockMultipartFile("file", "journal-sample.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", bytes);
     }
 }

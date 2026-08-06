@@ -343,7 +343,14 @@ export const SocietyMemberDirectory = ({ view = 'directory' }) => {
       .finally(() => setLoading(false))
   }
 
-  useEffect(loadRequests, [isAdmin, financialYear])
+  useEffect(loadRequests, [currentAccount?.id, isAdmin, financialYear])
+
+  useEffect(() => {
+    setLedgerByFlat({})
+    setLedgerRows([])
+    setLedgerPages({})
+    setFlatLedgerPage(1)
+  }, [currentAccount?.id])
 
   const normalizeBlock = (value) => String(value || '').trim().toLowerCase().replace(/\bblock\b/g, '').replace(/[^a-z0-9]/g, '')
   const normalizeFlat = (value) => String(value || '').trim().toLowerCase().replace(/[^a-z0-9]/g, '')
@@ -501,7 +508,7 @@ export const SocietyMemberDirectory = ({ view = 'directory' }) => {
       .then((response) => [flat.id, response.data || []])))
       .then((entries) => setLedgerByFlat((current) => ({ ...current, ...Object.fromEntries(entries) })))
       .catch((error) => toast.error(error.response?.data?.message || 'Unable to load flat ledger'))
-  }, [isAdmin, view, visibleFlatIds, financialYear])
+  }, [currentAccount?.id, isAdmin, view, visibleFlatIds, financialYear])
 
   return (
     <Shell title={view === 'ledger' ? 'Financial Ledger' : 'Society Member Directory'} eyebrow="Society module">

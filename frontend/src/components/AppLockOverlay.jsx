@@ -2,6 +2,7 @@
 import { useState } from 'react'
 import { toast } from 'react-toastify'
 import { authAPI } from '../api/endpoints'
+import { useIsMobileOrTabletDevice } from '../utils/device'
 
 export const AppLockOverlay = () => {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated)
@@ -10,6 +11,7 @@ export const AppLockOverlay = () => {
   const logout = useAuthStore((state) => state.logout)
   const user = useAuthStore((state) => state.user)
   const [isUnlocking, setIsUnlocking] = useState(false)
+  const isMobileOrTablet = useIsMobileOrTabletDevice()
 
   const handleUnlock = async () => {
     if (isUnlocking) return
@@ -31,7 +33,7 @@ export const AppLockOverlay = () => {
     }
   }
 
-  if (!isAuthenticated || !isAppLocked) return null
+  if (!isAuthenticated || !isAppLocked || !isMobileOrTablet) return null
 
   return (
     <div className="app-lock-backdrop" role="dialog" aria-modal="true" aria-labelledby="app-lock-title">

@@ -50,13 +50,24 @@ public class SocietyJournalService {
                 }
                 if (draft == null) continue;
                 String particulars = text(row, columns.get("particulars"), formatter, evaluator);
+                String ledgerName = text(row, columns.get("ledger name"), formatter, evaluator);
+                String flatText = text(row, columns.get("flat"), formatter, evaluator);
                 BigDecimal debit = amount(row, columns.get("debit"), formatter, evaluator);
                 BigDecimal credit = amount(row, columns.get("credit"), formatter, evaluator);
-                if ((debit.signum() > 0 || credit.signum() > 0) && !particulars.isBlank()) {
-                    String[] parts = particulars.split("\\R", 2);
-                    String ledger = parts[0].trim(); String narration = parts.length > 1 ? parts[1].trim() : "";
+                if ((debit.signum() > 0 || credit.signum() > 0) && (!ledgerName.isBlank() || !particulars.isBlank())) {
+                    String ledger;
+                    String narration;
+                    if (!ledgerName.isBlank()) {
+                        ledger = ledgerName;
+                        narration = particulars;
+                    } else {
+                        String[] parts = particulars.split("\\R", 2);
+                        ledger = parts[0].trim();
+                        narration = parts.length > 1 ? parts[1].trim() : "";
+                    }
                     if ((draft.narration == null || draft.narration.isBlank()) && !narration.isBlank()) draft.narration = narration;
-                    Flat flat = debit.signum() > 0 ? matchFlat(ledger, flats) : null;
+                    Flat flat = debit.signum() > 0 ? matchFlat(flatText, flats) : null;
+                    if (flat == null && debit.signum() > 0) flat = matchFlat(ledger, flats);
                     List<String> errors = new ArrayList<>();
                     if (debit.signum() > 0 && requiresUnit(draft.voucherType) && flat == null) errors.add("Select the member or unit for this debit line");
                     draft.lines.add(SocietyJournalDtos.Line.builder().lineNumber(draft.lines.size() + 1).ledgerName(ledger)
@@ -167,7 +178,7 @@ public class SocietyJournalService {
     private Account societyAccount(Long id) { Account account = accountRepository.findById(id).orElseThrow(() -> new ValidationException("Account not found")); if (account.getAccountType()!=AccountType.SOCIETY) throw new ValidationException("Journal book is available only for society accounts"); return account; }
     private void validateFile(MultipartFile file) { if(file==null||file.isEmpty()) throw new ValidationException("Select an Excel journal book"); if(file.getSize()>MAX_FILE_SIZE) throw new ValidationException("Excel file must be 10 MB or smaller"); String name=Optional.ofNullable(file.getOriginalFilename()).orElse("").toLowerCase(); if(!name.endsWith(".xlsx")&&!name.endsWith(".xls")) throw new ValidationException("Only .xlsx and .xls files are supported"); }
     private Row findHeader(Sheet sheet, DataFormatter f, FormulaEvaluator e) { for(Row row:sheet){Map<String,Integer> h=headers(row,f,e); if(h.containsKey("date")&&h.containsKey("particulars")&&h.containsKey("debit"))return row;} throw new ValidationException("Could not find journal columns: Date, Particulars, Reference No., Voucher Type, Voucher No., Debit and Credit"); }
-    private Map<String,Integer> headers(Row row, DataFormatter f, FormulaEvaluator e) { Map<String,Integer> result=new HashMap<>(); for(Cell cell:row){String raw=f.formatCellValue(cell,e);String key=normalize(raw);String canonical=switch(key){case "","serialno","srno","no"->"number";case "date"->"date";case "particular","particulars"->"particulars";case "referenceno","referencenumber","reference"->"reference";case "vouchertype"->"voucher type";case "voucherno","vouchernumber","vouchernovouchertype"->"voucher number";case "debit"->"debit";case "credit"->"credit";default->raw.trim().toLowerCase();};result.put(canonical,cell.getColumnIndex());} return result; }
+    private Map<String,Integer> headers(Row row, DataFormatter f, FormulaEvaluator e) { Map<String,Integer> result=new HashMap<>(); for(Cell cell:row){String raw=f.formatCellValue(cell,e);String key=normalize(raw);String canonical=switch(key){case "","serialno","srno","no"->"number";case "towerflat","towerunit","flatunit","flat","unit"->"flat";case "date"->"date";case "ledger","ledgername"->"ledger name";case "particular","particulars"->"particulars";case "referenceno","referencenumber","reference"->"reference";case "vouchertype"->"voucher type";case "voucherno","vouchernumber","vouchernovouchertype"->"voucher number";case "debit"->"debit";case "credit"->"credit";default->raw.trim().toLowerCase();};result.put(canonical,cell.getColumnIndex());} return result; }
     private void requireHeaders(Map<String,Integer> headers,String... required){List<String> missing=Arrays.stream(required).filter(key->!headers.containsKey(key)).toList();if(!missing.isEmpty())throw new ValidationException("Missing journal column(s): "+String.join(", ",missing));}
     private String text(Row row,Integer column,DataFormatter f,FormulaEvaluator e){if(column==null)return "";Cell cell=row.getCell(column,Row.MissingCellPolicy.RETURN_BLANK_AS_NULL);return cell==null?"":f.formatCellValue(cell,e).trim();}
     private BigDecimal amount(Row row,Integer column,DataFormatter f,FormulaEvaluator e){String raw=text(row,column,f,e).replace(",","").trim();if(raw.isBlank())return ZERO;try{return new BigDecimal(raw);}catch(Exception ignored){return ZERO;}}
