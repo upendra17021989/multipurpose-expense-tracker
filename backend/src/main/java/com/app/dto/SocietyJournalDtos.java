@@ -25,7 +25,7 @@ public final class SocietyJournalDtos {
     @Data @NoArgsConstructor @AllArgsConstructor public static class ImportRequest {
         @NotBlank private String financialYear; @Valid @NotEmpty private List<Voucher> vouchers;
     }
-    @Data @Builder @NoArgsConstructor @AllArgsConstructor public static class ImportResult { private int created; private int skipped; }
+    @Data @Builder @NoArgsConstructor @AllArgsConstructor public static class ImportResult { private int created; private int relinked; private int skipped; }
     @Data @Builder @NoArgsConstructor @AllArgsConstructor public static class PageResult {
         private List<Voucher> content; private long totalElements; private int totalPages; private int number;
     }

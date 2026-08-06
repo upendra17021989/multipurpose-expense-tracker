@@ -66,10 +66,11 @@ public class SocietyJournalService {
                         narration = parts.length > 1 ? parts[1].trim() : "";
                     }
                     if ((draft.narration == null || draft.narration.isBlank()) && !narration.isBlank()) draft.narration = narration;
-                    Flat flat = debit.signum() > 0 ? matchFlat(flatText, flats) : null;
-                    if (flat == null && debit.signum() > 0) flat = matchFlat(ledger, flats);
+                    boolean unitLine = requiresUnit(draft.voucherType, debit, credit);
+                    Flat flat = unitLine ? matchFlat(flatText, flats) : null;
+                    if (flat == null && unitLine) flat = matchFlat(ledger, flats);
                     List<String> errors = new ArrayList<>();
-                    if (debit.signum() > 0 && requiresUnit(draft.voucherType) && flat == null) errors.add("Select the member or unit for this debit line");
+                    if (unitLine && flat == null) errors.add("Select the member or unit for this " + (credit.signum() > 0 ? "credit" : "debit") + " line");
                     draft.lines.add(SocietyJournalDtos.Line.builder().lineNumber(draft.lines.size() + 1).ledgerName(ledger)
                             .particulars(narration).flatId(flat == null ? null : flat.getId()).flatLabel(flat == null ? null : label(flat))
                             .debit(debit).credit(credit).errors(errors).build());
@@ -91,11 +92,18 @@ public class SocietyJournalService {
     public SocietyJournalDtos.ImportResult confirm(Long accountId, Long userId, SocietyJournalDtos.ImportRequest request) {
         Account account = societyAccount(accountId); validateYear(request.getFinancialYear());
         User user = userRepository.findById(userId).orElseThrow(() -> new ValidationException("User not found"));
-        int created = 0, skipped = 0; Set<String> submitted = new HashSet<>();
+        int created = 0, relinked = 0, skipped = 0; Set<String> submitted = new HashSet<>();
         for (SocietyJournalDtos.Voucher voucher : request.getVouchers()) {
             validateVoucher(voucher, accountId, request.getFinancialYear());
             String key = voucher.getVoucherNumber().trim().toLowerCase(Locale.ROOT);
-            if (!submitted.add(key) || journalRepository.existsByAccountIdAndFinancialYearAndVoucherNumberIgnoreCase(accountId, request.getFinancialYear(), voucher.getVoucherNumber())) { skipped++; continue; }
+            if (!submitted.add(key)) { skipped++; continue; }
+            Optional<SocietyJournalEntry> existing = journalRepository.findByAccountIdAndFinancialYearAndVoucherNumberIgnoreCase(
+                    accountId, request.getFinancialYear(), voucher.getVoucherNumber());
+            if (existing.isPresent()) {
+                if (relinkExistingVoucher(existing.get(), voucher, accountId)) relinked++;
+                else skipped++;
+                continue;
+            }
             SocietyJournalEntry entry = SocietyJournalEntry.builder().account(account).financialYear(request.getFinancialYear()).entryDate(voucher.getDate())
                     .referenceNumber(clean(voucher.getReferenceNumber())).voucherType(voucher.getVoucherType().trim()).voucherNumber(voucher.getVoucherNumber().trim())
                     .narration(clean(voucher.getNarration())).createdBy(user).build();
@@ -108,7 +116,27 @@ public class SocietyJournalService {
             }
             journalRepository.save(entry); created++;
         }
-        return SocietyJournalDtos.ImportResult.builder().created(created).skipped(skipped).build();
+        return SocietyJournalDtos.ImportResult.builder().created(created).relinked(relinked).skipped(skipped).build();
+    }
+
+    private boolean relinkExistingVoucher(SocietyJournalEntry existing, SocietyJournalDtos.Voucher submitted, Long accountId) {
+        boolean changed = false;
+        for (SocietyJournalDtos.Line submittedLine : submitted.getLines()) {
+            if (submittedLine.getFlatId() == null) continue;
+            Flat flat = flatRepository.findByAccountIdAndIdAndActiveTrue(accountId, submittedLine.getFlatId())
+                    .orElseThrow(() -> new ValidationException("Selected member or unit is no longer active"));
+            Optional<SocietyJournalLine> storedLine = existing.getLines().stream()
+                    .filter(line -> Objects.equals(line.getLineNumber(), submittedLine.getLineNumber()))
+                    .filter(line -> value(line.getDebit()).compareTo(value(submittedLine.getDebit())) == 0)
+                    .filter(line -> value(line.getCredit()).compareTo(value(submittedLine.getCredit())) == 0)
+                    .findFirst();
+            if (storedLine.isPresent() && storedLine.get().getFlat() == null) {
+                storedLine.get().setFlat(flat);
+                changed = true;
+            }
+        }
+        if (changed) journalRepository.save(existing);
+        return changed;
     }
 
     @Transactional(readOnly = true)
@@ -140,7 +168,7 @@ public class SocietyJournalService {
         for (SocietyJournalDtos.Line line : voucher.getLines()) {
             BigDecimal dr = value(line.getDebit()), cr = value(line.getCredit());
             if (blank(line.getLedgerName()) || dr.signum() < 0 || cr.signum() < 0 || (dr.signum() > 0 && cr.signum() > 0) || (dr.signum() == 0 && cr.signum() == 0)) throw new ValidationException("Every journal line must contain one debit or credit amount");
-            if (dr.signum() > 0 && requiresUnit(voucher.getVoucherType()) && line.getFlatId() == null) throw new ValidationException("Select a member or unit for debit ledger " + line.getLedgerName());
+            if (requiresUnit(voucher.getVoucherType(), dr, cr) && line.getFlatId() == null) throw new ValidationException("Select a member or unit for " + (cr.signum() > 0 ? "credit" : "debit") + " ledger " + line.getLedgerName());
             debit = debit.add(dr); credit = credit.add(cr);
         }
         if (debit.signum() <= 0 || debit.compareTo(credit) != 0) throw new ValidationException("Journal voucher " + voucher.getVoucherNumber() + " is not balanced");
@@ -157,7 +185,11 @@ public class SocietyJournalService {
     }
 
     private boolean ready(SocietyJournalDtos.Voucher voucher) { return !voucher.isDuplicate() && voucher.getErrors().isEmpty() && voucher.getLines().stream().allMatch(line -> line.getErrors().isEmpty()); }
-    private boolean requiresUnit(String voucherType) { String type = normalize(voucherType); return type.equals("invoice") || type.equals("debitnote"); }
+    private boolean requiresUnit(String voucherType, BigDecimal debit, BigDecimal credit) {
+        String type = normalize(voucherType);
+        if (type.equals("creditnote")) return value(credit).signum() > 0;
+        return (type.equals("invoice") || type.equals("debitnote")) && value(debit).signum() > 0;
+    }
     private Flat matchFlat(String ledger, List<Flat> flats) {
         String target = normalize(ledger);
         if (target.isBlank()) return null;

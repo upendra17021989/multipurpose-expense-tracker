@@ -313,9 +313,11 @@ export const SocietyMemberDirectory = ({ view = 'directory' }) => {
   const [ledgerByFlat, setLedgerByFlat] = useState({})
   const [ledgerPages, setLedgerPages] = useState({})
   const [flatLedgerPage, setFlatLedgerPage] = useState(1)
-  const [filters, setFilters] = useState({ block: '', flat: '', name: '', month: '', year: '' })
+  const [filters, setFilters] = useState({ block: '', flat: '', flatId: '', flatQuery: '', name: '', month: '', year: '' })
   const [memberPage, setMemberPage] = useState(1)
   const [loading, setLoading] = useState(true)
+  const [requestsRefreshing, setRequestsRefreshing] = useState(false)
+  const [flatSearchOpen, setFlatSearchOpen] = useState(false)
   const isAdmin = currentAccount?.role === 'ADMIN'
   const currentFinancialYear = (() => { const date = new Date(); const year = date.getMonth() < 3 ? date.getFullYear() - 1 : date.getFullYear(); return `${year}-${year + 1}` })()
   const [financialYear, setFinancialYear] = useState(currentFinancialYear)
@@ -343,17 +345,52 @@ export const SocietyMemberDirectory = ({ view = 'directory' }) => {
       .finally(() => setLoading(false))
   }
 
+  const refreshPendingRequests = (showFeedback = false) => {
+    if (!isAdmin) return Promise.resolve()
+    setRequestsRefreshing(true)
+    return societyMembershipAPI.getPending()
+      .then((response) => {
+        setRequests(response.data || [])
+        if (showFeedback) toast.success('Membership requests refreshed')
+      })
+      .catch((error) => {
+        if (showFeedback) toast.error(error.response?.data?.message || 'Unable to refresh membership requests')
+      })
+      .finally(() => setRequestsRefreshing(false))
+  }
+
   useEffect(loadRequests, [currentAccount?.id, isAdmin, financialYear])
+
+  useEffect(() => {
+    if (!isAdmin || view !== 'directory') return undefined
+
+    refreshPendingRequests()
+    const refreshWhenVisible = () => {
+      if (document.visibilityState === 'visible') refreshPendingRequests()
+    }
+    const intervalId = window.setInterval(refreshPendingRequests, 15000)
+    window.addEventListener('focus', refreshWhenVisible)
+    document.addEventListener('visibilitychange', refreshWhenVisible)
+
+    return () => {
+      window.clearInterval(intervalId)
+      window.removeEventListener('focus', refreshWhenVisible)
+      document.removeEventListener('visibilitychange', refreshWhenVisible)
+    }
+  }, [currentAccount?.id, isAdmin, view])
 
   useEffect(() => {
     setLedgerByFlat({})
     setLedgerRows([])
     setLedgerPages({})
     setFlatLedgerPage(1)
+    setFilters((current) => ({ ...current, flatId: '', flatQuery: '' }))
   }, [currentAccount?.id])
 
   const normalizeBlock = (value) => String(value || '').trim().toLowerCase().replace(/\bblock\b/g, '').replace(/[^a-z0-9]/g, '')
   const normalizeFlat = (value) => String(value || '').trim().toLowerCase().replace(/[^a-z0-9]/g, '')
+  const flatOptionLabel = (flat) => `${flat.blockName}-${flat.flatNumber} — ${flat.ownerName || 'Owner not recorded'}`
+  const flatSearchResults = flats.filter((flat) => normalizeFlat(flatOptionLabel(flat)).includes(normalizeFlat(filters.flatQuery)))
   const relationOptions = ['Resident', 'Owner', 'Tenant', 'Family member', 'Committee member']
   const matchingRelation = (value) => relationOptions.find((option) => option.toLowerCase() === String(value || '').trim().toLowerCase()) || 'Resident'
 
@@ -485,10 +522,14 @@ export const SocietyMemberDirectory = ({ view = 'directory' }) => {
     return (!filters.month || date.slice(5, 7) === filters.month) && (!filters.year || date.slice(0, 4) === filters.year)
   })
   const filteredFlats = flats.filter((flat) => {
+    if (view === 'ledger' && isAdmin && !filters.flatId) return false
+    if (view === 'ledger' && isAdmin && String(flat.id) !== String(filters.flatId)) return false
     const blockMatches = !filters.block || normalizeBlock(flat.blockName).includes(normalizeBlock(filters.block))
     const flatMatches = !filters.flat || normalizeFlat(flat.flatNumber).includes(normalizeFlat(filters.flat))
     const nameMatches = !filters.name || membersForFlat(flat).length > 0
-    const dateMatches = !(filters.month || filters.year) || ledgerByFlat[flat.id] === undefined || transactionsForFlat(flat).length > 0
+    const dateMatches = view === 'ledger' && isAdmin
+      ? true
+      : !(filters.month || filters.year) || ledgerByFlat[flat.id] === undefined || transactionsForFlat(flat).length > 0
     return blockMatches && flatMatches && nameMatches && dateMatches
   })
   const flatPageSize = 5
@@ -514,15 +555,15 @@ export const SocietyMemberDirectory = ({ view = 'directory' }) => {
     <Shell title={view === 'ledger' ? 'Financial Ledger' : 'Society Member Directory'} eyebrow="Society module">
     <section className="toolbar-panel society-member-filters">
       {view === 'ledger' && <label>Financial year<select value={financialYear} onChange={(event) => { setFinancialYear(event.target.value); setLedgerByFlat({}); setLedgerRows([]); setLedgerPages({}); setFlatLedgerPage(1); setFilters((current) => ({ ...current, month: '', year: '' })) }}>{financialYears.map((year) => <option key={year} value={year}>{year}{year === currentFinancialYear ? ' (Current)' : ''}</option>)}</select></label>}
-      {view === 'ledger' && isAdmin && <label>Block<input type="search" value={filters.block} placeholder="Search block" onChange={(event) => { setFilters((current) => ({ ...current, block: event.target.value })); setFlatLedgerPage(1) }} /></label>}
-      <label>Flat number<input type="search" value={filters.flat} placeholder="Search flat" onChange={(event) => { setFilters((current) => ({ ...current, flat: event.target.value })); setFlatLedgerPage(1) }} /></label>
-      {(view === 'directory' || isAdmin) && <label>Member name<input type="search" value={filters.name} placeholder="Search member" onChange={(event) => { setFilters((current) => ({ ...current, name: event.target.value })); setFlatLedgerPage(1) }} /></label>}
+      {view === 'ledger' && isAdmin && <label className="flat-search-field">Flat<div className="flat-search-control"><input type="search" value={filters.flatQuery} placeholder="Search flat or owner" autoComplete="off" role="combobox" aria-expanded={flatSearchOpen} aria-controls="financial-ledger-flat-options" onFocus={() => setFlatSearchOpen(true)} onBlur={() => window.setTimeout(() => setFlatSearchOpen(false), 100)} onChange={(event) => { const query = event.target.value; setFilters((current) => ({ ...current, flatQuery: query, flatId: '' })); setFlatSearchOpen(true); setLedgerPages({}); setFlatLedgerPage(1) }} />{flatSearchOpen && <div className="flat-search-options" id="financial-ledger-flat-options" role="listbox">{flatSearchResults.map((flat) => <button type="button" role="option" aria-selected={String(flat.id) === String(filters.flatId)} key={flat.id} onMouseDown={(event) => { event.preventDefault(); setFilters((current) => ({ ...current, flatQuery: flatOptionLabel(flat), flatId: String(flat.id) })); setFlatSearchOpen(false); setLedgerPages({}); setFlatLedgerPage(1) }}>{flatOptionLabel(flat)}</button>)}{!flatSearchResults.length && <span>No matching flats</span>}</div>}</div></label>}
+      {view !== 'ledger' && <label>Flat number<input type="search" value={filters.flat} placeholder="Search flat" onChange={(event) => { setFilters((current) => ({ ...current, flat: event.target.value })); setFlatLedgerPage(1) }} /></label>}
+      {view === 'directory' && <label>Member name<input type="search" value={filters.name} placeholder="Search member" onChange={(event) => { setFilters((current) => ({ ...current, name: event.target.value })); setFlatLedgerPage(1) }} /></label>}
       {view === 'ledger' && <label>Month<select value={filters.month} onChange={(event) => { setFilters((current) => ({ ...current, month: event.target.value })); setFlatLedgerPage(1) }}><option value="">All months</option>{['January','February','March','April','May','June','July','August','September','October','November','December'].map((month, index) => <option key={month} value={String(index + 1).padStart(2, '0')}>{month}</option>)}</select></label>}
       {view === 'ledger' && <label>Year<select value={filters.year} onChange={(event) => { setFilters((current) => ({ ...current, year: event.target.value })); setFlatLedgerPage(1) }}><option value="">All years</option>{years.map((year) => <option key={year}>{year}</option>)}</select></label>}
-      <button type="button" onClick={() => { setFilters({ block: '', flat: '', name: '', month: '', year: '' }); setFlatLedgerPage(1); setLedgerPages({}) }}>Clear filters</button>
+      <button type="button" onClick={() => { setFilters({ block: '', flat: '', flatId: '', flatQuery: '', name: '', month: '', year: '' }); setFlatLedgerPage(1); setLedgerPages({}) }}>Clear filters</button>
     </section>
     <section className="panel">
-      {view === 'directory' && isAdmin && <><h2>Society membership requests</h2>
+      {view === 'directory' && isAdmin && <><div className="section-heading-row"><h2>Society membership requests</h2><button type="button" onClick={() => refreshPendingRequests(true)} disabled={requestsRefreshing}>{requestsRefreshing ? 'Refreshing...' : 'Refresh requests'}</button></div>
       {loading && <p className="muted">Checking for new requests...</p>}
       {!loading && !requests.length && <p className="muted">No pending membership requests.</p>}
       {requests.map((request) => (
@@ -559,8 +600,8 @@ export const SocietyMemberDirectory = ({ view = 'directory' }) => {
       {!loading && !filteredMembers.length && <p className="muted">No society members match these filters.</p>}
       <div className="society-member-directory">{visibleMembers.map(memberCard)}</div>
       {memberPageCount > 1 && <nav className="table-pagination" aria-label="Member directory pages"><button disabled={currentMemberPage === 1} onClick={() => setMemberPage(1)}>«</button><button disabled={currentMemberPage === 1} onClick={() => setMemberPage((page) => Math.max(1, page - 1))}>‹</button><span>Members page {currentMemberPage} of {memberPageCount}</span><button disabled={currentMemberPage === memberPageCount} onClick={() => setMemberPage((page) => Math.min(memberPageCount, page + 1))}>›</button><button disabled={currentMemberPage === memberPageCount} onClick={() => setMemberPage(memberPageCount)}>»</button></nav>}</>}
-      {view === 'ledger' && <><h2>{isAdmin ? 'Flat financial ledgers' : 'Your flat financial ledger'}</h2>
-      {isAdmin ? <><div className="society-flat-ledger-list">{visibleLedgerFlats.map((flat) => {
+      {view === 'ledger' && <><h2>{isAdmin ? 'Flat financial ledger' : 'Your flat financial ledger'}</h2>
+      {isAdmin ? <>{!filters.flatId && <p className="empty-state">Select a flat to view its financial ledger.</p>}<div className="society-flat-ledger-list">{visibleLedgerFlats.map((flat) => {
         const transactions = transactionsForFlat(flat)
         return <section className="society-flat-ledger" key={flat.id}>
           <header><div><strong>{flat.blockName}-{flat.flatNumber}</strong><small>Flat owner: {flat.ownerName || 'Not recorded'}</small></div><span>{transactions.length} {transactions.length === 1 ? 'transaction' : 'transactions'}</span></header>

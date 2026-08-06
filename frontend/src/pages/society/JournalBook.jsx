@@ -11,6 +11,12 @@ const currentYear = () => {
   return `${start}-${start + 1}`
 }
 
+const requiresUnitSelection = (voucherType, line) => {
+  const type = String(voucherType || '').toLowerCase().replace(/[^a-z0-9]/g, '')
+  if (type === 'creditnote') return Number(line.credit) > 0
+  return ['invoice', 'debitnote'].includes(type) && Number(line.debit) > 0
+}
+
 export const JournalBook = () => {
   const account = useAuthStore((state) => state.currentAccount)
   const canImport = account?.role === 'ADMIN'
@@ -77,7 +83,7 @@ export const JournalBook = () => {
           ...line,
           flatId: flatId ? Number(flatId) : null,
           flatLabel: flatId ? (() => { const flat = flats.find((item) => String(item.id) === String(flatId)); return flat ? `${flat.blockName}-${flat.flatNumber}` : null })() : null,
-          errors: flatId ? [] : ['Select the member or unit for this debit line']
+          errors: flatId ? [] : [`Select the member or unit for this ${Number(line.credit) > 0 ? 'credit' : 'debit'} line`]
         })
       })
       return { ...current, vouchers }
@@ -85,12 +91,14 @@ export const JournalBook = () => {
   }
 
   const readyVouchers = preview?.vouchers?.filter((voucher) => !voucher.duplicate && !voucher.errors?.length && voucher.lines.every((line) => !line.errors?.length)) || []
+  const repairableVouchers = preview?.vouchers?.filter((voucher) => voucher.duplicate && !voucher.errors?.length && voucher.lines.every((line) => !line.errors?.length) && voucher.lines.some((line) => line.flatId)) || []
+  const importableVouchers = [...readyVouchers, ...repairableVouchers]
   const confirmImport = async () => {
-    if (!readyVouchers.length) return
+    if (!importableVouchers.length) return
     setWorking(true)
     try {
-      const response = await societyJournalAPI.import(financialYear, readyVouchers)
-      toast.success(`Posted ${response.data.created} journal voucher(s); skipped ${response.data.skipped}`)
+      const response = await societyJournalAPI.import(financialYear, importableVouchers)
+      toast.success(`Posted ${response.data.created} journal voucher(s); repaired ${response.data.relinked || 0}; skipped ${response.data.skipped}`)
       setPreview(null); setImportOpen(false); setPage(1); load()
     } catch (error) { toast.error(error.response?.data?.message || 'Unable to import journal vouchers') }
     finally { setWorking(false) }
@@ -121,11 +129,11 @@ export const JournalBook = () => {
         <div className="table-wrap journal-preview-table"><table><thead><tr><th>Voucher</th><th>Date</th><th>Ledger</th><th>Member / Unit</th><th className="numeric">Debit</th><th className="numeric">Credit</th><th>Status</th></tr></thead><tbody>
           {preview.vouchers.map((voucher, vi) => voucher.lines.map((line, li) => <tr key={`${vi}-${li}`} className={voucher.duplicate || voucher.errors?.length || line.errors?.length ? 'import-row-warning' : ''}>
             {li === 0 && <><td rowSpan={voucher.lines.length}>{voucher.voucherNumber || 'Missing'}<small>{voucher.voucherType}</small></td><td rowSpan={voucher.lines.length}>{voucher.date ? formatDate(voucher.date) : '-'}</td></>}
-            <td>{line.ledgerName}</td><td>{Number(line.debit) > 0 ? <select value={line.flatId || ''} onChange={(event) => setLineFlat(vi, li, event.target.value)} disabled={flatsLoading || Boolean(flatsError)}><option value="">{flatsLoading ? 'Loading members / units...' : flatsError ? 'Member / unit details unavailable' : flats.length ? 'Select member / unit' : 'No active members / units found'}</option>{flats.map((flat) => <option key={flat.id} value={flat.id}>{flat.blockName}-{flat.flatNumber} — {flat.ownerName}</option>)}</select> : '-'}</td>
+            <td>{line.ledgerName}</td><td>{requiresUnitSelection(voucher.voucherType, line) ? <select value={line.flatId || ''} onChange={(event) => setLineFlat(vi, li, event.target.value)} disabled={flatsLoading || Boolean(flatsError)}><option value="">{flatsLoading ? 'Loading members / units...' : flatsError ? 'Member / unit details unavailable' : flats.length ? 'Select member / unit' : 'No active members / units found'}</option>{flats.map((flat) => <option key={flat.id} value={flat.id}>{flat.blockName}-{flat.flatNumber} — {flat.ownerName}</option>)}</select> : '-'}</td>
             <td className="numeric">{Number(line.debit) ? formatCurrency(line.debit) : '-'}</td><td className="numeric">{Number(line.credit) ? formatCurrency(line.credit) : '-'}</td><td>{voucher.duplicate ? 'Duplicate' : [...(voucher.errors || []), ...(line.errors || [])].join('; ') || 'Ready'}</td>
           </tr>))}</tbody></table></div>
         {flatsError && <p className="form-error" role="alert">{flatsError}. Close and reopen the import to retry.</p>}
-        <div className="expense-modal-actions"><button onClick={() => setPreview(null)} disabled={working}>Choose another file</button><button className="primary" onClick={confirmImport} disabled={working || !readyVouchers.length}>{working ? 'Posting...' : `Post ${readyVouchers.length} vouchers`}</button></div></>}
+        <div className="expense-modal-actions"><button onClick={() => setPreview(null)} disabled={working}>Choose another file</button><button className="primary" onClick={confirmImport} disabled={working || !importableVouchers.length}>{working ? 'Posting...' : readyVouchers.length ? `Post ${readyVouchers.length} and repair ${repairableVouchers.length}` : `Repair ${repairableVouchers.length} existing vouchers`}</button></div></>}
     </section></div>}
   </Shell>
 }

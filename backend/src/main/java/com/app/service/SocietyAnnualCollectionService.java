@@ -60,7 +60,8 @@ public class SocietyAnnualCollectionService {
         return ledgerRows(accountId, year, assignedFlat.getId());
     }
     private List<SocietyAnnualCollectionDto> ledgerRows(Long accountId, String year, Long flatId) {
-        if (flatId != null) flatRepository.findByAccountIdAndIdAndActiveTrue(accountId, flatId).orElseThrow(() -> new ResourceNotFoundException("Flat not found"));
+        Flat requestedFlat = flatId == null ? null : flatRepository.findByAccountIdAndIdAndActiveTrue(accountId, flatId)
+                .orElseThrow(() -> new ResourceNotFoundException("Flat not found"));
         List<SocietyAnnualCollection> collections = flatId == null
                 ? repository.findByAccountIdAndFinancialYearOrderByPaymentDateDescIdDesc(accountId, year)
                 : repository.findByAccountIdAndFinancialYearAndFlatIdOrderByPaymentDateDescIdDesc(accountId, year, flatId);
@@ -68,8 +69,16 @@ public class SocietyAnnualCollectionService {
             row.setEntryKey("COLLECTION-" + row.getId()); row.setEntryType("PAYMENT"); row.setCredit(row.getAmount()); row.setDebit(BigDecimal.ZERO);
             return row;
         }).toList());
-        journalLineRepository.ledgerLines(accountId, year, flatId).forEach(line -> {
-            SocietyJournalEntry entry = line.getJournalEntry(); Flat flat = line.getFlat();
+        List<SocietyJournalLine> journalLines = new ArrayList<>(journalLineRepository.ledgerLines(accountId, year, flatId));
+        if (requestedFlat != null) {
+            List<Flat> activeFlats = flatRepository.findByAccountIdAndActiveTrue(accountId);
+            journalLineRepository.unassignedLedgerLines(accountId, year).stream()
+                    .filter(this::isMemberNoteLine)
+                    .filter(line -> uniquelyMatchesFlat(line.getLedgerName(), requestedFlat, activeFlats))
+                    .forEach(journalLines::add);
+        }
+        journalLines.forEach(line -> {
+            SocietyJournalEntry entry = line.getJournalEntry(); Flat flat = line.getFlat() == null ? requestedFlat : line.getFlat();
             rows.add(SocietyAnnualCollectionDto.builder().id(line.getId()).entryKey("JOURNAL-" + line.getId()).entryType("JOURNAL")
                     .flatId(flat == null ? null : flat.getId()).flatLabel(flat == null ? null : flat.getBlockName()+"-"+flat.getFlatNumber())
                     .financialYear(year).sourceName(line.getLedgerName()).paymentDate(entry.getEntryDate()).amount(line.getDebit().signum()>0?line.getDebit():line.getCredit())
@@ -82,6 +91,18 @@ public class SocietyAnnualCollectionService {
         BigDecimal balance = BigDecimal.ZERO;
         for (SocietyAnnualCollectionDto row : rows) { balance = balance.add(value(row.getDebit())).subtract(value(row.getCredit())); row.setRunningBalance(balance); }
         return rows;
+    }
+    private boolean isMemberNoteLine(SocietyJournalLine line) {
+        String type = normalize(line.getJournalEntry().getVoucherType());
+        return type.equals("debitnote") && value(line.getDebit()).signum() > 0
+                || type.equals("creditnote") && value(line.getCredit()).signum() > 0;
+    }
+    private boolean uniquelyMatchesFlat(String ledgerName, Flat requestedFlat, List<Flat> activeFlats) {
+        String target = normalize(ledgerName);
+        if (target.isBlank()) return false;
+        List<Flat> matches = activeFlats.stream().filter(flat -> target.equals(normalize(flat.getBlockName() + "-" + flat.getFlatNumber()))
+                || target.equals(normalize(flat.getFlatNumber())) || target.equals(normalize(flat.getOwnerName()))).toList();
+        return matches.size() == 1 && matches.get(0).getId().equals(requestedFlat.getId());
     }
     @Transactional public SocietyAnnualCollectionDto create(Long accountId, SocietyAnnualCollectionRequest r) {
         validateRequestYear(r);

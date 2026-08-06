@@ -9,6 +9,9 @@ public interface SocietyJournalEntryRepository extends JpaRepository<SocietyJour
     boolean existsByAccountIdAndFinancialYearAndVoucherNumberIgnoreCase(Long accountId, String financialYear, String voucherNumber);
 
     @EntityGraph(attributePaths = {"lines", "lines.flat"})
+    java.util.Optional<SocietyJournalEntry> findByAccountIdAndFinancialYearAndVoucherNumberIgnoreCase(Long accountId, String financialYear, String voucherNumber);
+
+    @EntityGraph(attributePaths = {"lines", "lines.flat"})
     @Query("select distinct j from SocietyJournalEntry j left join j.lines l left join l.flat f where j.account.id=:accountId and j.financialYear=:year " +
             "and (:search='' or lower(j.voucherNumber) like lower(concat('%',:search,'%')) or lower(coalesce(j.referenceNumber,'')) like lower(concat('%',:search,'%')) " +
             "or lower(coalesce(j.narration,'')) like lower(concat('%',:search,'%')) or lower(l.ledgerName) like lower(concat('%',:search,'%')) " +
