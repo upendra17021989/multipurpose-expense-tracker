@@ -193,6 +193,11 @@ export const Navbar = () => {
                     {tx('Tasks')}
                   </Link>
                 )}
+                {currentAccount?.accountType === 'INDIVIDUAL' && (
+                  <Link to="/personal/office-hours" onClick={closeMenus}>
+                    {tx('Office Hours')}
+                  </Link>
+                )}
                 <Link to="/feedback" onClick={closeMenus}>
                   {tx('Feedback')}
                 </Link>

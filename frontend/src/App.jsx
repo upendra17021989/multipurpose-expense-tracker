@@ -24,6 +24,7 @@ import { SharedExpenseFriends } from './pages/personal/SharedExpenseFriends'
 import { MyDocumentsFull as MyDocuments } from './pages/personal/MyDocumentsFull'
 import { PersonalTodos } from './pages/personal/PersonalTodos'
 import { PersonalExpenses } from './pages/personal/PersonalExpenses'
+import { OfficeHours } from './pages/personal/OfficeHours'
 import { FlatList } from './pages/society/FlatList'
 import { FlatForm } from './pages/society/FlatForm'
 import { VendorList } from './pages/society/VendorList'
@@ -238,6 +239,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <PersonalTodos />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/personal/office-hours"
+            element={
+              <ProtectedRoute>
+                <OfficeHours />
               </ProtectedRoute>
             }
           />
