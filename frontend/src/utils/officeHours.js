@@ -1,4 +1,4 @@
-const DATE_MONTHS = {
+﻿const DATE_MONTHS = {
   jan: 0, feb: 1, mar: 2, apr: 3, may: 4, jun: 5,
   jul: 6, aug: 7, sep: 8, oct: 9, nov: 10, dec: 11
 }
@@ -132,7 +132,9 @@ const summaryRow = (row, indexes) => {
   }
 }
 
-export const calculatePunchHours = (punches) => {
+export const calculatePunchHours = (punches, now = new Date()) => {
+  const currentDate = localDate(now)
+  const currentSeconds = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds()
   const grouped = new Map()
   punches.forEach((punch) => {
     const employeeId = cleanEmployeeId(punch.employeeId)
@@ -170,14 +172,16 @@ export const calculatePunchHours = (punches) => {
     const entries = ordered.filter((punch) => punch.direction === 'ENTRY').map((punch) => punch.seconds)
     const exits = ordered.filter((punch) => punch.direction === 'EXIT').map((punch) => punch.seconds)
     const firstEntrySeconds = entries.length ? Math.min(...entries) : null
-    const lastExitSeconds = exits.length ? Math.max(...exits) : null
+    const isWorkingNow = openEntry !== null && group.date === currentDate && currentSeconds >= openEntry
+    if (isWorkingNow) officeSeconds += currentSeconds - openEntry
+    const lastExitSeconds = isWorkingNow ? currentSeconds : (exits.length ? Math.max(...exits) : null)
     let spanSeconds = firstEntrySeconds !== null && lastExitSeconds !== null ? lastExitSeconds - firstEntrySeconds : null
     if (spanSeconds !== null && spanSeconds < 0) spanSeconds += 86400
-    return { ...group, firstEntrySeconds, lastExitSeconds, officeSeconds: pairs ? officeSeconds : spanSeconds, spanSeconds, punchCount: ordered.length, status: '', complete: pairs > 0 && openEntry === null }
+    return { ...group, firstEntrySeconds, lastExitSeconds, officeSeconds: pairs || isWorkingNow ? officeSeconds : spanSeconds, spanSeconds, punchCount: ordered.length, status: isWorkingNow ? 'Working now' : '', complete: pairs > 0 && openEntry === null }
   }).sort((a, b) => a.date.localeCompare(b.date) || a.employeeId.localeCompare(b.employeeId))
 }
 
-export const parseAttendanceOcrText = (text) => {
+export const parseAttendanceText = (text) => {
   const normalized = String(text || '')
     .replace(/[|]/g, ' ')
     .replace(/\bEn(?:t|l)ry\b/gi, 'Entry')
@@ -190,41 +194,7 @@ export const parseAttendanceOcrText = (text) => {
     const nextEmployee = normalized.slice(pattern.lastIndex).search(/\$?\d{3,}\s+\d{1,2}[\s/-]+[A-Za-z]{3}/)
     if (nextEmployee >= 0) pattern.lastIndex += nextEmployee
   }
-  if (!punches.length) throw new Error('No attendance punches could be recognized. Use a clear table image with Employee ID, Date, Direction and Time columns.')
-  return calculatePunchHours(punches)
-}
-
-export const parseAttendanceOcrColumns = ({ employeeIds, dates, directions, times }) => {
-  const ids = String(employeeIds || '').match(/\b\d{3,}\b/g) || []
-  const dateValues = []
-  const datePattern = /(\d{1,2})[\s.\-_/]*([A-Za-z]{3,9})[\s.\-_/]*(\d{4})/gi
-  const normalizedDates = String(dates || '').replace(/\r?\n/g, ' ')
-  let dateMatch
-  while ((dateMatch = datePattern.exec(normalizedDates)) !== null) {
-    dateValues.push(`${dateMatch[1]} ${dateMatch[2]} ${dateMatch[3]}`)
-  }
-  const directionValues = String(directions || '').match(/\b(?:Entry|Exit|In|Out)\b/gi) || []
-  const timeValues = []
-  const normalizedTimes = String(times || '').replace(/[.]/g, '').replace(/\r?\n/g, ' ')
-  const timePattern = /\b(\d{1,2}:?\d{2}:?\d{2})\s*(AM|PM)?\b/gi
-  let timeMatch
-  while ((timeMatch = timePattern.exec(normalizedTimes)) !== null) {
-    const digits = timeMatch[1].replace(/:/g, '').padStart(6, '0')
-    timeValues.push(`${digits.slice(0, 2)}:${digits.slice(2, 4)}:${digits.slice(4, 6)}${timeMatch[2] ? ` ${timeMatch[2]}` : ''}`)
-  }
-  const punchCount = Math.min(ids.length, directionValues.length, timeValues.length)
-  const uniqueDates = [...new Set(dateValues.map(parseDate).filter(Boolean))]
-  if (dateValues.length < punchCount && uniqueDates.length === 1) {
-    while (dateValues.length < punchCount) dateValues.push(uniqueDates[0])
-  }
-  const rowCount = Math.min(punchCount, dateValues.length)
-  if (!rowCount) throw new Error('No complete attendance rows were recognized in the image.')
-  const punches = Array.from({ length: rowCount }, (_, index) => ({
-    employeeId: ids[index],
-    date: dateValues[index],
-    direction: directionValues[index],
-    time: timeValues[index]
-  }))
+  if (!punches.length) throw new Error('No attendance rows were found. Paste rows containing Employee ID, Date, Direction and Time.')
   return calculatePunchHours(punches)
 }
 
@@ -234,3 +204,7 @@ export const officeHoursSummary = (rows) => ({
   incompleteDays: rows.filter((row) => !row.complete && row.punchCount > 0).length,
   employees: new Set(rows.map((row) => row.employeeId)).size
 })
+
+
+
+

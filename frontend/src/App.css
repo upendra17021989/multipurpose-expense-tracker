@@ -1,4 +1,4 @@
-#root {
+﻿#root {
   width: 100%;
   max-width: 100%;
   min-height: 100vh;
@@ -3075,6 +3075,11 @@ textarea:disabled {
 .office-hours-upload { margin-bottom: 1.25rem; }
 .office-hours-file { margin: 0.8rem 0 0; overflow-wrap: anywhere; }
 .office-hours-note { margin: 0.75rem 0 0; }
+.office-hours-text-import { display: grid; gap: 0.65rem; }
+.office-hours-text-import textarea { width: 100%; min-height: 14rem; resize: vertical; font: inherit; line-height: 1.45; }
+.office-hours-text-import .primary { justify-self: start; }
+.office-hours-import-divider { display: flex; align-items: center; gap: 0.75rem; margin: 1.25rem 0; color: var(--muted); }
+.office-hours-import-divider::before, .office-hours-import-divider::after { content: ''; height: 1px; flex: 1; background: var(--border); }
 .office-hours-table-wrap td small { display: block; margin-top: 0.2rem; color: var(--muted); }
 .office-hours-table-wrap th { white-space: nowrap; }
 .office-hours-samples { margin-bottom: 1.25rem; }
@@ -5231,3 +5236,4 @@ textarea:disabled {
 .flat-search-options button[aria-selected='true'] {
   background: #f3f7fb;
 }
+
