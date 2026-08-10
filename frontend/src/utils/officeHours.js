@@ -81,6 +81,7 @@ export const parseAttendanceSheet = (matrix) => {
   const indexes = {
     employeeId: columnIndex(headers, [/^employee id$/, /^emp(?:loyee)? id$/, /^employee code$/]),
     employeeName: columnIndex(headers, [/employee name/, /^name$/]),
+    machineName: columnIndex(headers, [/machine name/, /^machine$/, /device name/, /terminal name/]),
     date: columnIndex(headers, [/^date$/, /attendance date/]),
     direction: columnIndex(headers, [/direction/, /entry exit/, /in out/]),
     time: columnIndex(headers, [/^time$/, /punch time/, /swipe time/]),
@@ -97,6 +98,7 @@ export const parseAttendanceSheet = (matrix) => {
     const punches = dataRows.map((row) => ({
       employeeId: cleanEmployeeId(row[indexes.employeeId]),
       employeeName: indexes.employeeName >= 0 ? String(row[indexes.employeeName] || '').trim() : '',
+      machineName: indexes.machineName >= 0 ? String(row[indexes.machineName] || '').trim() : '',
       date: parseDate(row[indexes.date]),
       direction: String(row[indexes.direction] || '').trim(),
       time: String(row[indexes.time] || '').trim()
@@ -143,7 +145,8 @@ export const calculatePunchHours = (punches, now = new Date()) => {
     if (!employeeId || !date || seconds === null) return
     const key = `${employeeId}|${date}`
     if (!grouped.has(key)) grouped.set(key, { employeeId, employeeName: punch.employeeName || '', date, punches: [] })
-    grouped.get(key).punches.push({ direction: /^entry|in$/i.test(punch.direction) ? 'ENTRY' : 'EXIT', seconds })
+    const isCafeteria = /cafeteria/i.test(String(punch.machineName || ''))
+    grouped.get(key).punches.push({ direction: !isCafeteria && /^(entry|in)$/i.test(punch.direction) ? 'ENTRY' : 'EXIT', seconds })
   })
 
   return [...grouped.values()].map((group) => {
@@ -186,11 +189,11 @@ export const parseAttendanceText = (text) => {
     .replace(/[|]/g, ' ')
     .replace(/\bEn(?:t|l)ry\b/gi, 'Entry')
     .replace(/\bEx(?:i|l)t\b/gi, 'Exit')
-  const pattern = /\$?(\d{3,})\s+(\d{1,2}[\s/-]+[A-Za-z]{3,9}[\s/-]+\d{4})[\s\S]*?\b(Entry|Exit|In|Out)\b[\s\S]*?(\d{1,2}:\d{2}(?::\d{2})?\s*(?:AM|PM)?)/gi
+  const pattern = /\$?(\d{3,})\s+(\d{1,2}[\s/-]+[A-Za-z]{3,9}[\s/-]+\d{4})\s+([\s\S]*?)\b(Entry|Exit|In|Out)\b[\s\S]*?(\d{1,2}:\d{2}(?::\d{2})?\s*(?:AM|PM)?)/gi
   const punches = []
   let match
   while ((match = pattern.exec(normalized)) !== null) {
-    punches.push({ employeeId: match[1], date: match[2], direction: match[3], time: match[4] })
+    punches.push({ employeeId: match[1], date: match[2], machineName: match[3].trim(), direction: match[4], time: match[5] })
     const nextEmployee = normalized.slice(pattern.lastIndex).search(/\$?\d{3,}\s+\d{1,2}[\s/-]+[A-Za-z]{3}/)
     if (nextEmployee >= 0) pattern.lastIndex += nextEmployee
   }
@@ -204,6 +207,7 @@ export const officeHoursSummary = (rows) => ({
   incompleteDays: rows.filter((row) => !row.complete && row.punchCount > 0).length,
   employees: new Set(rows.map((row) => row.employeeId)).size
 })
+
 
 
 

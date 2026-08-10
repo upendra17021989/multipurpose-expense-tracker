@@ -72,7 +72,23 @@ Exit
     expect(formatDuration(rows[0].spanSeconds, true)).toBe('03:21:16')
     expect(rows[0]).toMatchObject({ status: 'Working now', complete: false })
   })
+
+  it('treats a cafeteria machine punch as an exit', () => {
+    const rows = parseAttendanceText(`14693
+10 Aug 2026
+Gandhinagar Reception
+Entry
+01:00:00 PM
+14693
+10 Aug 2026
+Gandhinagar 2nd Floor Fire (Cafeteria) Door
+Entry
+01:36:44 PM`)
+    expect(formatDuration(rows[0].officeSeconds, true)).toBe('00:36:44')
+    expect(rows[0].complete).toBe(true)
+  })
 })
+
 
 
 
