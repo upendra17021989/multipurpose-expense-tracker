@@ -145,17 +145,41 @@ export const calculatePunchHours = (punches, now = new Date()) => {
     if (!employeeId || !date || seconds === null) return
     const key = `${employeeId}|${date}`
     if (!grouped.has(key)) grouped.set(key, { employeeId, employeeName: punch.employeeName || '', date, punches: [] })
-    const isCafeteria = /cafeteria/i.test(String(punch.machineName || ''))
-    grouped.get(key).punches.push({ direction: !isCafeteria && /^(entry|in)$/i.test(punch.direction) ? 'ENTRY' : 'EXIT', seconds })
+    const isEntry = /^(entry|in)$/i.test(punch.direction)
+const isCafeteria = /cafeteria/i.test(String(punch.machineName || ''))
+
+grouped.get(key).punches.push({
+  direction: isCafeteria
+    ? (isEntry ? 'EXIT' : 'ENTRY')
+    : (isEntry ? 'ENTRY' : 'EXIT'),
+  seconds
+})
   })
 
   return [...grouped.values()].map((group) => {
     const ordered = group.punches.sort((a, b) => a.seconds - b.seconds)
+    const consolidated = ordered.reduce((result, punch) => {
+  const previous = result[result.length - 1]
+
+  if (
+    previous?.direction === punch.direction &&
+    punch.seconds - previous.seconds <= 60
+  ) {
+    // Keep the first nearby entry and the last nearby exit.
+    if (punch.direction === 'EXIT') {
+      previous.seconds = punch.seconds
+    }
+  } else {
+    result.push({ ...punch })
+  }
+
+  return result
+}, [])
     let openEntry = null
     let pendingExit = null
     let officeSeconds = 0
     let pairs = 0
-    ordered.forEach((punch) => {
+    consolidated.forEach((punch) => {
       if (punch.direction === 'ENTRY') {
         if (openEntry !== null && pendingExit !== null) {
           officeSeconds += pendingExit - openEntry
@@ -164,7 +188,7 @@ export const calculatePunchHours = (punches, now = new Date()) => {
         openEntry = openEntry === null || pendingExit !== null ? punch.seconds : Math.min(openEntry, punch.seconds)
         pendingExit = null
       } else if (openEntry !== null && punch.seconds >= openEntry) {
-        pendingExit = punch.seconds
+        if (pendingExit === null) pendingExit = punch.seconds
       }
     })
     if (openEntry !== null && pendingExit !== null) {
@@ -172,8 +196,8 @@ export const calculatePunchHours = (punches, now = new Date()) => {
       pairs += 1
       openEntry = null
     }
-    const entries = ordered.filter((punch) => punch.direction === 'ENTRY').map((punch) => punch.seconds)
-    const exits = ordered.filter((punch) => punch.direction === 'EXIT').map((punch) => punch.seconds)
+    const entries = consolidated.filter((punch) => punch.direction === 'ENTRY').map((punch) => punch.seconds)
+    const exits = consolidated.filter((punch) => punch.direction === 'EXIT').map((punch) => punch.seconds)
     const firstEntrySeconds = entries.length ? Math.min(...entries) : null
     const isWorkingNow = openEntry !== null && group.date === currentDate && currentSeconds >= openEntry
     if (isWorkingNow) officeSeconds += currentSeconds - openEntry
