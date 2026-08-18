@@ -4611,28 +4611,39 @@ textarea:disabled {
 .document-wide { grid-column: 1 / -1; }
 .document-filters { display: grid; grid-template-columns: 2fr repeat(3, 1fr) auto auto; gap: .6rem; margin: 1rem 0; }
 .document-state { padding: 2rem; text-align: center; }
-.document-list { display: grid; gap: .8rem; }
+.document-list { display: grid; gap: .5rem; }
 .document-mobile-list { display: none; }
 .document-mobile-toolbar, .document-mobile-stats { display: none; }
-.document-card { padding: 1rem; border: 1px solid #d9e2ec; border-radius: 10px; background: #fff; }
+.document-card { display: grid; grid-template-columns: minmax(190px, 1.2fr) minmax(360px, 2fr) auto; align-items: center; gap: 1rem; min-height: 68px; padding: .65rem .75rem; border: 1px solid #d9e2ec; border-radius: 9px; background: #fff; transition: border-color .15s ease, box-shadow .15s ease; }
+.document-card:hover { border-color: #b9c9d8; box-shadow: 0 3px 12px rgba(15, 23, 42, .05); }
 .document-card-main, .document-actions, .document-pagination { display: flex; align-items: center; justify-content: space-between; gap: .75rem; }
 .document-card h3, .document-card p { margin: 0; }
-.document-card-main p { color: #64748b; font-size: .9rem; }
-.document-card dl { display: grid; grid-template-columns: repeat(4, 1fr); gap: .8rem; margin: 1rem 0; }
+.document-card-main { min-width: 0; }
+.document-card-main > div { min-width: 0; }
+.document-card h3 { overflow: hidden; font-size: .95rem; text-overflow: ellipsis; white-space: nowrap; }
+.document-card-main p { overflow: hidden; margin-top: .12rem; color: #64748b; font-size: .78rem; text-overflow: ellipsis; white-space: nowrap; }
+.document-card dl { display: grid; grid-template-columns: repeat(4, minmax(70px, 1fr)); gap: .7rem; margin: 0; }
 .document-card dl div { min-width: 0; }
-.document-card dt { color: #64748b; font-size: .78rem; text-transform: uppercase; }
-.document-card dd { margin: .2rem 0 0; overflow-wrap: anywhere; }
-.document-status { padding: .3rem .6rem; border-radius: 999px; font-size: .78rem; font-weight: 700; white-space: nowrap; }
+.document-card dt { color: #64748b; font-size: .66rem; font-weight: 700; letter-spacing: .02em; text-transform: uppercase; }
+.document-card dd { overflow: hidden; margin: .12rem 0 0; font-size: .82rem; text-overflow: ellipsis; white-space: nowrap; }
+.document-status { padding: .24rem .5rem; border-radius: 999px; font-size: .7rem; font-weight: 700; white-space: nowrap; }
 .document-status.success { color: #166534; background: #dcfce7; }
 .document-status.warning { color: #92400e; background: #fef3c7; }
 .document-status.danger { color: #991b1b; background: #fee2e2; }
 .document-status.neutral { color: #475569; background: #e2e8f0; }
-.document-tags { color: #0f766e; font-size: .85rem; }
-.shared-document-label { display: inline-flex; width: fit-content; margin: .75rem 0 0 !important; padding: .3rem .6rem; border-radius: 999px; color: #075985; background: #e0f2fe; font-size: .78rem; font-weight: 700; }
-.document-actions { justify-content: flex-end; margin-top: .8rem; }
-.document-actions .danger { color: #b91c1c; border-color: #fecaca; }
+.document-tags { overflow: hidden; max-width: 100%; color: #0f766e; font-size: .72rem; text-align: right; text-overflow: ellipsis; white-space: nowrap; }
+.shared-document-label { display: inline-flex; width: fit-content; margin-top: .28rem; padding: .16rem .42rem; border-radius: 999px; color: #075985; background: #e0f2fe; font-size: .66rem; font-weight: 700; }
+.document-card-controls { display: grid; min-width: 0; gap: .3rem; justify-items: end; }
+.document-actions { justify-content: flex-end; margin-top: 0; gap: .35rem; }
+.document-actions button { min-height: 32px; padding: .38rem .55rem; font-size: .75rem; }
+.document-actions .document-delete-button { border-color: #f1c6c6; background: #fff7f7; color: #a83232; box-shadow: none; }
+.document-actions .document-delete-button:hover { border-color: #e6a7a7; background: #fdecec; color: #8f2424; }
 .document-pagination { justify-content: center; margin-top: 1rem; }
 
+@media (max-width: 1100px) {
+  .document-card { grid-template-columns: minmax(180px, 1fr) minmax(320px, 1.7fr); }
+  .document-card-controls { grid-column: 1 / -1; display: flex; align-items: center; justify-content: flex-end; }
+}
 @media (max-width: 900px) {
   .document-filters { grid-template-columns: 1fr 1fr; }
   .document-filters input { grid-column: 1 / -1; }
