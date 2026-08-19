@@ -433,7 +433,7 @@ export const SharedExpenseGroup = () => {
       <section className="shared-group-hero">
         <div>
           <span>{tx(group.active ? 'Active shared group' : 'Archived shared group')}</span>
-          <h2>{formatCurrency(totalSpent)} {tx('tracked across')} {group.expenses?.length || 0} {tx('expenses')}</h2>
+          <h2>{formatCurrency(totalSpent)} {tx('tracked across')} {activeExpenses.length} {tx('expenses')}</h2>
           <p>{recentActivity ? recentActivity.message : tx('Add the first expense or invite members to start the shared ledger.')}</p>
         </div>
         <div className="shared-group-pulse">
@@ -500,18 +500,26 @@ export const SharedExpenseGroup = () => {
           return (
             <article className={balance > 0 ? 'gets' : balance < 0 ? 'owes' : 'settled'} key={x.memberId || x.memberName}>
               <span>{x.memberName?.charAt(0)?.toUpperCase() || 'M'}</span>
-              <div>
-                <strong>{x.memberName}</strong>
+              <div className="shared-balance-member">
+                <strong title={x.memberName}>{x.memberName}</strong>
                 <small>{tx(balance > 0 ? 'Gets back' : balance < 0 ? 'Needs to pay' : 'All settled')}</small>
               </div>
-              <b>{balance > 0 ? formatCurrency(balance) : balance < 0 ? formatCurrency(-balance) : tx('Settled')}</b>
-              {!!balance && group.active && <button type="button" onClick={() => prepareSettlement(x)}>{tx('Settle')}</button>}
+              <div className="shared-balance-action">
+                <b>{balance > 0 ? formatCurrency(balance) : balance < 0 ? formatCurrency(-balance) : tx('Settled')}</b>
+                {balance < 0 && group.active && <button type="button" onClick={() => prepareSettlement(x)}>{tx('Settle up')}</button>}
+              </div>
             </article>
           )
         })}
         {!group.balances?.length && <p className="empty-state">{tx('Add members to see balances here.')}</p>}
         </div>
-        <div className="shared-insight-filters" aria-label={tx('Expense insight date range')}>
+        <div className="shared-insight-heading">
+          <div>
+            <span>{tx('Analytics')}</span>
+            <h2>{tx('Spending insights')}</h2>
+            <p>{insightExpenses.length} {tx(insightExpenses.length === 1 ? 'expense' : 'expenses')} · {formatCurrency(insightTotal)}</p>
+          </div>
+          <div className="shared-insight-filters" aria-label={tx('Expense insight date range')}>
           <div className="shared-insight-presets">
             {[
               ['all', 'All time'],
@@ -534,6 +542,7 @@ export const SharedExpenseGroup = () => {
               <label>{tx('To')}<input type="date" value={insightDates.to} min={insightDates.from || undefined} onChange={(e) => setInsightDates({ ...insightDates, to: e.target.value })} /></label>
             </div>
           )}
+        </div>
         </div>
         <div className="shared-expense-insights">
           <section className="report-panel">
