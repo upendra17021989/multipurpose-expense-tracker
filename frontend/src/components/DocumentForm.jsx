@@ -9,6 +9,8 @@ export const DOCUMENT_CATEGORIES = [
 ]
 
 const emptyForm = { title: '', category: 'INSURANCE_POLICY', issuer: '', documentNumber: '', issueDate: '', expiryDate: '', tags: '', notes: '' }
+const MAX_FILE_SIZE = 1024 * 1024
+const FILE_SIZE_ERROR = 'This file exceeds the 1 MB upload limit. Please choose a file that is 1 MB or smaller.'
 
 export const DocumentForm = ({ document, onSubmit, onCancel, saving }) => {
   const [form, setForm] = useState(emptyForm)
@@ -25,10 +27,21 @@ export const DocumentForm = ({ document, onSubmit, onCancel, saving }) => {
   }, [document])
 
   const change = (event) => setForm({ ...form, [event.target.name]: event.target.value })
+  const changeFile = (event) => {
+    const selectedFile = event.target.files?.[0] || null
+    if (selectedFile && selectedFile.size > MAX_FILE_SIZE) {
+      setFile(null)
+      setError(FILE_SIZE_ERROR)
+      event.target.value = ''
+      return
+    }
+    setFile(selectedFile)
+    setError('')
+  }
   const submit = (event) => {
     event.preventDefault()
     if (!document && !file) return setError('Choose a PDF or image to upload.')
-    if (file && file.size > 5 * 1024 * 1024) return setError('File must be 5 MB or smaller.')
+    if (file && file.size > MAX_FILE_SIZE) return setError(FILE_SIZE_ERROR)
     if (form.issueDate && form.expiryDate && form.expiryDate < form.issueDate) return setError('Expiry date cannot be before issue date.')
     setError(''); onSubmit(form, file)
   }
@@ -40,7 +53,7 @@ export const DocumentForm = ({ document, onSubmit, onCancel, saving }) => {
       <div className="form-grid two">
         <label>Title<input name="title" maxLength="150" value={form.title} onChange={change} required /></label>
         <label>Category<select name="category" value={form.category} onChange={change}>{DOCUMENT_CATEGORIES.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
-        {!document && <label className="document-file-field">File<input type="file" accept=".pdf,.jpg,.jpeg,.jfif,.png" onChange={(event) => setFile(event.target.files?.[0] || null)} required /></label>}
+        {!document && <label className="document-file-field">File (maximum 1 MB)<input type="file" accept=".pdf,.jpg,.jpeg,.jfif,.png" onChange={changeFile} required /></label>}
         <label>Issuer / provider<input name="issuer" maxLength="150" value={form.issuer} onChange={change} /></label>
         <label>Policy / account / reference number<input name="documentNumber" maxLength="150" value={form.documentNumber} onChange={change} /></label>
         <label>Issue date<input type="date" name="issueDate" value={form.issueDate} onChange={change} /></label>
