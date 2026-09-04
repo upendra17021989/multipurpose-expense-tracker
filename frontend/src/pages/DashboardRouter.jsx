@@ -39,9 +39,9 @@ export const Shell = ({ title, eyebrow = 'Dashboard', actions, children }) => {
   const showIndividualBack = currentAccount?.accountType === 'INDIVIDUAL' && !['/home', '/dashboard'].includes(location.pathname)
 
   return (
-    <div>
+    <div className="app-layout">
       <Navbar />
-      <main className="page-shell">
+      <main className="page-shell app-main-content">
         <div className="page-header">
           <div>
             {showIndividualBack && <Link className="page-back-link" to="/home">{tx('Back to dashboard')}</Link>}

@@ -1,396 +1,296 @@
 import { useEffect, useRef, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { toast } from 'react-toastify'
 import { authAPI } from '../api/endpoints'
 import { useInstallPrompt } from '../hooks/useInstallPrompt'
 import { LANGUAGES, useI18n } from '../i18n'
 import { useAuthStore } from '../store/authStore'
+import { getNavigationGroups, isNavigationItemActive } from './navigationConfig'
+
+const glyphs = {
+  Dashboard: 'D',
+  Expenses: 'E',
+  Categories: 'C',
+  Budget: 'B',
+  Reports: 'R',
+  'Shared Expenses': 'S',
+  Friends: 'F',
+  Documents: 'D',
+  Tasks: 'T',
+  'Office Hours': 'O',
+  'Annual Finance': 'A',
+  'Financial Ledger': 'L',
+  'Journal Book': 'J',
+  Festivals: 'F',
+  Collections: 'C',
+  Flats: 'F',
+  'Member Directory': 'M',
+  Vendors: 'V',
+  Staff: 'S',
+  Sales: 'S',
+  Purchases: 'P',
+  Products: 'P',
+  Customers: 'C',
+  'Customer Credit': 'C',
+  Suppliers: 'S',
+  'Supplier Dues': 'D',
+  Overview: 'O',
+  Members: 'M',
+  Events: 'E',
+  'System Admin': 'A',
+  Feedback: '?'
+}
 
 export const Navbar = () => {
   const navigate = useNavigate()
-  const navRef = useRef(null)
+  const location = useLocation()
+  const panelRef = useRef(null)
+  const openButtonRef = useRef(null)
+  const closeButtonRef = useRef(null)
   const { user, currentAccount, accounts, setSession, logout } = useAuthStore()
   const { canInstall, hasNativePrompt, promptInstall } = useInstallPrompt()
   const { language, setLanguage, tx } = useI18n()
-  const [menuOpen, setMenuOpen] = useState(false)
-  const [moduleOpen, setModuleOpen] = useState(false)
+  const [drawerOpen, setDrawerOpen] = useState(false)
   const [accountOpen, setAccountOpen] = useState(false)
 
-  const handleLogout = () => {
-    logout()
+  const groups = getNavigationGroups(
+    currentAccount?.accountType,
+    user?.systemAdmin
+  )
+  const closeDrawer = (restoreFocus = false) => {
+    setDrawerOpen(false)
     setAccountOpen(false)
-    setMenuOpen(false)
-    navigate('/login')
+    if (restoreFocus) window.setTimeout(() => openButtonRef.current?.focus(), 0)
   }
 
-  const handleInstall = async () => {
-    const accepted = await promptInstall()
-    if (!hasNativePrompt) {
-      toast.info(
-        'Open Chrome menu and choose "Add to Home screen" or "Install app".'
-      )
-      closeMenus()
-      return
+  useEffect(() => {
+    closeDrawer()
+  }, [location.pathname])
+
+  useEffect(() => {
+    if (!drawerOpen) return undefined
+    document.body.classList.add('sidebar-drawer-open')
+    closeButtonRef.current?.focus()
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') {
+        event.preventDefault()
+        closeDrawer(true)
+        return
+      }
+      if (event.key !== 'Tab') return
+      const focusable = [
+        ...panelRef.current.querySelectorAll(
+          'a[href], button:not([disabled]), select:not([disabled])'
+        )
+      ]
+      if (!focusable.length) return
+      const first = focusable[0]
+      const last = focusable[focusable.length - 1]
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault()
+        last.focus()
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault()
+        first.focus()
+      }
     }
-    if (accepted) {
-      toast.success('App installed')
-      closeMenus()
+    document.addEventListener('keydown', handleKeyDown)
+    return () => {
+      document.body.classList.remove('sidebar-drawer-open')
+      document.removeEventListener('keydown', handleKeyDown)
     }
-  }
+  }, [drawerOpen])
 
   const handleAccountChange = async (event) => {
     const accountId = event.target.value
     if (!accountId || String(currentAccount?.id) === accountId) return
-
     try {
       const response = await authAPI.switchAccount(accountId)
-      const { token, user, accounts, currentAccount } = response.data
-      setSession(token, user, accounts, currentAccount)
-      toast.success(`Switched to ${currentAccount.accountName}`)
-      setMenuOpen(false)
-      setAccountOpen(false)
+      const {
+        token,
+        user: nextUser,
+        accounts: nextAccounts,
+        currentAccount: nextAccount
+      } = response.data
+      setSession(token, nextUser, nextAccounts, nextAccount)
+      toast.success(`Switched to ${nextAccount.accountName}`)
+      closeDrawer()
       navigate('/home')
     } catch (error) {
       toast.error(error.response?.data?.message || 'Unable to switch account')
     }
   }
 
-  const closeMenus = () => {
-    setMenuOpen(false)
-    setModuleOpen(false)
-    setAccountOpen(false)
+  const handleInstall = async () => {
+    const accepted = await promptInstall()
+    if (!hasNativePrompt)
+      toast.info(
+        'Open Chrome menu and choose "Add to Home screen" or "Install app".'
+      )
+    else if (accepted) toast.success('App installed')
+    closeDrawer()
   }
 
-  useEffect(() => {
-    if (!menuOpen && !moduleOpen && !accountOpen) return undefined
+  const handleLogout = () => {
+    logout()
+    closeDrawer()
+    navigate('/login')
+  }
 
-    const handlePointerDown = (event) => {
-      if (navRef.current?.contains(event.target)) return
-      closeMenus()
-    }
-    const handleKeyDown = (event) => {
-      if (event.key === 'Escape') closeMenus()
-    }
-
-    document.addEventListener('mousedown', handlePointerDown)
-    document.addEventListener('touchstart', handlePointerDown)
-    document.addEventListener('keydown', handleKeyDown)
-    return () => {
-      document.removeEventListener('mousedown', handlePointerDown)
-      document.removeEventListener('touchstart', handlePointerDown)
-      document.removeEventListener('keydown', handleKeyDown)
-    }
-  }, [menuOpen, moduleOpen, accountOpen])
-
-  const moduleLabel =
-    currentAccount?.accountType === 'KIRANA_STORE'
-      ? 'Kirana'
-      : currentAccount?.accountType === 'SOCIETY'
-        ? 'Society'
-        : currentAccount?.accountType === 'SPORTS'
-          ? 'Sports'
-          : 'Personal'
+  const navigationLink = (item) => {
+    const active = isNavigationItemActive(location.pathname, item)
+    return (
+      <Link
+        key={item.to}
+        to={item.to}
+        className={`sidebar-nav-link${active ? ' active' : ''}`}
+        aria-current={active ? 'page' : undefined}
+        onClick={() => closeDrawer()}
+      >
+        <span className="sidebar-nav-glyph" aria-hidden="true">
+          {glyphs[item.label] || item.label[0]}
+        </span>
+        <span>{tx(item.label)}</span>
+      </Link>
+    )
+  }
 
   return (
-    <nav className="navbar" ref={navRef}>
-      <div className="nav-container">
-        <div className="nav-topline">
-          <Link
-            className="nav-logo"
-            to="/home"
-            onClick={() => setMenuOpen(false)}
-          >
+    <>
+      <header className="sidebar-mobile-bar">
+        <button
+          ref={openButtonRef}
+          type="button"
+          className="sidebar-menu-button"
+          aria-label={tx('Open navigation menu')}
+          aria-expanded={drawerOpen}
+          aria-controls="primary-sidebar"
+          onClick={() => setDrawerOpen(true)}
+        >
+          <span />
+          <span />
+          <span />
+        </button>
+        <Link to="/home">{tx('Expense Tracker')}</Link>
+        <span className="sidebar-mobile-avatar" aria-hidden="true">
+          {user?.name?.[0]?.toUpperCase() || 'A'}
+        </span>
+      </header>
+      {drawerOpen && (
+        <button
+          type="button"
+          className="sidebar-overlay"
+          aria-label={tx('Close navigation menu')}
+          onClick={() => closeDrawer(true)}
+        />
+      )}
+      <aside
+        ref={panelRef}
+        id="primary-sidebar"
+        className={`app-sidebar${drawerOpen ? ' open' : ''}`}
+        aria-label={tx('Application sidebar')}
+      >
+        <div className="sidebar-heading">
+          <Link to="/home" onClick={() => closeDrawer()}>
             {tx('Expense Tracker')}
           </Link>
           <button
+            ref={closeButtonRef}
             type="button"
-            className="nav-menu-toggle"
-            aria-expanded={menuOpen}
-            aria-label="Toggle navigation menu"
-            onClick={() => setMenuOpen((open) => !open)}
+            className="sidebar-close-button"
+            aria-label={tx('Close navigation menu')}
+            onClick={() => closeDrawer(true)}
           >
-            <span />
-            <span />
-            <span />
+            ×
           </button>
+          <p title={currentAccount?.accountName}>
+            {currentAccount?.accountName || tx('No workspace selected')}
+          </p>
+          {currentAccount?.accountType && (
+            <span>{tx(currentAccount.accountType.replaceAll('_', ' '))}</span>
+          )}
         </div>
-
-        <div className={`nav-menu ${menuOpen ? 'open' : ''}`}>
-          <div className="nav-links">
-            <Link to="/home" onClick={closeMenus}>
-              {tx('Dashboard')}
-            </Link>
-            {user?.systemAdmin && (
-              <Link to="/system-admin" onClick={closeMenus}>
-                {tx('System Admin')}
+        <nav className="sidebar-nav" aria-label={tx('Primary navigation')}>
+          {navigationLink({ label: 'Dashboard', to: '/home', exact: true })}
+          {groups.map((group) => (
+            <section className="sidebar-nav-group" key={group.label}>
+              <h2>{tx(group.label)}</h2>
+              {group.items.map(navigationLink)}
+            </section>
+          ))}
+        </nav>
+        <div className="sidebar-account">
+          <button
+            type="button"
+            className="sidebar-account-trigger"
+            aria-expanded={accountOpen}
+            aria-controls="sidebar-account-menu"
+            onClick={() => setAccountOpen((open) => !open)}
+          >
+            <span className="sidebar-avatar" aria-hidden="true">
+              {user?.name?.[0]?.toUpperCase() || 'A'}
+            </span>
+            <span className="sidebar-account-copy">
+              <strong>{user?.name || tx('Account')}</strong>
+              <small>{currentAccount?.accountName}</small>
+            </span>
+            <span aria-hidden="true">{accountOpen ? '⌄' : '⌃'}</span>
+          </button>
+          {accountOpen && (
+            <div id="sidebar-account-menu" className="sidebar-account-menu">
+              {accounts.length > 1 && (
+                <label>
+                  {tx('Workspace')}
+                  <select
+                    value={currentAccount?.id || ''}
+                    onChange={handleAccountChange}
+                  >
+                    {accounts.map((account) => (
+                      <option key={account.id} value={account.id}>
+                        {account.accountName}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              )}
+              <label>
+                {tx('Language')}
+                <select
+                  value={language}
+                  onChange={(event) => setLanguage(event.target.value)}
+                >
+                  {LANGUAGES.map((item) => (
+                    <option key={item.code} value={item.code}>
+                      {item.shortLabel}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <Link to="/workspaces" onClick={() => closeDrawer()}>
+                {tx('Workspaces')}
               </Link>
-            )}
-            {currentAccount?.accountType !== 'SPORTS' &&
-              currentAccount?.accountType !== 'SOCIETY' && (
-              <Link to={currentAccount?.accountType === 'INDIVIDUAL' ? '/personal/expenses' : '/expenses'} onClick={closeMenus}>
-                {tx('Expenses')}
+              <Link to="/profile" onClick={() => closeDrawer()}>
+                {tx('Edit account details')}
               </Link>
-            )}
-            {currentAccount?.accountType !== 'SPORTS' &&
-              currentAccount?.accountType !== 'INDIVIDUAL' &&
-              currentAccount?.accountType !== 'SOCIETY' && (
-              <Link to="/categories" onClick={closeMenus}>
-                {tx('Categories')}
+              <Link to="/change-password" onClick={() => closeDrawer()}>
+                {tx('Change password')}
               </Link>
-            )}
-            {currentAccount?.accountType === 'SOCIETY' && (
-              <Link to="/society/annual-finance" onClick={closeMenus}>
-                {tx('Annual Finance')}
-              </Link>
-            )}
-            {currentAccount?.accountType === 'SOCIETY' && (
-              <Link to="/society/festivals" onClick={closeMenus}>
-                {tx('Festivals')}
-              </Link>
-            )}
-
-            <div className={`nav-dropdown ${moduleOpen ? 'open' : ''}`}>
-              <button
-                type="button"
-                className="nav-dropdown-trigger"
-                onClick={() => setModuleOpen((open) => !open)}
-              >
-                {tx(moduleLabel)}
-              </button>
-              <div className="nav-dropdown-panel">
-                {currentAccount?.accountType === 'INDIVIDUAL' && (
-                  <Link to="/categories" onClick={closeMenus}>
-                    {tx('Categories')}
-                  </Link>
-                )}
-                {currentAccount?.accountType === 'INDIVIDUAL' && (
-                  <Link to="/budget" onClick={closeMenus}>
-                    {tx('Budget')}
-                  </Link>
-                )}
-                {currentAccount?.accountType === 'INDIVIDUAL' && (
-                  <Link to="/personal/reports" onClick={closeMenus}>
-                    {tx('Reports')}
-                  </Link>
-                )}
-                {currentAccount?.accountType === 'INDIVIDUAL' && (
-                  <Link to="/personal/shared-expenses" onClick={closeMenus}>
-                    {tx('Shared Expenses')}
-                  </Link>
-                )}
-                {currentAccount?.accountType === 'INDIVIDUAL' && (
-                  <Link to="/personal/friends" onClick={closeMenus}>
-                    {tx('Friends')}
-                  </Link>
-                )}
-                {currentAccount?.accountType === 'INDIVIDUAL' && (
-                  <Link to="/personal/documents" onClick={closeMenus}>
-                    {tx('Documents')}
-                  </Link>
-                )}
-                {currentAccount?.accountType === 'INDIVIDUAL' && (
-                  <Link to="/personal/todos" onClick={closeMenus}>
-                    {tx('Tasks')}
-                  </Link>
-                )}
-                {currentAccount?.accountType === 'INDIVIDUAL' && (
-                  <Link to="/personal/office-hours" onClick={closeMenus}>
-                    {tx('Office Hours')}
-                  </Link>
-                )}
-                <Link to="/feedback" onClick={closeMenus}>
-                  {tx('Feedback')}
-                </Link>
-                {currentAccount?.accountType === 'SOCIETY' && (
-                  <Link to="/categories" onClick={closeMenus}>
-                    {tx('Categories')}
-                  </Link>
-                )}
-                {currentAccount?.accountType === 'SOCIETY' && (
-                  <Link to="/society/flats" onClick={closeMenus}>
-                    {tx('Flats')}
-                  </Link>
-                )}
-                {currentAccount?.accountType === 'SOCIETY' && (
-                  <Link to="/society/member-directory" onClick={closeMenus}>
-                    {tx('Member Directory')}
-                  </Link>
-                )}
-                {currentAccount?.accountType === 'SOCIETY' && (
-                  <Link to="/society/financial-ledger" onClick={closeMenus}>
-                    {tx('Financial Ledger')}
-                  </Link>
-                )}
-                {currentAccount?.accountType === 'SOCIETY' && (
-                  <Link to="/society/journal-book" onClick={closeMenus}>
-                    {tx('Journal Book')}
-                  </Link>
-                )}
-                {currentAccount?.accountType === 'SOCIETY' && (
-                  <Link to="/society/vendors" onClick={closeMenus}>
-                    {tx('Vendors')}
-                  </Link>
-                )}
-                {currentAccount?.accountType === 'SOCIETY' && (
-                  <Link to="/society/staff" onClick={closeMenus}>
-                    {tx('Staff')}
-                  </Link>
-                )}
-                {currentAccount?.accountType === 'SOCIETY' && (
-                  <Link to="/society/festival-collections" onClick={closeMenus}>
-                    {tx('Collections')}
-                  </Link>
-                )}
-                {currentAccount?.accountType === 'KIRANA_STORE' && (
-                  <Link to="/kirana/products" onClick={closeMenus}>
-                    {tx('Products')}
-                  </Link>
-                )}
-                {currentAccount?.accountType === 'KIRANA_STORE' && (
-                  <Link to="/kirana/sales" onClick={closeMenus}>
-                    {tx('Sales')}
-                  </Link>
-                )}
-                {currentAccount?.accountType === 'KIRANA_STORE' && (
-                  <Link to="/kirana/purchases" onClick={closeMenus}>
-                    {tx('Purchases')}
-                  </Link>
-                )}
-                {currentAccount?.accountType === 'KIRANA_STORE' && (
-                  <Link to="/kirana/suppliers" onClick={closeMenus}>
-                    {tx('Suppliers')}
-                  </Link>
-                )}
-                {currentAccount?.accountType === 'KIRANA_STORE' && (
-                  <Link to="/kirana/customers" onClick={closeMenus}>
-                    {tx('Customers')}
-                  </Link>
-                )}
-                {currentAccount?.accountType === 'KIRANA_STORE' && (
-                  <Link to="/kirana/customer-credit" onClick={closeMenus}>
-                    {tx('Customer Credit')}
-                  </Link>
-                )}
-                {currentAccount?.accountType === 'KIRANA_STORE' && (
-                  <Link to="/kirana/supplier-payments" onClick={closeMenus}>
-                    {tx('Supplier Dues')}
-                  </Link>
-                )}
-                {currentAccount?.accountType === 'KIRANA_STORE' && (
-                  <Link to="/kirana/reports" onClick={closeMenus}>
-                    {tx('Reports')}
-                  </Link>
-                )}
-                {currentAccount?.accountType === 'SPORTS' && (
-                  <Link to="/sports" onClick={closeMenus}>
-                    {tx('Overview')}
-                  </Link>
-                )}
-                {currentAccount?.accountType === 'SPORTS' && (
-                  <Link to="/sports/members" onClick={closeMenus}>
-                    {tx('Members')}
-                  </Link>
-                )}
-                {currentAccount?.accountType === 'SPORTS' && (
-                  <Link to="/sports/events" onClick={closeMenus}>
-                    {tx('Events')}
-                  </Link>
-                )}
-                {currentAccount?.accountType === 'SPORTS' && (
-                  <Link to="/sports/expenses" onClick={closeMenus}>
-                    {tx('Expenses')}
-                  </Link>
-                )}
-                {currentAccount?.accountType === 'SPORTS' && (
-                  <Link to="/sports/collections" onClick={closeMenus}>
-                    {tx('Collections')}
-                  </Link>
-                )}
-                {currentAccount?.accountType === 'SPORTS' && (
-                  <Link to="/sports/reports" onClick={closeMenus}>
-                    {tx('Reports')}
-                  </Link>
-                )}
-              </div>
-            </div>
-          </div>
-          <div className="nav-right">
-            {canInstall && (
-              <button
-                type="button"
-                className="install-btn"
-                onClick={handleInstall}
-              >
-                {tx('Install app')}
-              </button>
-            )}
-            <label className="language-picker">
-              <span>{tx('Language')}</span>
-              <select
-                aria-label={tx('Language')}
-                title={tx('Language')}
-                value={language}
-                onChange={(event) => setLanguage(event.target.value)}
-              >
-                {LANGUAGES.map((item) => (
-                  <option key={item.code} value={item.code}>{item.shortLabel}</option>
-                ))}
-              </select>
-            </label>
-            <div className={`nav-account ${accountOpen ? 'open' : ''}`}>
-              <button
-                type="button"
-                className="nav-account-trigger"
-                onClick={() => setAccountOpen((open) => !open)}
-              >
-                <span>{user?.name || tx('Account')}</span>
-                {currentAccount && (
-                  <span className="account-badge">
-                    {currentAccount.accountType}
-                  </span>
-                )}
-              </button>
-              <div className="nav-account-panel">
-                {accounts.length > 1 && (
-                  <label>
-                    {tx('Account')}
-                    <select
-                      value={currentAccount?.id || ''}
-                      onChange={handleAccountChange}
-                    >
-                      {accounts.map((account) => (
-                        <option key={account.id} value={account.id}>
-                          {account.accountName}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                )}
-                {accounts.length <= 1 && currentAccount && (
-                  <p className="nav-account-name">
-                    {currentAccount.accountName}
-                  </p>
-                )}
-                <Link to="/workspaces" onClick={closeMenus}>
-                  {tx('Workspaces')}
-                </Link>
-                <Link to="/profile" onClick={closeMenus}>
-                  {tx('Edit account details')}
-                </Link>
-                <Link to="/change-password" onClick={closeMenus}>
-                  {tx('Change password')}
-                </Link>
-
-                <button onClick={handleLogout} className="logout-btn">
-                  {tx('Logout')}
+              {canInstall && (
+                <button type="button" onClick={handleInstall}>
+                  {tx('Install app')}
                 </button>
-              </div>
+              )}
+              <button
+                type="button"
+                className="sidebar-logout"
+                onClick={handleLogout}
+              >
+                {tx('Logout')}
+              </button>
             </div>
-          </div>
+          )}
         </div>
-      </div>
-    </nav>
+      </aside>
+    </>
   )
 }
-
-
