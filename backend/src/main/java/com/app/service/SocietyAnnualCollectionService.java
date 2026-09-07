@@ -46,7 +46,8 @@ public class SocietyAnnualCollectionService {
         if (owner) return ledgerRows(accountId, year, requestedFlatId);
         AccountUserMembership membership = membershipRepository.findByAccountIdAndUserIdAndActiveTrue(accountId, userId)
                 .orElseThrow(() -> new ValidationException("Approved society membership is required"));
-        if (membership.getRole() == UserRole.ADMIN || membership.getRole() == UserRole.TREASURER) {
+        if (membership.getRole() == UserRole.ADMIN || membership.getRole() == UserRole.SUPERVISOR
+                || membership.getRole() == UserRole.TREASURER) {
             return ledgerRows(accountId, year, requestedFlatId);
         }
         String block = normalize(membership.getRequestedBlockName());

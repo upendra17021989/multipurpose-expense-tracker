@@ -22,8 +22,8 @@ export const FestivalForm = () => {
   const [saving, setSaving] = useState(false)
   const isEdit = Boolean(festivalEventId)
   const canSave = currentAccount?.accountType === 'SOCIETY' && (isEdit
-    ? ['ADMIN', 'TREASURER'].includes(currentAccount?.role)
-    : currentAccount?.role === 'ADMIN')
+    ? ['ADMIN', 'SUPERVISOR', 'TREASURER'].includes(currentAccount?.role)
+    : ['ADMIN', 'SUPERVISOR'].includes(currentAccount?.role))
 
   useEffect(() => {
     if (!isEdit || !canSave) return
@@ -79,7 +79,7 @@ export const FestivalForm = () => {
   }
 
   if (!canSave) {
-    return <Shell title={isEdit ? 'Edit Event' : 'Add Event'} eyebrow="Society module"><p role="alert">{isEdit ? 'You do not have permission to edit festivals.' : 'Only society admins can create festivals.'}</p><button onClick={() => navigate('/society/festivals')}>Back to festivals</button></Shell>
+    return <Shell title={isEdit ? 'Edit Event' : 'Add Event'} eyebrow="Society module"><p role="alert">{isEdit ? 'You do not have permission to edit festivals.' : 'Only society admins and supervisors can create festivals.'}</p><button onClick={() => navigate('/society/festivals')}>Back to festivals</button></Shell>
   }
 
   return (

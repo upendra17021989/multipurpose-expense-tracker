@@ -65,8 +65,8 @@ public class SocietyMembershipService {
     @Transactional
     public SocietyMembershipRequestDto updateRole(Long accountId, Long adminUserId, Long membershipId, UserRole role) {
         requireAdmin(accountId, adminUserId);
-        if (role != UserRole.ADMIN && role != UserRole.TREASURER && role != UserRole.MEMBER) {
-            throw new ValidationException("Society role must be ADMIN, TREASURER, or MEMBER");
+        if (role != UserRole.ADMIN && role != UserRole.SUPERVISOR && role != UserRole.TREASURER && role != UserRole.MEMBER) {
+            throw new ValidationException("Society role must be ADMIN, SUPERVISOR, TREASURER, or MEMBER");
         }
         AccountUserMembership membership = membershipRepository.findById(membershipId)
                 .orElseThrow(() -> new ValidationException("Society member not found"));

@@ -33,10 +33,15 @@ class SocietyRoleAccessFilterTest {
         else { assertEquals(403, response.getStatus()); verifyNoInteractions(chain); }
     }
 
-    @Test void onlyAdminCreatesFestival() throws Exception {
+    @Test void adminAndSupervisorCanCreateFestival() throws Exception {
         check(UserRole.ADMIN, "POST", "/society/festivals", "/api", true);
+        check(UserRole.SUPERVISOR, "POST", "/society/festivals", "/api", true);
         check(UserRole.TREASURER, "POST", "/society/festivals", "/api", false);
         check(UserRole.MEMBER, "POST", "/society/festivals", "/api", false);
+    }
+    @Test void supervisorCanMaintainSocietyRecords() throws Exception {
+        check(UserRole.SUPERVISOR, "POST", "/society/flats", "/api", true);
+        check(UserRole.SUPERVISOR, "POST", "/society/journal-book/import", "/api", true);
     }
     @Test void trailingSlashAndCustomContextCannotBypassRestriction() throws Exception {
         check(UserRole.TREASURER, "POST", "/society/festivals/", "/custom", false);

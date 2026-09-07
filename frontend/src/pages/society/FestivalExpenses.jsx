@@ -11,7 +11,7 @@ import './FestivalPaymentModal.css'
 export const FestivalExpenses = () => {
   const { festivalEventId } = useParams()
   const account = useAuthStore((state) => state.currentAccount)
-  const canWrite = ['ADMIN', 'TREASURER'].includes(account?.role)
+  const canWrite = ['ADMIN', 'SUPERVISOR', 'TREASURER'].includes(account?.role)
   const [festival, setFestival] = useState(null)
   const [expenses, setExpenses] = useState([])
   const [estimates, setEstimates] = useState([])

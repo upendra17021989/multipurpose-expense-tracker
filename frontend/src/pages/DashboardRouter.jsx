@@ -436,6 +436,7 @@ export const SocietyMemberDirectory = ({ view = 'directory' }) => {
         Access role
         <select aria-label={`Access role for ${member.name}`} value={member.role} onChange={(event) => updateRole(member, event.target.value)}>
           <option value="MEMBER">Member</option>
+          <option value="SUPERVISOR">Supervisor</option>
           <option value="TREASURER">Treasurer</option>
           <option value="ADMIN">Admin</option>
         </select>

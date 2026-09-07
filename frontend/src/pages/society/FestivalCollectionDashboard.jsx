@@ -34,7 +34,7 @@ export const FestivalCollectionDashboard = () => {
   }
 
   return (
-    <Shell title="Festival / Sports Collections" eyebrow="Society module" actions={currentAccount?.role === 'ADMIN' && <Link className="button-link" to="/society/festivals/new">Add Event</Link>}>
+    <Shell title="Festival / Sports Collections" eyebrow="Society module" actions={['ADMIN', 'SUPERVISOR'].includes(currentAccount?.role) && <Link className="button-link" to="/society/festivals/new">Add Event</Link>}>
       <SummaryGrid items={[
         ['Events', summary.festivals],
         ['Active', summary.active],

@@ -57,7 +57,7 @@ public class SocietyRoleAccessFilter extends OncePerRequestFilter {
 
         UserRole role = resolveRole(account, principal.getUserId());
         boolean creatingFestival = "POST".equals(request.getMethod()) && "/society/festivals".equals(path);
-        boolean permitted = role == UserRole.ADMIN
+        boolean permitted = role == UserRole.ADMIN || role == UserRole.SUPERVISOR
                 || !creatingFestival && role == UserRole.TREASURER && TREASURER_WRITE_PATHS.stream().anyMatch(path::startsWith);
         if (!permitted) {
             response.setStatus(HttpServletResponse.SC_FORBIDDEN);

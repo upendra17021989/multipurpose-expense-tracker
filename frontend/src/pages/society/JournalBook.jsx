@@ -19,7 +19,7 @@ const requiresUnitSelection = (voucherType, line) => {
 
 export const JournalBook = () => {
   const account = useAuthStore((state) => state.currentAccount)
-  const canImport = account?.role === 'ADMIN'
+  const canImport = ['ADMIN', 'SUPERVISOR'].includes(account?.role)
   const [financialYear, setFinancialYear] = useState(currentYear())
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)

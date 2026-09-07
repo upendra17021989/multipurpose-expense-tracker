@@ -12,7 +12,7 @@ const statusTabs = [['ALL', 'All events'], ['PLANNED', 'Planned'], ['ACTIVE', 'A
 export const FestivalList = () => {
   const navigate = useNavigate()
   const { currentAccount } = useAuthStore()
-  const canManage = ['ADMIN', 'TREASURER'].includes(currentAccount?.role)
+  const canManage = ['ADMIN', 'SUPERVISOR', 'TREASURER'].includes(currentAccount?.role)
   const [festivals, setFestivals] = useState([])
   const [loading, setLoading] = useState(true)
   const [year, setYear] = useState('')
@@ -69,7 +69,7 @@ export const FestivalList = () => {
   }
 
   return (
-    <Shell title="Festival / Sports Events" eyebrow="Society module" actions={currentAccount?.role === 'ADMIN' && <Link className="button-link" to="/society/festivals/new">Add Event</Link>}>
+    <Shell title="Festival / Sports Events" eyebrow="Society module" actions={['ADMIN', 'SUPERVISOR'].includes(currentAccount?.role) && <Link className="button-link" to="/society/festivals/new">Add Event</Link>}>
       <SummaryGrid items={[
         ['Total Events', festivals.length],
         ['Active', summary.active],
