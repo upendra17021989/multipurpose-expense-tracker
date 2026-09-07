@@ -279,6 +279,10 @@ export const kiranaLedgerAPI = {
 
 
 export const festivalEventAPI = {
+  getEstimates: (id) => axiosInstance.get(`/society/festivals/${id}/estimates`),
+  createEstimate: (id, data) => axiosInstance.post(`/society/festivals/${id}/estimates`, data),
+  updateEstimate: (id, estimateId, data) => axiosInstance.put(`/society/festivals/${id}/estimates/${estimateId}`, data),
+  deleteEstimate: (id, estimateId) => axiosInstance.delete(`/society/festivals/${id}/estimates/${estimateId}`),
   getFestivals: (year) => axiosInstance.get('/society/festivals', { params: year ? { year } : {} }),
   getFestival: (festivalEventId) => axiosInstance.get(`/society/festivals/${festivalEventId}`),
   createFestival: (data) => axiosInstance.post('/society/festivals', data),
@@ -288,6 +292,7 @@ export const festivalEventAPI = {
 }
 
 export const festivalCollectionAPI = {
+  downloadReceipt: (collectionId, receiptId) => axiosInstance.get(`/society/festival-collections/${collectionId}/receipts/${receiptId}/pdf`, { responseType: 'blob' }),
   getCollections: (festivalEventId) => axiosInstance.get('/society/festival-collections', { params: { festivalEventId } }),
   getCollection: (collectionId) => axiosInstance.get(`/society/festival-collections/${collectionId}`),
   getSummary: (festivalEventId) => axiosInstance.get('/society/festival-collections/summary', { params: { festivalEventId } }),

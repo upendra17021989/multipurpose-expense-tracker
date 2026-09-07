@@ -32,6 +32,7 @@ import { VendorForm } from './pages/society/VendorForm'
 import { StaffList } from './pages/society/StaffList'
 import { StaffForm } from './pages/society/StaffForm'
 import { FestivalList } from './pages/society/FestivalList'
+import { FestivalExpenses } from './pages/society/FestivalExpenses'
 import { FestivalForm } from './pages/society/FestivalForm'
 import { FestivalCollectionDashboard } from './pages/society/FestivalCollectionDashboard'
 import { FestivalCollectionList } from './pages/society/FestivalCollectionList'
@@ -354,6 +355,7 @@ function App() {
               </ProtectedRoute>
             }
           />
+          <Route path="/society/festivals/:festivalEventId/expenses" element={<ProtectedRoute><FestivalExpenses /></ProtectedRoute>} />
           <Route path="/society/annual-finance" element={<ProtectedRoute><AnnualFinance /></ProtectedRoute>} />
           <Route path="/society/financial-ledger" element={<ProtectedRoute><SocietyFinancialLedger /></ProtectedRoute>} />
           <Route path="/society/journal-book" element={<ProtectedRoute><JournalBook /></ProtectedRoute>} />

@@ -33,8 +33,7 @@ export const ACCOUNT_NAVIGATION = {
     {
       label: 'Community',
       items: [
-        { label: 'Festivals', to: '/society/festivals' },
-        { label: 'Collections', to: '/society/festival-collections' },
+        { label: 'Festivals', to: '/society/festivals', activePaths: ['/society/festival-collections'] },
         { label: 'Flats', to: '/society/flats' },
         { label: 'Member Directory', to: '/society/member-directory' },
         { label: 'Vendors', to: '/society/vendors' },
@@ -97,5 +96,7 @@ export const isNavigationItemActive = (pathname, item) => {
   if (item.label === 'Dashboard')
     return pathname === '/home' || pathname === '/dashboard'
   if (item.exact) return pathname === item.to
-  return pathname === item.to || pathname.startsWith(`${item.to}/`)
+  return [item.to, ...(item.activePaths || [])].some(
+    (path) => pathname === path || pathname.startsWith(`${path}/`)
+  )
 }

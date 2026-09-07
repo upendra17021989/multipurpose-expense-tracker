@@ -101,6 +101,7 @@ export const FestivalList = () => {
                 <td className="numeric">{formatCurrency(festival.balanceAmount)}</td>
                 <td><span className={`status-pill ${String(festival.status).toLowerCase()}`}>{festival.status}</span></td>
                 <td className="table-actions">
+                  <Link className="button-link secondary" to={`/society/festivals/${festival.id}/expenses`}>Expenses & estimates</Link>
                   <button onClick={() => navigate(`/society/festivals/${festival.id}/edit`)}>Edit</button>
                   <button onClick={() => navigate(`/society/festival-collections/${festival.id}`)}>Collections</button>
                   {festival.status !== 'ACTIVE' && <button onClick={() => updateStatus(festival.id, 'ACTIVE')}>Activate</button>}

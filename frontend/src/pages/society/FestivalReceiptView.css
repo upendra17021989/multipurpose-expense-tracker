@@ -1,0 +1,26 @@
+.festival-receipt-modal { position: fixed; inset: 0; margin: auto; width: min(850px, calc(100vw - 24px)); max-height: calc(100dvh - 24px); overflow-y: auto; padding: 24px; border: 1px solid #dce7ea; border-radius: 16px; background: #f5f8f9; color: #172b36; box-shadow: 0 24px 80px #0003; }
+.festival-receipt-modal::backdrop { background: #10232d99; }
+.festival-receipt-heading, .festival-receipt-toolbar { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 22px; }
+.festival-receipt-heading h2 { font-size: 22px; }
+.festival-receipt-heading p { color: #617580; font-size: 13px; }
+.festival-receipt-heading button { background: #e3efed; color: #0f766e; font-size: 22px; padding: 4px 12px; }
+.festival-receipt-toolbar label { display: grid; gap: 6px; min-width: 0; flex: 1; font-size: 12px; }
+.festival-receipt-toolbar select { width: 100%; min-width: 0; padding: 10px; background: white; border: 1px solid #cddde0; border-radius: 8px; }
+.festival-receipt-paper { max-width: 720px; margin: 0 auto; padding: 40px; border: 1px solid #dce7ea; border-top: 5px solid #0f766e; background: white; overflow-wrap: anywhere; }
+.festival-receipt-paper header h2 { color: #0f766e; font-size: 26px; }
+.festival-receipt-paper header p { color: #617580; font-size: 12px; margin-top: 6px; }
+.festival-receipt-paper header > span { display: block; margin-top: 28px; font-size: 10px; letter-spacing: 1.8px; color: #0f766e; font-weight: 700; }
+.festival-receipt-paper h3 { font-size: 21px; margin-top: 8px; }
+.festival-receipt-meta { display: flex; justify-content: space-between; gap: 20px; margin: 24px 0; padding-bottom: 22px; border-bottom: 1px solid #dce7ea; }
+.festival-receipt-meta small, .festival-receipt-meta strong { display: block; }
+.festival-receipt-meta small { color: #617580; font-size: 11px; margin-bottom: 6px; }
+.festival-receipt-paper dl > div { display: grid; grid-template-columns: 35% minmax(0, 1fr); gap: 14px; padding: 9px 0; font-size: 13px; }
+.festival-receipt-paper dt { color: #617580; }
+.festival-receipt-paper dd { margin: 0; font-weight: 600; }
+.festival-receipt-amount { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 22px; background: #ebf7f4; color: #0f766e; margin: 24px 0; }
+.festival-receipt-amount span { font-size: 11px; font-weight: 700; letter-spacing: 1px; }
+.festival-receipt-amount strong { font-size: 26px; }
+.festival-receipt-paper footer { margin-top: 32px; border-top: 1px solid #dce7ea; padding-top: 20px; }
+.festival-receipt-paper footer p { font-size: 13px; margin-bottom: 12px; }
+.festival-receipt-paper footer small { display: block; color: #617580; font-size: 10px; }
+@media (max-width: 600px) { .festival-receipt-modal { padding: 16px; } .festival-receipt-paper { padding: 20px; } .festival-receipt-toolbar, .festival-receipt-amount { align-items: stretch; flex-direction: column; } .festival-receipt-meta { flex-wrap: wrap; } }

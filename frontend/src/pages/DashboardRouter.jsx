@@ -1,3 +1,4 @@
+import { SocietyOverview } from './society/SocietyOverview'
 import { Link, Navigate, useLocation } from 'react-router-dom'
 import { Navbar } from '../components/Navbar'
 import { useAuthStore } from '../store/authStore'
@@ -269,40 +270,7 @@ const createDashboardExpenseForm = () => ({
   status: 'DRAFT'
 })
 
-const SocietyDashboard = () => {
-  const currentAccount = useAuthStore((state) => state.currentAccount)
-  const [expenses, setExpenses] = useState([])
-  const [flats, setFlats] = useState([])
-
-  useEffect(() => {
-    Promise.all([
-      expenseAPI.getExpenses(),
-      societyFlatAPI.getFlats().catch(() => ({ data: [] }))
-    ]).then(([expenseResponse, flatResponse]) => {
-      setExpenses(expenseResponse.data || [])
-      setFlats(flatResponse.data || [])
-    })
-  }, [])
-
-  const summary = useMemo(() => buildExpenseSummary(expenses), [expenses])
-  const pending = expenses.filter((expense) => expense.status === 'SUBMITTED').length
-
-  return (
-    <Shell title={accountLabels.SOCIETY}>
-      <SummaryGrid
-        items={[
-          ['This Month', formatCurrency(summary.monthTotal)],
-          ['Festival Spend', formatCurrency(summary.festivalTotal)],
-          ['Pending Approvals', pending],
-          ['Active Flats', flats.length]
-        ]}
-      />
-      <ActionRow actions={(currentAccount?.role === 'MEMBER'
-        ? [[ 'View Expenses', '/expenses' ], [ 'Categories', '/categories' ], [ 'Flat Master', '/society/flats' ], [ 'Festivals', '/society/festivals' ], [ 'Collections', '/society/festival-collections' ]]
-        : [[ 'Add Expense', '/expenses/new' ], [ 'View Expenses', '/expenses' ], [ 'Categories', '/categories' ], [ 'Flat Master', '/society/flats' ], [ 'Festivals', '/society/festivals' ], [ 'Collections', '/society/festival-collections' ]])} />
-    </Shell>
-  )
-}
+const SocietyDashboard = () => <Shell title={accountLabels.SOCIETY}><SocietyOverview /></Shell>
 
 export const SocietyMemberDirectory = ({ view = 'directory' }) => {
   const currentAccount = useAuthStore((state) => state.currentAccount)

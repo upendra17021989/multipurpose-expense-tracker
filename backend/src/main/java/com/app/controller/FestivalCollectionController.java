@@ -27,9 +27,20 @@ import java.util.List;
 public class FestivalCollectionController {
 
     private final FestivalCollectionService festivalCollectionService;
+    private final com.app.service.FestivalReceiptPdfService receiptPdfService;
 
-    public FestivalCollectionController(FestivalCollectionService festivalCollectionService) {
+    public FestivalCollectionController(FestivalCollectionService festivalCollectionService, com.app.service.FestivalReceiptPdfService receiptPdfService) {
         this.festivalCollectionService = festivalCollectionService;
+        this.receiptPdfService = receiptPdfService;
+    }
+
+    @GetMapping(value = "/{collectionId}/receipts/{receiptId}/pdf", produces = "application/pdf")
+    public ResponseEntity<byte[]> downloadReceipt(@AuthenticationPrincipal UserPrincipal userPrincipal,
+            @PathVariable Long collectionId, @PathVariable Long receiptId) {
+        return ResponseEntity.ok()
+                .header("Content-Disposition", "attachment; filename=festival-receipt-" + receiptId + ".pdf")
+                .header("Cache-Control", "no-store")
+                .body(receiptPdfService.export(userPrincipal.getAccountId(), collectionId, receiptId));
     }
 
     @GetMapping

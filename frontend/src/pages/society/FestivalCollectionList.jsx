@@ -1,14 +1,15 @@
-import { Link, useNavigate, useParams } from 'react-router-dom'
+import { Link, useParams } from 'react-router-dom'
 import { useEffect, useMemo, useState } from 'react'
 import { toast } from 'react-toastify'
 import { festivalCollectionAPI, festivalEventAPI } from '../../api/endpoints'
 import { useAuthStore } from '../../store/authStore'
 import { formatCurrency } from '../../utils/format'
 import { Shell, SummaryGrid } from '../DashboardRouter'
+import { FestivalPaymentModal } from './FestivalPaymentModal'
+import { FestivalCollectionReceipt } from './FestivalCollectionReceipt'
 
 export const FestivalCollectionList = () => {
   const { festivalEventId } = useParams()
-  const navigate = useNavigate()
   const { currentAccount } = useAuthStore()
   const canWrite = currentAccount?.role !== 'MEMBER'
   const [festival, setFestival] = useState(null)
@@ -21,6 +22,8 @@ export const FestivalCollectionList = () => {
   const [demandForm, setDemandForm] = useState({ expectedAmount: '', remarks: '' })
   const [loading, setLoading] = useState(true)
   const [generating, setGenerating] = useState(false)
+  const [paymentCollection, setPaymentCollection] = useState(null)
+  const [receiptCollection, setReceiptCollection] = useState(null)
 
   const loadData = () => {
     setLoading(true)
@@ -116,6 +119,7 @@ export const FestivalCollectionList = () => {
         ['Pending Flats', summary?.pendingFlats || 0],
         ['Excess Flats', summary?.excessFlats || 0]
       ]} />
+      <div className="form-actions"><Link className="button-link secondary" to={`/society/festivals/${festivalEventId}/expenses`}>Expense details & estimates</Link></div>
 
       {canWrite && <form className="inline-form collection-demand-form" onSubmit={generateDemand}>
         <label>
@@ -179,10 +183,10 @@ export const FestivalCollectionList = () => {
                   ) : canWrite ? (
                     <>
                       <button onClick={() => startDemandEdit(collection)}>Demand</button>
-                      <button onClick={() => navigate(`/society/festival-collections/${festivalEventId}/${collection.id}/payment`)}>Payment</button>
-                      <button onClick={() => navigate(`/society/festival-collections/${festivalEventId}/${collection.id}/receipts`)}>Receipts</button>
+                      <button onClick={() => setPaymentCollection(collection)}>Payment</button>
+                      <button onClick={() => setReceiptCollection({ id: collection.id })}>Receipts</button>
                     </>
-                  ) : <button onClick={() => navigate(`/society/festival-collections/${festivalEventId}/${collection.id}/receipts`)}>Receipts</button>}
+                  ) : <button onClick={() => setReceiptCollection({ id: collection.id })}>Receipts</button>}
                 </td>
               </tr>
             ))}
@@ -191,6 +195,8 @@ export const FestivalCollectionList = () => {
         </table>
       </div>
       {loading && <p className="muted">Loading collections...</p>}
+      {canWrite && paymentCollection && <FestivalPaymentModal collection={paymentCollection} onClose={() => setPaymentCollection(null)} onSaved={(receipt) => { setReceiptCollection({ id: paymentCollection.id, receiptId: receipt.id }); setPaymentCollection(null); loadData() }} />}
+      {receiptCollection && <FestivalCollectionReceipt collectionId={receiptCollection.id} initialReceiptId={receiptCollection.receiptId} onClose={() => setReceiptCollection(null)} />}
     </Shell>
   )
 }

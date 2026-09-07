@@ -6,16 +6,16 @@ import { useAuthStore } from '../../store/authStore'
 import { formatCurrency } from '../../utils/format'
 import { Shell, SummaryGrid } from '../DashboardRouter'
 
-const today = new Date().toISOString().slice(0, 10)
-
-export const FestivalCollectionForm = () => {
-  const { festivalEventId, collectionId } = useParams()
+export const FestivalCollectionForm = ({ collectionId: selectedCollectionId, onClose, onSaved, onSavingChange }) => {
+  const { festivalEventId, collectionId: routeCollectionId } = useParams()
+  const collectionId = selectedCollectionId || routeCollectionId
   const navigate = useNavigate()
   const { currentAccount, user } = useAuthStore()
   const [collection, setCollection] = useState(null)
   const [saving, setSaving] = useState(false)
+  const [loadError, setLoadError] = useState('')
   const [form, setForm] = useState({
-    paymentDate: today,
+    paymentDate: new Date().toISOString().slice(0, 10),
     amountPaid: '',
     paymentMode: 'CASH',
     transactionId: '',
@@ -26,18 +26,22 @@ export const FestivalCollectionForm = () => {
   })
 
   useEffect(() => {
+    let active = true
     festivalCollectionAPI.getCollection(collectionId)
       .then((response) => {
+        if (!active) return
         setCollection(response.data)
         setForm((current) => ({ ...current, amountPaid: response.data.pendingAmount || '' }))
       })
-      .catch((error) => toast.error(error.response?.data?.message || 'Unable to load collection'))
+      .catch((error) => { if (active) setLoadError(error.response?.data?.message || 'Unable to load collection. Close and try again.') })
+    return () => { active = false }
   }, [collectionId])
 
   const update = (field, value) => setForm((current) => ({ ...current, [field]: value }))
 
   const handleSubmit = async (event) => {
     event.preventDefault()
+    if (saving || !collection || currentAccount?.role === 'MEMBER') return
     if ((form.paymentMode === 'UPI' || form.paymentMode === 'NEFT') && !form.utr.trim()) {
       toast.error('UTR is required for UPI/NEFT')
       return
@@ -47,8 +51,9 @@ export const FestivalCollectionForm = () => {
       return
     }
     setSaving(true)
+    onSavingChange?.(true)
     try {
-      await festivalCollectionAPI.addPayment(collectionId, {
+      const response = await festivalCollectionAPI.addPayment(collectionId, {
         paymentDate: form.paymentDate,
         amountPaid: Number(form.amountPaid),
         paymentMode: form.paymentMode,
@@ -59,11 +64,13 @@ export const FestivalCollectionForm = () => {
         remarks: form.remarks.trim() || null
       })
       toast.success('Payment added')
-      navigate(`/society/festival-collections/${festivalEventId}/${collectionId}/receipts`)
+      if (onSaved) onSaved(response.data)
+      else navigate(`/society/festival-collections/${festivalEventId}/${collectionId}/receipts`)
     } catch (error) {
       toast.error(error.response?.data?.message || 'Unable to add payment')
     } finally {
       setSaving(false)
+      onSavingChange?.(false)
     }
   }
 
@@ -75,8 +82,10 @@ export const FestivalCollectionForm = () => {
     )
   }
 
-  return (
-    <Shell title="Add Collection Payment" eyebrow="Society module">
+  const content = (
+    <>
+      {loadError && <p role="alert">{loadError}</p>}
+      {!collection && !loadError && <p role="status">Loading collection...</p>}
       {collection && (
         <SummaryGrid items={[
           ['Flat', `${collection.blockName}-${collection.flatNumber}`],
@@ -132,10 +141,11 @@ export const FestivalCollectionForm = () => {
           </label>
         </div>
         <div className="form-actions">
-          <button type="button" onClick={() => navigate(`/society/festival-collections/${festivalEventId}`)}>Cancel</button>
-          <button type="submit" className="primary" disabled={saving}>{saving ? 'Saving...' : 'Save Payment'}</button>
+          <button type="button" disabled={saving} onClick={() => onClose ? onClose() : navigate(`/society/festival-collections/${festivalEventId}`)}>Cancel</button>
+          <button type="submit" className="primary" disabled={saving || !collection || currentAccount?.role === 'MEMBER'}>{saving ? 'Saving...' : 'Save Payment'}</button>
         </div>
       </form>
-    </Shell>
+    </>
   )
+  return onClose ? content : <Shell title="Add Collection Payment" eyebrow="Society module">{content}</Shell>
 }

@@ -17,7 +17,7 @@ const blank = (financialYear) => ({
   remarks: ''
 })
 
-export const ExpenseModal = ({ open, financialYear, expense, onClose, onSaved }) => {
+export const ExpenseModal = ({ open, financialYear, expense, festival, onClose, onSaved }) => {
   const [form, setForm] = useState(blank(financialYear))
   const [categories, setCategories] = useState([])
   const [saving, setSaving] = useState(false)
@@ -27,11 +27,11 @@ export const ExpenseModal = ({ open, financialYear, expense, onClose, onSaved })
 
     setForm(expense
       ? { ...blank(financialYear), ...expense, categoryId: expense.categoryId || '' }
-      : blank(financialYear))
+      : { ...blank(financialYear), ...(festival ? { expenseDate: new Date().toISOString().slice(0, 10), expenseType: 'FESTIVAL', festivalEventId: festival.id } : {}) })
     expenseCategoryAPI.getCategories()
-      .then((response) => setCategories((response.data || []).filter((category) => category.categoryType === 'SOCIETY_REGULAR')))
+      .then((response) => setCategories((response.data || []).filter((category) => category.categoryType === (festival ? 'FESTIVAL' : 'SOCIETY_REGULAR'))))
       .catch(() => toast.error('Unable to load categories'))
-  }, [open, financialYear, expense])
+  }, [open, financialYear, expense, festival])
 
   if (!open) return null
 
@@ -59,7 +59,7 @@ export const ExpenseModal = ({ open, financialYear, expense, onClose, onSaved })
     try {
       const payload = {
         ...form,
-        expenseType: 'SOCIETY_REGULAR',
+        expenseType: festival ? 'FESTIVAL' : 'SOCIETY_REGULAR',
         categoryId: Number(form.categoryId),
         amount: Number(form.amount),
         vendorName: form.vendorName || null,
@@ -68,7 +68,7 @@ export const ExpenseModal = ({ open, financialYear, expense, onClose, onSaved })
         utr: form.utr || null,
         chequeNumber: form.chequeNumber || null,
         remarks: form.remarks || null,
-        festivalEventId: null
+        festivalEventId: festival?.id || null
       }
       if (expense) await expenseAPI.updateExpense(expense.id, payload)
       else await expenseAPI.createExpense(payload)
@@ -85,12 +85,12 @@ export const ExpenseModal = ({ open, financialYear, expense, onClose, onSaved })
   return <div className="modal-backdrop" onMouseDown={() => !saving && onClose()}>
     <section className="expense-modal annual-finance-modal" role="dialog" aria-modal="true" aria-labelledby="expense-modal-title" onMouseDown={(event) => event.stopPropagation()}>
       <div className="expense-modal-header">
-        <div><h2 id="expense-modal-title">{expense ? 'Edit Expense' : 'Add Expense'}</h2><p className="muted">Financial year {financialYear}</p></div>
+        <div><h2 id="expense-modal-title">{expense ? 'Edit Expense' : 'Add Expense'}</h2><p className="muted">{festival ? festival.festivalName : `Financial year ${financialYear}`}</p></div>
         <button type="button" className="modal-close" aria-label="Close" disabled={saving} onClick={onClose}>&times;</button>
       </div>
       <form onSubmit={submit}>
         <div className="expense-modal-form">
-          <label>Date<input required type="date" min={`${financialYear.slice(0, 4)}-04-01`} max={`${financialYear.slice(5)}-03-31`} value={form.expenseDate} onChange={(event) => update('expenseDate', event.target.value)} /></label>
+          <label>Date<input required type="date" min={festival ? undefined : `${financialYear.slice(0, 4)}-04-01`} max={festival ? undefined : `${financialYear.slice(5)}-03-31`} value={form.expenseDate} onChange={(event) => update('expenseDate', event.target.value)} /></label>
           <label>Category<select required value={form.categoryId} onChange={(event) => update('categoryId', event.target.value)}><option value="">Select category</option>{categories.map((category) => <option key={category.id} value={category.id}>{category.categoryName}</option>)}</select></label>
           <label>Vendor<input value={form.vendorName || ''} onChange={(event) => update('vendorName', event.target.value)} /></label>
           <label>Description<input value={form.description || ''} onChange={(event) => update('description', event.target.value)} /></label>

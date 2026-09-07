@@ -65,6 +65,7 @@ export const FestivalCollectionDashboard = () => {
                 <td className="numeric">{formatCurrency(festival.balanceAmount)}</td>
                 <td><span className={`status-pill ${String(festival.status).toLowerCase()}`}>{festival.status}</span></td>
                 <td className="table-actions">
+                  <Link className="button-link secondary" to={`/society/festivals/${festival.id}/expenses`}>Expenses & estimates</Link>
                   <Link className="button-link secondary" to={`/society/festival-collections/${festival.id}`}>Open</Link>
                 </td>
               </tr>
