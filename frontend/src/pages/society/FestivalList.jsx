@@ -5,13 +5,19 @@ import { festivalEventAPI } from '../../api/endpoints'
 import { useAuthStore } from '../../store/authStore'
 import { formatCurrency, formatDate } from '../../utils/format'
 import { Shell, SummaryGrid } from '../DashboardRouter'
+import './FestivalList.css'
+
+const statusTabs = [['ALL', 'All events'], ['PLANNED', 'Planned'], ['ACTIVE', 'Active'], ['CLOSED', 'Closed']]
 
 export const FestivalList = () => {
   const navigate = useNavigate()
   const { currentAccount } = useAuthStore()
+  const canManage = ['ADMIN', 'TREASURER'].includes(currentAccount?.role)
   const [festivals, setFestivals] = useState([])
   const [loading, setLoading] = useState(true)
   const [year, setYear] = useState('')
+  const [status, setStatus] = useState('ALL')
+  const visibleFestivals = festivals.filter((festival) => status === 'ALL' || festival.status === status)
 
   const loadFestivals = () => {
     setLoading(true)
@@ -32,6 +38,7 @@ export const FestivalList = () => {
   }, [festivals])
 
   const remove = async (festivalEventId) => {
+    if (!canManage) return
     if (!window.confirm('Delete this event?')) return
     try {
       await festivalEventAPI.deleteFestival(festivalEventId)
@@ -43,6 +50,7 @@ export const FestivalList = () => {
   }
 
   const updateStatus = async (festivalEventId, status) => {
+    if (!canManage) return
     try {
       await festivalEventAPI.updateFestivalStatus(festivalEventId, status)
       toast.success('Status updated')
@@ -61,7 +69,7 @@ export const FestivalList = () => {
   }
 
   return (
-    <Shell title="Festival / Sports Events" eyebrow="Society module" actions={<Link className="button-link" to="/society/festivals/new">Add Event</Link>}>
+    <Shell title="Festival / Sports Events" eyebrow="Society module" actions={currentAccount?.role === 'ADMIN' && <Link className="button-link" to="/society/festivals/new">Add Event</Link>}>
       <SummaryGrid items={[
         ['Total Events', festivals.length],
         ['Active', summary.active],
@@ -74,7 +82,28 @@ export const FestivalList = () => {
         <strong>Expenses {formatCurrency(summary.expense)}</strong>
       </section>
 
-      <div className="table-wrap">
+      <div className="festival-status-tabs" role="tablist" aria-label="Event status">
+        {statusTabs.map(([value, label], index) => <button
+          key={value}
+          id={`festival-tab-${value}`}
+          type="button"
+          role="tab"
+          aria-selected={status === value}
+          aria-controls="festival-events-panel"
+          tabIndex={status === value ? 0 : -1}
+          onClick={() => setStatus(value)}
+          onKeyDown={(event) => {
+            const next = event.key === 'ArrowRight' ? (index + 1) % statusTabs.length
+              : event.key === 'ArrowLeft' ? (index + statusTabs.length - 1) % statusTabs.length
+                : event.key === 'Home' ? 0 : event.key === 'End' ? statusTabs.length - 1 : null
+            if (next === null) return
+            event.preventDefault()
+            setStatus(statusTabs[next][0])
+            event.currentTarget.parentElement.children[next].focus()
+          }}
+        >{label}<span>{loading ? '…' : value === 'ALL' ? festivals.length : festivals.filter((festival) => festival.status === value).length}</span></button>)}
+      </div>
+      <div className="table-wrap" id="festival-events-panel" role="tabpanel" aria-labelledby={`festival-tab-${status}`} tabIndex={0} aria-busy={loading}>
         <table>
           <thead>
             <tr>
@@ -90,7 +119,7 @@ export const FestivalList = () => {
             </tr>
           </thead>
           <tbody>
-            {festivals.map((festival) => (
+            {visibleFestivals.map((festival) => (
               <tr key={festival.id}>
                 <td>{festival.festivalName}</td>
                 <td>{festival.year}</td>
@@ -102,15 +131,16 @@ export const FestivalList = () => {
                 <td><span className={`status-pill ${String(festival.status).toLowerCase()}`}>{festival.status}</span></td>
                 <td className="table-actions">
                   <Link className="button-link secondary" to={`/society/festivals/${festival.id}/expenses`}>Expenses & estimates</Link>
-                  <button onClick={() => navigate(`/society/festivals/${festival.id}/edit`)}>Edit</button>
+                  <Link className="button-link secondary" to={`/society/festivals/${festival.id}/report`}>Report</Link>
+                  {canManage && <button onClick={() => navigate(`/society/festivals/${festival.id}/edit`)}>Edit</button>}
                   <button onClick={() => navigate(`/society/festival-collections/${festival.id}`)}>Collections</button>
-                  {festival.status !== 'ACTIVE' && <button onClick={() => updateStatus(festival.id, 'ACTIVE')}>Activate</button>}
-                  {festival.status !== 'CLOSED' && <button onClick={() => updateStatus(festival.id, 'CLOSED')}>Close</button>}
-                  <button className="danger" onClick={() => remove(festival.id)}>Delete</button>
+                  {canManage && festival.status !== 'ACTIVE' && <button onClick={() => updateStatus(festival.id, 'ACTIVE')}>Activate</button>}
+                  {canManage && festival.status !== 'CLOSED' && <button onClick={() => updateStatus(festival.id, 'CLOSED')}>Close</button>}
+                  {canManage && <button className="danger" onClick={() => remove(festival.id)}>Delete</button>}
                 </td>
               </tr>
             ))}
-            {!loading && festivals.length === 0 && <tr><td colSpan="9" className="empty-state">No festival or sports events found.</td></tr>}
+            {!loading && visibleFestivals.length === 0 && <tr><td colSpan="9" className="empty-state">{status === 'ALL' ? 'No festival or sports events found.' : `No ${status.toLowerCase()} events${year ? ` for ${year}` : ''}.`}</td></tr>}
           </tbody>
         </table>
       </div>

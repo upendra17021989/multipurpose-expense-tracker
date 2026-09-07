@@ -45,7 +45,7 @@ public class SocietyRoleAccessFilter extends OncePerRequestFilter {
             return;
         }
 
-        String path = request.getRequestURI().replaceFirst("^/api", "");
+        String path = request.getRequestURI().substring(request.getContextPath().length()).replaceAll("/+$", "");
         if ("POST".equals(request.getMethod()) && "/society/membership-requests".equals(path)) {
             chain.doFilter(request, response);
             return;
@@ -56,8 +56,9 @@ public class SocietyRoleAccessFilter extends OncePerRequestFilter {
         }
 
         UserRole role = resolveRole(account, principal.getUserId());
+        boolean creatingFestival = "POST".equals(request.getMethod()) && "/society/festivals".equals(path);
         boolean permitted = role == UserRole.ADMIN
-                || role == UserRole.TREASURER && TREASURER_WRITE_PATHS.stream().anyMatch(path::startsWith);
+                || !creatingFestival && role == UserRole.TREASURER && TREASURER_WRITE_PATHS.stream().anyMatch(path::startsWith);
         if (!permitted) {
             response.setStatus(HttpServletResponse.SC_FORBIDDEN);
             response.setContentType("application/json");

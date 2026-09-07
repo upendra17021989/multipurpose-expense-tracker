@@ -21,9 +21,12 @@ export const FestivalForm = () => {
   const [form, setForm] = useState(initialForm)
   const [saving, setSaving] = useState(false)
   const isEdit = Boolean(festivalEventId)
+  const canSave = currentAccount?.accountType === 'SOCIETY' && (isEdit
+    ? ['ADMIN', 'TREASURER'].includes(currentAccount?.role)
+    : currentAccount?.role === 'ADMIN')
 
   useEffect(() => {
-    if (!isEdit) return
+    if (!isEdit || !canSave) return
     festivalEventAPI.getFestival(festivalEventId)
       .then((response) => {
         const festival = response.data
@@ -36,12 +39,16 @@ export const FestivalForm = () => {
         })
       })
       .catch((error) => toast.error(error.response?.data?.message || 'Unable to load event'))
-  }, [festivalEventId, isEdit])
+  }, [festivalEventId, isEdit, canSave])
 
   const update = (field, value) => setForm((current) => ({ ...current, [field]: value }))
 
   const handleSubmit = async (event) => {
     event.preventDefault()
+    if (!canSave) {
+      toast.error(isEdit ? 'You do not have permission to edit festivals' : 'Only society admins can create festivals')
+      return
+    }
     setSaving(true)
     const payload = {
       festivalName: form.festivalName.trim(),
@@ -69,6 +76,10 @@ export const FestivalForm = () => {
         <p className="muted">Festival and sports events are available for society accounts.</p>
       </Shell>
     )
+  }
+
+  if (!canSave) {
+    return <Shell title={isEdit ? 'Edit Event' : 'Add Event'} eyebrow="Society module"><p role="alert">{isEdit ? 'You do not have permission to edit festivals.' : 'Only society admins can create festivals.'}</p><button onClick={() => navigate('/society/festivals')}>Back to festivals</button></Shell>
   }
 
   return (

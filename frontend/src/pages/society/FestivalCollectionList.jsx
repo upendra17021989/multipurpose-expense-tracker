@@ -119,7 +119,7 @@ export const FestivalCollectionList = () => {
         ['Pending Flats', summary?.pendingFlats || 0],
         ['Excess Flats', summary?.excessFlats || 0]
       ]} />
-      <div className="form-actions"><Link className="button-link secondary" to={`/society/festivals/${festivalEventId}/expenses`}>Expense details & estimates</Link></div>
+      <div className="form-actions"><Link className="button-link secondary" to={`/society/festivals/${festivalEventId}/expenses`}>Expense details & estimates</Link><Link className="button-link secondary" to={`/society/festivals/${festivalEventId}/report`}>Collection & expense report</Link></div>
 
       {canWrite && <form className="inline-form collection-demand-form" onSubmit={generateDemand}>
         <label>

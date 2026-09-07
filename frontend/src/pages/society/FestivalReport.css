@@ -1,0 +1,29 @@
+.festival-report-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 16px; margin-bottom: 22px; }
+.festival-report-header { padding: 24px; border: 1px solid #d9e9e4; border-left: 4px solid #0f766e; border-radius: 12px; background: #f2faf7; margin-bottom: 22px; }
+.festival-report-header h2 { margin: 6px 0; color: #173c36; }
+.festival-report-header p, .festival-report-header small { color: #5c746e; }
+.festival-report-reconciliation { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 20px; padding: 22px; margin-bottom: 22px; border: 1px solid #dce7ea; border-radius: 12px; }
+.festival-report-reconciliation span, .festival-report-reconciliation strong { display: block; }
+.festival-report-reconciliation span { color: #617580; font-size: 12px; margin-bottom: 8px; }
+.festival-report-reconciliation p { grid-column: 1 / -1; color: #617580; font-size: 12px; }
+.festival-report-controls { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; margin: 22px 0; }
+.festival-report-controls > div { display: flex; gap: 8px; }
+.festival-report-controls button[aria-pressed=true] { background: #0f766e; color: white; }
+.festival-report-controls input { min-width: 220px; padding: 12px; border: 1px solid #d0dce3; border-radius: 8px; }
+.festival-report-detail h3, .festival-report-breakdown h3 { margin-bottom: 14px; font-size: 17px; }
+.festival-report-category { display: block; color: #617580; }
+.festival-report-breakdown { padding: 22px; border: 1px solid #dce7ea; border-radius: 12px; margin-top: 22px; }
+.festival-report-breakdown > div { display: flex; justify-content: space-between; gap: 14px; padding: 10px 0; border-bottom: 1px solid #edf1f3; }
+.festival-report .report-hidden, .festival-report .report-search-hidden { display: none; }
+@media (max-width: 700px) { .festival-report-reconciliation { grid-template-columns: repeat(2, minmax(0, 1fr)); } .festival-report-controls input { width: 100%; } }
+@media print {
+  body:has(.festival-report) .app-layout > :not(main), body:has(.festival-report) .page-header, .festival-report-actions, .festival-report-controls, .festival-report-no-results { display: none !important; }
+  body:has(.festival-report) .app-layout, body:has(.festival-report) .app-main-content { display: block !important; margin: 0 !important; padding: 0 !important; width: 100% !important; max-width: none !important; }
+  .festival-report .report-hidden { display: block; }
+  .festival-report .report-search-hidden { display: table-row; }
+  .festival-report .table-wrap { overflow: visible; }
+  .festival-report table { width: 100%; min-width: 0; font-size: 9px; }
+  .festival-report th, .festival-report td { padding: 5px; overflow-wrap: anywhere; }
+  .festival-report tr { break-inside: avoid; }
+  .festival-report-detail { margin-top: 24px; }
+}
