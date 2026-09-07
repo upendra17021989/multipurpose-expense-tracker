@@ -1,0 +1,124 @@
+diff --git a/backend/src/main/java/com/app/service/AuthService.java b/backend/src/main/java/com/app/service/AuthService.java
+--- a/backend/src/main/java/com/app/service/AuthService.java
++++ b/backend/src/main/java/com/app/service/AuthService.java
+@@ -1,1 +1,2 @@
+ import com.app.entity.UserRole;
++import com.app.entity.StaffAccessStatus;
+@@ -1,1 +1,2 @@
+ import com.app.repository.AccountUserMembershipRepository;
++import com.app.repository.SocietyStaffAccessRepository;
+@@ -1,1 +1,2 @@
+     private final AccountUserMembershipRepository membershipRepository;
++    private final SocietyStaffAccessRepository staffAccessRepository;
+@@ -1,1 +1,2 @@
+     public AuthService(UserRepository userRepository, AccountRepository accountRepository,
+                        AccountUserMembershipRepository membershipRepository,
++                       SocietyStaffAccessRepository staffAccessRepository,
+                        PasswordEncoder passwordEncoder, JwtTokenProvider tokenProvider,
+@@ -1,1 +1,2 @@
+         this.membershipRepository = membershipRepository;
++        this.staffAccessRepository = staffAccessRepository;
+@@ -1,1 +1,2 @@
+         membershipRepository.findByUserIdAndActiveTrue(userId).forEach(membership -> {
+             Account account = membership.getAccount();
+             if (Boolean.TRUE.equals(account.getActive())) {
+                 accounts.put(account.getId(), mapToAccountDto(account, membership.getRole(), userId));
+             }
+         });
++        staffAccessRepository.findByUserIdAndStatus(userId, StaffAccessStatus.ACTIVE).forEach(access -> {
++            Account account = access.getAccount();
++            if (Boolean.TRUE.equals(account.getActive()) && Boolean.TRUE.equals(access.getStaff().getActive())) {
++                accounts.putIfAbsent(account.getId(), mapToAccountDto(account, access.getRole(), userId));
++            }
++        });
+         return new ArrayList<>(accounts.values());
+diff --git a/backend/src/main/java/com/app/security/SocietyRoleAccessFilter.java b/backend/src/main/java/com/app/security/SocietyRoleAccessFilter.java
+--- a/backend/src/main/java/com/app/security/SocietyRoleAccessFilter.java
++++ b/backend/src/main/java/com/app/security/SocietyRoleAccessFilter.java
+@@ -1,1 +1,2 @@
+ import com.app.entity.UserRole;
++import com.app.entity.StaffAccessStatus;
+@@ -1,1 +1,2 @@
+ import com.app.repository.AccountUserMembershipRepository;
++import com.app.repository.SocietyStaffAccessRepository;
+@@ -1,1 +1,2 @@
+     private final AccountRepository accountRepository;
+     private final AccountUserMembershipRepository membershipRepository;
++    private final SocietyStaffAccessRepository staffAccessRepository;
+@@ -1,1 +1,2 @@
+         UserRole role = resolveRole(account, principal.getUserId());
+         boolean creatingFestival = "POST".equals(request.getMethod()) && "/society/festivals".equals(path);
+-        boolean permitted = role == UserRole.ADMIN || role == UserRole.SUPERVISOR
++        boolean managingStaffAccess = path.matches("/society/staff/[^/]+/access(?:/status)?");
++        boolean permitted = role == UserRole.ADMIN || !managingStaffAccess
++                && (role == UserRole.SUPERVISOR || role == UserRole.STAFF_SUPERVISOR)
+                 || !creatingFestival && role == UserRole.TREASURER && TREASURER_WRITE_PATHS.stream().anyMatch(path::startsWith);
+@@ -1,1 +1,2 @@
+         if (account.getUser().getId().equals(userId)) return account.getRole();
+         return membershipRepository.findByAccountIdAndUserIdAndActiveTrue(account.getId(), userId)
+-                .map(membership -> membership.getRole()).orElse(UserRole.MEMBER);
++                .map(membership -> membership.getRole())
++                .or(() -> staffAccessRepository.findByAccountIdAndUserIdAndStatus(
++                        account.getId(), userId, StaffAccessStatus.ACTIVE).map(access -> access.getRole()))
++                .orElse(UserRole.MEMBER);
+diff --git a/backend/src/test/java/com/app/service/AuthServiceTest.java b/backend/src/test/java/com/app/service/AuthServiceTest.java
+--- a/backend/src/test/java/com/app/service/AuthServiceTest.java
++++ b/backend/src/test/java/com/app/service/AuthServiceTest.java
+@@ -1,1 +1,2 @@
+ import com.app.repository.AccountUserMembershipRepository;
++import com.app.repository.SocietyStaffAccessRepository;
+@@ -1,1 +1,2 @@
+     private AccountUserMembershipRepository memberships;
++    private SocietyStaffAccessRepository staffAccess;
+@@ -1,1 +1,2 @@
+         memberships = mock(AccountUserMembershipRepository.class);
++        staffAccess = mock(SocietyStaffAccessRepository.class);
+@@ -1,1 +1,2 @@
+-        service = new AuthService(users, accounts, memberships, passwordEncoder, tokenProvider,
++        service = new AuthService(users, accounts, memberships, staffAccess, passwordEncoder, tokenProvider,
+                 expenseCategoryService, sharedInvitationService);
+@@ -1,1 +1,2 @@
+         when(memberships.findByUserIdAndActiveTrue(7L)).thenReturn(List.of());
++        when(staffAccess.findByUserIdAndStatus(7L, com.app.entity.StaffAccessStatus.ACTIVE))
++                .thenReturn(List.of());
+         when(tokenProvider.generateToken(7L, 42L)).thenReturn("workspace-token");
+diff --git a/backend/src/test/java/com/app/security/SocietyRoleAccessFilterTest.java b/backend/src/test/java/com/app/security/SocietyRoleAccessFilterTest.java
+--- a/backend/src/test/java/com/app/security/SocietyRoleAccessFilterTest.java
++++ b/backend/src/test/java/com/app/security/SocietyRoleAccessFilterTest.java
+@@ -1,1 +1,2 @@
+ import com.app.repository.AccountUserMembershipRepository;
++import com.app.repository.SocietyStaffAccessRepository;
+@@ -1,1 +1,2 @@
+         var accounts = mock(AccountRepository.class);
+         var memberships = mock(AccountUserMembershipRepository.class);
+-        var account = Account.builder().id(2L).accountType(AccountType.SOCIETY).role(role).user(User.builder().id(1L).build()).build();
++        var staffAccess = mock(SocietyStaffAccessRepository.class);
++        boolean staffUser = role == UserRole.STAFF_SUPERVISOR;
++        long principalUserId = staffUser ? 9L : 1L;
++        var account = Account.builder().id(2L).accountType(AccountType.SOCIETY).role(UserRole.ADMIN)
++                .user(User.builder().id(1L).build()).build();
+         when(accounts.findById(2L)).thenReturn(Optional.of(account));
+-        var principal = UserPrincipal.builder().userId(1L).accountId(2L).build();
++        if (staffUser) {
++            var accessRecord = SocietyStaffAccess.builder().account(account)
++                    .user(User.builder().id(9L).build()).role(UserRole.STAFF_SUPERVISOR)
++                    .status(StaffAccessStatus.ACTIVE).build();
++            when(memberships.findByAccountIdAndUserIdAndActiveTrue(2L, 9L)).thenReturn(Optional.empty());
++            when(staffAccess.findByAccountIdAndUserIdAndStatus(2L, 9L, StaffAccessStatus.ACTIVE))
++                    .thenReturn(Optional.of(accessRecord));
++        } else {
++            account.setRole(role);
++        }
++        var principal = UserPrincipal.builder().userId(principalUserId).accountId(2L).build();
+@@ -1,1 +1,2 @@
+-        new SocietyRoleAccessFilter(accounts, memberships).doFilter(request, response, chain);
++        new SocietyRoleAccessFilter(accounts, memberships, staffAccess).doFilter(request, response, chain);
+@@ -1,1 +1,2 @@
+     @Test void supervisorCanMaintainSocietyRecords() throws Exception {
+         check(UserRole.SUPERVISOR, "POST", "/society/flats", "/api", true);
+         check(UserRole.SUPERVISOR, "POST", "/society/journal-book/import", "/api", true);
+     }
++    @Test void staffSupervisorCanOperateButCannotManageAccess() throws Exception {
++        check(UserRole.STAFF_SUPERVISOR, "POST", "/society/flats", "/api", true);
++        check(UserRole.STAFF_SUPERVISOR, "PATCH", "/society/staff/5/access/status", "/api", false);
++    }
