@@ -1,5 +1,5 @@
 import { Link, useParams } from 'react-router-dom'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { toast } from 'react-toastify'
 import { festivalCollectionAPI, festivalEventAPI } from '../../api/endpoints'
 import { useAuthStore } from '../../store/authStore'
@@ -24,6 +24,9 @@ export const FestivalCollectionList = () => {
   const [editingDemandId, setEditingDemandId] = useState(null)
   const [demandForm, setDemandForm] = useState({ expectedAmount: '', remarks: '' })
   const [loading, setLoading] = useState(true)
+  const [page, setPage] = useState(0)
+  const [totalPages, setTotalPages] = useState(0)
+  const [totalElements, setTotalElements] = useState(0)
   const [generating, setGenerating] = useState(false)
   const [paymentCollection, setPaymentCollection] = useState(null)
   const [receiptCollection, setReceiptCollection] = useState(null)
@@ -32,28 +35,23 @@ export const FestivalCollectionList = () => {
     setLoading(true)
     Promise.all([
       festivalEventAPI.getFestival(festivalEventId),
-      festivalCollectionAPI.getCollections(festivalEventId),
+      festivalCollectionAPI.getCollections(festivalEventId, { page, size: 20, search: filters.search, status: filters.status, blockName: assignedBlock }),
       festivalCollectionAPI.getSummary(festivalEventId)
     ])
       .then(([festivalResponse, collectionResponse, summaryResponse]) => {
         setFestival(festivalResponse.data)
-        setCollections(collectionResponse.data || [])
+        setCollections(collectionResponse.data?.content || [])
+        setTotalPages(collectionResponse.data?.totalPages || 0)
+        setTotalElements(collectionResponse.data?.totalElements || 0)
         setSummary(summaryResponse.data || null)
       })
       .catch((error) => toast.error(error.response?.data?.message || 'Unable to load collections'))
       .finally(() => setLoading(false))
   }
 
-  useEffect(loadData, [festivalEventId])
+  useEffect(loadData, [assignedBlock, festivalEventId, filters.search, filters.status, page])
 
-  const visibleCollections = useMemo(() => {
-    const query = filters.search.trim().toLowerCase()
-    return collections.filter((collection) => !assignedBlock || String(collection.blockName).toLowerCase() === String(assignedBlock).toLowerCase())
-      .filter((collection) => [collection.blockName, collection.flatNumber, collection.ownerName, collection.paymentStatus]
-      .filter(Boolean)
-      .some((value) => String(value).toLowerCase().includes(query)))
-      .filter((collection) => !filters.status || collection.paymentStatus === filters.status)
-  }, [assignedBlock, collections, filters])
+  const visibleCollections = collections
 
   const generateDemand = async (event) => {
     event.preventDefault()
@@ -152,8 +150,8 @@ export const FestivalCollectionList = () => {
       </form>}
 
       <section className="toolbar-panel flat-toolbar">
-        <input placeholder="Search flat, owner, status" value={filters.search} onChange={(event) => setFilters({ ...filters, search: event.target.value })} />
-        <select value={filters.status} onChange={(event) => setFilters({ ...filters, status: event.target.value })}>
+        <input placeholder="Search flat, owner, status" value={filters.search} onChange={(event) => { setPage(0); setFilters({ ...filters, search: event.target.value }) }} />
+        <select value={filters.status} onChange={(event) => { setPage(0); setFilters({ ...filters, status: event.target.value }) }}>
           <option value="">All statuses</option>
           <option value="PENDING">Pending</option>
           <option value="PARTIAL">Partial</option>
@@ -161,7 +159,7 @@ export const FestivalCollectionList = () => {
           <option value="EXCESS">Excess</option>
           <option value="REFUNDED">Refunded</option>
         </select>
-        <strong>{assignedBlock ? `${assignedBlock} · ` : ''}{visibleCollections.length} shown</strong>
+        <strong>{assignedBlock ? `${assignedBlock} · ` : ''}{totalElements} found</strong>
       </section>
 
       <div className="table-wrap">
@@ -257,6 +255,7 @@ export const FestivalCollectionList = () => {
         ))}
         {!loading && visibleCollections.length === 0 && <p className="festival-collection-mobile-empty">Generate demand to create flat-wise collection rows.</p>}
       </div>
+      {totalPages > 1 && <nav className="table-pagination" aria-label="Collection pages"><button type="button" disabled={page === 0 || loading} onClick={() => setPage(0)}>«</button><button type="button" disabled={page === 0 || loading} onClick={() => setPage((value) => Math.max(0, value - 1))}>‹</button><span>Page {page + 1} of {totalPages}</span><button type="button" disabled={page + 1 >= totalPages || loading} onClick={() => setPage((value) => Math.min(totalPages - 1, value + 1))}>›</button><button type="button" disabled={page + 1 >= totalPages || loading} onClick={() => setPage(totalPages - 1)}>»</button></nav>}
       {loading && <p className="muted">Loading collections...</p>}
       {canAddPayment && paymentCollection && <FestivalPaymentModal collection={paymentCollection} onClose={() => setPaymentCollection(null)} onSaved={(receipt) => { setReceiptCollection({ id: paymentCollection.id, receiptId: receipt.id }); setPaymentCollection(null); loadData() }} />}
       {receiptCollection && <FestivalCollectionReceipt collectionId={receiptCollection.id} initialReceiptId={receiptCollection.receiptId} onClose={() => setReceiptCollection(null)} />}

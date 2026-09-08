@@ -23,6 +23,8 @@ import com.app.repository.FlatRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -61,6 +63,15 @@ public class FestivalCollectionService {
                 .stream()
                 .map(this::mapToDto)
                 .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public Page<FestivalCollectionDto> getCollectionsPage(Long accountId, Long festivalEventId, String blockName,
+            String status, String search, int page, int size) {
+        PaymentStatus paymentStatus = valueOrEmpty(status).isEmpty() ? null : PaymentStatus.valueOf(valueOrEmpty(status).toUpperCase());
+        return collectionRepository.searchPage(accountId, festivalEventId, valueOrEmpty(blockName),
+                paymentStatus, valueOrEmpty(search),
+                PageRequest.of(Math.max(0, page), Math.min(Math.max(1, size), 100))).map(this::mapToDto);
     }
 
     @Transactional(readOnly = true)
@@ -199,6 +210,10 @@ public class FestivalCollectionService {
     private FestivalCollection findCollection(Long accountId, Long collectionId) {
         return collectionRepository.findByAccountIdAndId(accountId, collectionId)
                 .orElseThrow(() -> new ResourceNotFoundException("Festival collection not found"));
+    }
+
+    private String valueOrEmpty(String value) {
+        return value == null ? "" : value.trim();
     }
 
     private void validatePayment(FestivalCollectionPaymentRequest request) {

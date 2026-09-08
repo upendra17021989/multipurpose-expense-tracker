@@ -293,7 +293,7 @@ export const festivalEventAPI = {
 
 export const festivalCollectionAPI = {
   downloadReceipt: (collectionId, receiptId) => axiosInstance.get(`/society/festival-collections/${collectionId}/receipts/${receiptId}/pdf`, { responseType: 'blob' }),
-  getCollections: (festivalEventId) => axiosInstance.get('/society/festival-collections', { params: { festivalEventId } }),
+  getCollections: (festivalEventId, params = {}) => axiosInstance.get('/society/festival-collections', { params: { festivalEventId, ...params } }),
   getCollection: (collectionId) => axiosInstance.get(`/society/festival-collections/${collectionId}`),
   getSummary: (festivalEventId) => axiosInstance.get('/society/festival-collections/summary', { params: { festivalEventId } }),
   generateDemand: (data) => axiosInstance.post('/society/festival-collections/generate-demand', data),

@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import org.springframework.data.domain.Page;
 
 @RestController
 @RequestMapping("/society/festival-collections")
@@ -44,10 +45,16 @@ public class FestivalCollectionController {
     }
 
     @GetMapping
-    public ResponseEntity<List<FestivalCollectionDto>> getCollections(
+    public ResponseEntity<Page<FestivalCollectionDto>> getCollections(
             @AuthenticationPrincipal UserPrincipal userPrincipal,
-            @RequestParam Long festivalEventId) {
-        return ResponseEntity.ok(festivalCollectionService.getCollections(userPrincipal.getAccountId(), festivalEventId));
+            @RequestParam Long festivalEventId,
+            @RequestParam(defaultValue = "") String blockName,
+            @RequestParam(defaultValue = "") String status,
+            @RequestParam(defaultValue = "") String search,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        return ResponseEntity.ok(festivalCollectionService.getCollectionsPage(userPrincipal.getAccountId(),
+                festivalEventId, blockName, status, search, page, size));
     }
 
     @GetMapping("/{collectionId}")

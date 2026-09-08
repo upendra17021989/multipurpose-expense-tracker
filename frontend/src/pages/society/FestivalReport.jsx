@@ -17,9 +17,9 @@ export const FestivalReport = () => {
   useEffect(() => {
     let active = true
     setData(null); setError('')
-    Promise.all([festivalEventAPI.getFestival(festivalEventId), festivalCollectionAPI.getCollections(festivalEventId), expenseAPI.getExpenses()])
+    Promise.all([festivalEventAPI.getFestival(festivalEventId), festivalCollectionAPI.getCollections(festivalEventId, { size: 100 }), expenseAPI.getExpenses()])
       .then(([festival, collections, expenses]) => {
-        if (active) setData({ festival: festival.data, collections: collections.data || [], expenses: (expenses.data || []).filter((row) => String(row.festivalEventId) === String(festivalEventId) && row.expenseType === 'FESTIVAL') })
+        if (active) setData({ festival: festival.data, collections: collections.data?.content || [], expenses: (expenses.data || []).filter((row) => String(row.festivalEventId) === String(festivalEventId) && row.expenseType === 'FESTIVAL') })
       }).catch(() => { if (active) setError('Unable to load the festival report. Please retry.') })
     return () => { active = false }
   }, [festivalEventId, account?.id, revision])
