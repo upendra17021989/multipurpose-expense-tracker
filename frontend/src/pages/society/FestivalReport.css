@@ -10,6 +10,10 @@
 .festival-report-controls > div { display: flex; gap: 8px; }
 .festival-report-controls button[aria-pressed=true] { background: #0f766e; color: white; }
 .festival-report-controls input { min-width: 220px; padding: 12px; border: 1px solid #d0dce3; border-radius: 8px; }
+.festival-block-pdf-controls { display: flex; gap: 8px; }
+.festival-block-pdf-controls select { min-width: 180px; }
+.festival-block-contributors { margin-top: 24px; }
+.festival-block-contributors > h3:not(:first-child) { margin-top: 24px; }
 .festival-report-detail h3, .festival-report-breakdown h3 { margin-bottom: 14px; font-size: 17px; }
 .festival-report-category { display: block; color: #617580; }
 .festival-report-breakdown { padding: 22px; border: 1px solid #dce7ea; border-radius: 12px; margin-top: 22px; }
@@ -26,4 +30,7 @@
   .festival-report th, .festival-report td { padding: 5px; overflow-wrap: anywhere; }
   .festival-report tr { break-inside: avoid; }
   .festival-report-detail { margin-top: 24px; }
+  .festival-report.block-pdf-mode .festival-report-detail:not(.festival-block-report),
+  .festival-report.block-pdf-mode .festival-report-breakdown { display: none !important; }
+  .festival-report.block-pdf-mode .festival-block-report { display: block !important; }
 }
