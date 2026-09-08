@@ -7,11 +7,15 @@ import { formatCurrency } from '../../utils/format'
 import { Shell, SummaryGrid } from '../DashboardRouter'
 import { FestivalPaymentModal } from './FestivalPaymentModal'
 import { FestivalCollectionReceipt } from './FestivalCollectionReceipt'
+import './FestivalCollectionList.css'
 
 export const FestivalCollectionList = () => {
   const { festivalEventId } = useParams()
   const { currentAccount } = useAuthStore()
-  const canWrite = currentAccount?.role !== 'MEMBER'
+  const canManageDemand = currentAccount?.role !== 'MEMBER' && currentAccount?.role !== 'COMMITTEE_MEMBER'
+    && currentAccount?.role !== 'BLOCK_REPRESENTATIVE'
+  const canAddPayment = currentAccount?.role !== 'MEMBER'
+  const assignedBlock = currentAccount?.role === 'BLOCK_REPRESENTATIVE' ? currentAccount?.assignedBlockName : ''
   const [festival, setFestival] = useState(null)
   const [collections, setCollections] = useState([])
   const [summary, setSummary] = useState(null)
@@ -45,11 +49,12 @@ export const FestivalCollectionList = () => {
 
   const visibleCollections = useMemo(() => {
     const query = filters.search.trim().toLowerCase()
-    return collections.filter((collection) => [collection.blockName, collection.flatNumber, collection.ownerName, collection.paymentStatus]
+    return collections.filter((collection) => !assignedBlock || String(collection.blockName).toLowerCase() === String(assignedBlock).toLowerCase())
+      .filter((collection) => [collection.blockName, collection.flatNumber, collection.ownerName, collection.paymentStatus]
       .filter(Boolean)
       .some((value) => String(value).toLowerCase().includes(query)))
       .filter((collection) => !filters.status || collection.paymentStatus === filters.status)
-  }, [collections, filters])
+  }, [assignedBlock, collections, filters])
 
   const generateDemand = async (event) => {
     event.preventDefault()
@@ -99,6 +104,19 @@ export const FestivalCollectionList = () => {
     }
   }
 
+  const sharePage = async () => {
+    const shareData = { title: festival ? `${festival.festivalName} Collections` : 'Festival Collections', url: window.location.href }
+    try {
+      if (navigator.share) await navigator.share(shareData)
+      else {
+        await navigator.clipboard.writeText(shareData.url)
+        toast.success('Share link copied')
+      }
+    } catch (error) {
+      if (error.name !== 'AbortError') toast.error('Unable to share this link')
+    }
+  }
+
   if (currentAccount?.accountType !== 'SOCIETY') {
     return (
       <Shell title="Festival Collections" eyebrow="Society module">
@@ -108,7 +126,8 @@ export const FestivalCollectionList = () => {
   }
 
   return (
-    <Shell title={festival ? `${festival.festivalName} Collections` : 'Festival Collections'} eyebrow="Society module" actions={<Link className="button-link" to="/society/festival-collections">All Festivals</Link>}>
+    <Shell title={festival ? `${festival.festivalName} Collections` : 'Festival Collections'} eyebrow="Society module" actions={<div className="header-actions"><button type="button" onClick={sharePage}>Share</button><Link className="button-link" to="/society/festival-collections">All Festivals</Link></div>}>
+      <div className="festival-collections-page">
       <SummaryGrid items={[
         ['Expected', formatCurrency(summary?.totalExpected)],
         ['Collected', formatCurrency(summary?.totalCollected)],
@@ -121,7 +140,7 @@ export const FestivalCollectionList = () => {
       ]} />
       <div className="form-actions"><Link className="button-link secondary" to={`/society/festivals/${festivalEventId}/expenses`}>Expense details & estimates</Link><Link className="button-link secondary" to={`/society/festivals/${festivalEventId}/report`}>Collection & expense report</Link></div>
 
-      {canWrite && <form className="inline-form collection-demand-form" onSubmit={generateDemand}>
+      {canManageDemand && <form className="inline-form collection-demand-form" onSubmit={generateDemand}>
         <label>
           Same Amount For All Flats
           <input type="number" min="0.01" step="0.01" value={expectedAmount} onChange={(event) => setExpectedAmount(event.target.value)} required placeholder="2500" />
@@ -143,11 +162,11 @@ export const FestivalCollectionList = () => {
           <option value="EXCESS">Excess</option>
           <option value="REFUNDED">Refunded</option>
         </select>
-        <strong>{visibleCollections.length} shown</strong>
+        <strong>{assignedBlock ? `${assignedBlock} · ` : ''}{visibleCollections.length} shown</strong>
       </section>
 
       <div className="table-wrap">
-        <table>
+        <table className="festival-collections-table">
           <thead>
             <tr>
               <th>Flat</th>
@@ -166,7 +185,7 @@ export const FestivalCollectionList = () => {
                 <td>{collection.blockName}-{collection.flatNumber}</td>
                 <td>{collection.ownerName}</td>
                 <td className="numeric">
-                  {canWrite && editingDemandId === collection.id ? (
+                  {canManageDemand && editingDemandId === collection.id ? (
                     <input className="table-input" type="number" min="0.01" step="0.01" value={demandForm.expectedAmount} onChange={(event) => setDemandForm({ ...demandForm, expectedAmount: event.target.value })} />
                   ) : formatCurrency(collection.expectedAmount)}
                 </td>
@@ -180,9 +199,9 @@ export const FestivalCollectionList = () => {
                       <button className="primary" onClick={() => updateDemand(collection.id)}>Save</button>
                       <button onClick={cancelDemandEdit}>Cancel</button>
                     </>
-                  ) : canWrite ? (
+                  ) : canAddPayment ? (
                     <>
-                      <button onClick={() => startDemandEdit(collection)}>Demand</button>
+                      {canManageDemand && <button onClick={() => startDemandEdit(collection)}>Demand</button>}
                       <button onClick={() => setPaymentCollection(collection)}>Payment</button>
                       <button onClick={() => setReceiptCollection({ id: collection.id })}>Receipts</button>
                     </>
@@ -194,9 +213,55 @@ export const FestivalCollectionList = () => {
           </tbody>
         </table>
       </div>
+      <div className="festival-collection-mobile-list" aria-busy={loading}>
+        {visibleCollections.map((collection) => (
+          <details className="festival-collection-card" key={collection.id}>
+            <summary>
+              <span className="festival-collection-row-main">
+                <strong>{collection.blockName}-{collection.flatNumber}</strong>
+                <small>{collection.ownerName || 'Owner not specified'}</small>
+              </span>
+              <span className="festival-collection-row-balance">
+                <strong>{formatCurrency(collection.pendingAmount)}</strong>
+                <span className={`status-pill ${String(collection.paymentStatus).toLowerCase()}`}>{collection.paymentStatus}</span>
+              </span>
+              <span className="festival-collection-row-chevron" aria-hidden="true">⌄</span>
+            </summary>
+            <div className="festival-collection-card-details">
+            <dl>
+              <div>
+                <dt>Expected</dt>
+                <dd>{canManageDemand && editingDemandId === collection.id
+                  ? <input type="number" min="0.01" step="0.01" value={demandForm.expectedAmount} onChange={(event) => setDemandForm({ ...demandForm, expectedAmount: event.target.value })} />
+                  : formatCurrency(collection.expectedAmount)}</dd>
+              </div>
+              <div><dt>Collected</dt><dd>{formatCurrency(collection.collectedAmount)}</dd></div>
+              <div><dt>Pending</dt><dd>{formatCurrency(collection.pendingAmount)}</dd></div>
+              <div><dt>Excess</dt><dd>{formatCurrency(collection.excessAmount)}</dd></div>
+            </dl>
+            <div className="festival-collection-card-actions">
+              {editingDemandId === collection.id ? (
+                <>
+                  <button type="button" className="primary" onClick={() => updateDemand(collection.id)}>Save</button>
+                  <button type="button" onClick={cancelDemandEdit}>Cancel</button>
+                </>
+              ) : canAddPayment ? (
+                <>
+                  {canManageDemand && <button type="button" onClick={() => startDemandEdit(collection)}>Edit demand</button>}
+                  <button type="button" onClick={() => setPaymentCollection(collection)}>Add payment</button>
+                  <button type="button" onClick={() => setReceiptCollection({ id: collection.id })}>Receipts</button>
+                </>
+              ) : <button type="button" onClick={() => setReceiptCollection({ id: collection.id })}>View receipts</button>}
+            </div>
+            </div>
+          </details>
+        ))}
+        {!loading && visibleCollections.length === 0 && <p className="festival-collection-mobile-empty">Generate demand to create flat-wise collection rows.</p>}
+      </div>
       {loading && <p className="muted">Loading collections...</p>}
-      {canWrite && paymentCollection && <FestivalPaymentModal collection={paymentCollection} onClose={() => setPaymentCollection(null)} onSaved={(receipt) => { setReceiptCollection({ id: paymentCollection.id, receiptId: receipt.id }); setPaymentCollection(null); loadData() }} />}
+      {canAddPayment && paymentCollection && <FestivalPaymentModal collection={paymentCollection} onClose={() => setPaymentCollection(null)} onSaved={(receipt) => { setReceiptCollection({ id: paymentCollection.id, receiptId: receipt.id }); setPaymentCollection(null); loadData() }} />}
       {receiptCollection && <FestivalCollectionReceipt collectionId={receiptCollection.id} initialReceiptId={receiptCollection.receiptId} onClose={() => setReceiptCollection(null)} />}
+      </div>
     </Shell>
   )
 }

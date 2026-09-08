@@ -267,7 +267,10 @@ public class AuthService {
         membershipRepository.findByUserIdAndActiveTrue(userId).forEach(membership -> {
             Account account = membership.getAccount();
             if (Boolean.TRUE.equals(account.getActive())) {
-                accounts.put(account.getId(), mapToAccountDto(account, membership.getRole(), userId));
+                UserRole membershipRole = membership.getRole() == UserRole.MEMBER
+                        && "Committee member".equalsIgnoreCase(membership.getRequestedRelation())
+                        ? UserRole.COMMITTEE_MEMBER : membership.getRole();
+                accounts.put(account.getId(), mapToAccountDto(account, membershipRole, userId, membership.getRequestedBlockName()));
             }
         });
         return new ArrayList<>(accounts.values());
@@ -314,10 +317,10 @@ public class AuthService {
     }
 
     private AccountDto mapToAccountDto(Account account) {
-        return mapToAccountDto(account, account.getRole(), account.getUser().getId());
+        return mapToAccountDto(account, account.getRole(), account.getUser().getId(), null);
     }
 
-    private AccountDto mapToAccountDto(Account account, UserRole role, Long userId) {
+    private AccountDto mapToAccountDto(Account account, UserRole role, Long userId, String assignedBlockName) {
         return AccountDto.builder()
                 .id(account.getId())
                 .userId(userId)
@@ -327,6 +330,7 @@ public class AuthService {
                 .societyName(account.getSocietyName())
                 .storeName(account.getStoreName())
                 .role(role)
+                .assignedBlockName(assignedBlockName)
                 .active(account.getActive())
                 .createdAt(account.getCreatedAt())
                 .build();

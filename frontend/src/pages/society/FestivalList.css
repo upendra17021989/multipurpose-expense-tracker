@@ -5,4 +5,35 @@
 .festival-status-tabs button span { display: inline-grid; place-items: center; min-width: 24px; padding: 1px 7px; background: #dfe9e7; color: #425f59; border-radius: 20px; font-size: 12px; }
 .festival-status-tabs button[aria-selected=true] span { background: #ffffff26; color: white; }
 .festival-status-tabs button:focus-visible { outline: 3px solid #14b8a6; outline-offset: 2px; }
-@media (max-width: 600px) { .festival-status-tabs button { flex: 1 1 calc(50% - 8px); padding: 10px 12px; } }
+.festival-mobile-list { display: none; }
+
+@media (max-width: 600px) {
+  .festival-list-page .summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-bottom: 12px; }
+  .festival-list-page .summary-card { min-height: 76px; padding: 11px 12px; }
+  .festival-list-page .summary-card span { font-size: 12px; }
+  .festival-list-page .summary-card strong { font-size: 16px; }
+  .festival-list-page .flat-toolbar { grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 10px; }
+  .festival-list-page .flat-toolbar input { min-width: 0; }
+  .festival-list-page .flat-toolbar strong { min-height: 0; justify-content: flex-end; font-size: 13px; white-space: nowrap; }
+  .festival-status-tabs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; padding: 6px; margin-bottom: 12px; }
+  .festival-status-tabs button { width: 100%; min-width: 0; padding: 9px 8px; font-size: 12px; }
+  .festival-list-page > .table-wrap { display: none; }
+  .festival-mobile-list { display: grid; gap: 12px; }
+  .festival-mobile-card { overflow: hidden; border: 1px solid #d9e2ec; border-radius: 12px; background: #fff; box-shadow: 0 4px 14px rgba(15, 23, 42, .05); }
+  .festival-mobile-card header { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; padding: 14px 14px 8px; }
+  .festival-mobile-card header > div { min-width: 0; }
+  .festival-mobile-card header p { margin: 0 0 2px; color: #0f766e; font-size: 11px; font-weight: 800; }
+  .festival-mobile-card h2 { margin: 0; color: #17202a; font-size: 17px; line-height: 1.25; overflow-wrap: anywhere; }
+  .festival-mobile-card .status-pill { flex: 0 0 auto; }
+  .festival-mobile-dates { margin: 0; padding: 0 14px 12px; color: #64748b; font-size: 12px; }
+  .festival-mobile-card dl { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); margin: 0 14px 14px; border: 1px solid #e2e8f0; border-radius: 9px; background: #f8fafc; }
+  .festival-mobile-card dl > div { min-width: 0; padding: 10px; }
+  .festival-mobile-card dl > div:nth-child(odd) { border-right: 1px solid #e2e8f0; }
+  .festival-mobile-card dl > div:nth-child(-n+2) { border-bottom: 1px solid #e2e8f0; }
+  .festival-mobile-card dt { color: #64748b; font-size: 11px; }
+  .festival-mobile-card dd { margin: 2px 0 0; color: #17202a; font-size: 14px; font-weight: 750; overflow-wrap: anywhere; }
+  .festival-mobile-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; padding: 12px 14px 14px; border-top: 1px solid #e2e8f0; }
+  .festival-mobile-actions > * { width: 100%; min-width: 0; min-height: 38px; display: inline-flex; align-items: center; justify-content: center; padding: 7px 8px; font-size: 12px; text-align: center; }
+  .festival-mobile-actions > .danger:last-child:nth-child(odd) { grid-column: 1 / -1; }
+  .festival-mobile-empty { padding: 28px 16px; color: #64748b; border: 1px dashed #cbd5e1; border-radius: 12px; background: #f8fafc; text-align: center; }
+}

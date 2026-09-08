@@ -79,7 +79,7 @@ public class FestivalCollectionController {
             @PathVariable Long collectionId,
             @Valid @RequestBody FestivalCollectionPaymentRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(festivalCollectionService.addPayment(userPrincipal.getAccountId(), collectionId, request));
+                .body(festivalCollectionService.addPayment(userPrincipal.getAccountId(), userPrincipal.getUserId(), collectionId, request));
     }
 
     @GetMapping("/{collectionId}/receipts")

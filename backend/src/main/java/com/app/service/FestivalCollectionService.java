@@ -15,6 +15,7 @@ import com.app.entity.PaymentStatus;
 import com.app.exception.ResourceNotFoundException;
 import com.app.exception.ValidationException;
 import com.app.repository.AccountRepository;
+import com.app.repository.AccountUserMembershipRepository;
 import com.app.repository.FestivalCollectionReceiptRepository;
 import com.app.repository.FestivalCollectionRepository;
 import com.app.repository.FestivalEventRepository;
@@ -37,18 +38,21 @@ public class FestivalCollectionService {
     private final FestivalEventRepository festivalEventRepository;
     private final FlatRepository flatRepository;
     private final AccountRepository accountRepository;
+    private final AccountUserMembershipRepository membershipRepository;
 
     public FestivalCollectionService(
             FestivalCollectionRepository collectionRepository,
             FestivalCollectionReceiptRepository receiptRepository,
             FestivalEventRepository festivalEventRepository,
             FlatRepository flatRepository,
-            AccountRepository accountRepository) {
+            AccountRepository accountRepository,
+            AccountUserMembershipRepository membershipRepository) {
         this.collectionRepository = collectionRepository;
         this.receiptRepository = receiptRepository;
         this.festivalEventRepository = festivalEventRepository;
         this.flatRepository = flatRepository;
         this.accountRepository = accountRepository;
+        this.membershipRepository = membershipRepository;
     }
 
     @Transactional(readOnly = true)
@@ -112,9 +116,15 @@ public class FestivalCollectionService {
     }
 
     @Transactional
-    public FestivalCollectionReceiptDto addPayment(Long accountId, Long collectionId, FestivalCollectionPaymentRequest request) {
+    public FestivalCollectionReceiptDto addPayment(Long accountId, Long userId, Long collectionId, FestivalCollectionPaymentRequest request) {
         validatePayment(request);
         FestivalCollection collection = findCollection(accountId, collectionId);
+        membershipRepository.findByAccountIdAndUserIdAndActiveTrue(accountId, userId).ifPresent(membership -> {
+            if (membership.getRole() == com.app.entity.UserRole.BLOCK_REPRESENTATIVE
+                    && !collection.getFlat().getBlockName().equalsIgnoreCase(membership.getRequestedBlockName())) {
+                throw new ValidationException("Block representatives can add payments only for flats in their assigned block");
+            }
+        });
 
         FestivalCollectionReceipt receipt = FestivalCollectionReceipt.builder()
                 .festivalCollection(collection)
@@ -194,10 +204,6 @@ public class FestivalCollectionService {
     private void validatePayment(FestivalCollectionPaymentRequest request) {
         if (request.getCollectedBy() == null || request.getCollectedBy().isBlank()) {
             throw new ValidationException("Collected by is required");
-        }
-        if ((request.getPaymentMode() == PaymentMode.UPI || request.getPaymentMode() == PaymentMode.NEFT)
-                && (request.getUtr() == null || request.getUtr().isBlank())) {
-            throw new ValidationException("UTR is required for UPI/NEFT payments");
         }
         if (request.getPaymentMode() == PaymentMode.CHEQUE
                 && (request.getChequeNumber() == null || request.getChequeNumber().isBlank())) {

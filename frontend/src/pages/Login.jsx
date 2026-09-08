@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { toast } from 'react-toastify'
 import { authAPI } from '../api/endpoints'
 import { useAuthStore } from '../store/authStore'
@@ -19,11 +19,17 @@ const workflowCards = [
 
 export const Login = () => {
   const navigate = useNavigate()
+  const location = useLocation()
   const { login } = useAuthStore()
   const [loading, setLoading] = useState(false)
   const [pendingSession, setPendingSession] = useState(null)
   const [formData, setFormData] = useState({ mobile: '', password: '' })
   const [mobileLoginOpen, setMobileLoginOpen] = useState(false)
+  const returnTo = typeof location.state?.returnTo === 'string' && location.state.returnTo.startsWith('/')
+    && !location.state.returnTo.startsWith('//') ? location.state.returnTo : '/home'
+  const requiredAccountType = returnTo.startsWith('/society/') ? 'SOCIETY'
+    : returnTo.startsWith('/kirana/') ? 'KIRANA_STORE'
+      : returnTo.startsWith('/sports/') ? 'SPORTS' : null
 
   useEffect(() => {
     const closeOnEscape = (event) => {
@@ -42,7 +48,7 @@ export const Login = () => {
     const { token, user, accounts, currentAccount } = session
     login(token, user, accounts, currentAccount)
     toast.success('Login successful')
-    navigate('/home')
+    navigate(returnTo, { replace: true })
   }
 
   const handleSubmit = async (event) => {
@@ -52,15 +58,24 @@ export const Login = () => {
     try {
       const response = await authAPI.login(formData)
       const { accounts } = response.data
-      if (accounts?.length > 1) {
+      const matchingAccounts = requiredAccountType
+        ? (accounts || []).filter((account) => account.accountType === requiredAccountType)
+        : (accounts || [])
+      if (matchingAccounts.length === 1 && String(response.data.currentAccount?.id) !== String(matchingAccounts[0].id)) {
+        const selectedResponse = await authAPI.loginWithAccount(formData, matchingAccounts[0].id)
+        completeLogin(selectedResponse.data)
+        return
+      }
+      if (matchingAccounts.length > 1 || accounts?.length > 1 && matchingAccounts.length === 0) {
         const lastWorkspaceId = localStorage.getItem('lastWorkspaceId')
-        const lastWorkspace = accounts.find((account) => String(account.id) === lastWorkspaceId)
+        const accountChoices = matchingAccounts.length ? matchingAccounts : accounts
+        const lastWorkspace = accountChoices.find((account) => String(account.id) === lastWorkspaceId)
         if (lastWorkspace) {
           const selectedResponse = await authAPI.loginWithAccount(formData, lastWorkspace.id)
           completeLogin(selectedResponse.data)
           return
         }
-        setPendingSession(response.data)
+        setPendingSession({ ...response.data, accounts: accountChoices })
         toast.info('Select an account to continue')
       } else {
         completeLogin(response.data)

@@ -70,6 +70,7 @@ export const FestivalList = () => {
 
   return (
     <Shell title="Festival / Sports Events" eyebrow="Society module" actions={['ADMIN', 'SUPERVISOR'].includes(currentAccount?.role) && <Link className="button-link" to="/society/festivals/new">Add Event</Link>}>
+      <div className="festival-list-page">
       <SummaryGrid items={[
         ['Total Events', festivals.length],
         ['Active', summary.active],
@@ -144,7 +145,38 @@ export const FestivalList = () => {
           </tbody>
         </table>
       </div>
+      <div className="festival-mobile-list" role="tabpanel" aria-labelledby={`festival-tab-${status}`} aria-busy={loading}>
+        {visibleFestivals.map((festival) => (
+          <article className="festival-mobile-card" key={festival.id}>
+            <header>
+              <div>
+                <p>{festival.year}</p>
+                <h2>{festival.festivalName}</h2>
+              </div>
+              <span className={`status-pill ${String(festival.status).toLowerCase()}`}>{festival.status}</span>
+            </header>
+            <p className="festival-mobile-dates">{formatDate(festival.startDate)} – {formatDate(festival.endDate)}</p>
+            <dl>
+              <div><dt>Budget</dt><dd>{formatCurrency(festival.budgetAmount)}</dd></div>
+              <div><dt>Collected</dt><dd>{formatCurrency(festival.collectedAmount)}</dd></div>
+              <div><dt>Expense</dt><dd>{formatCurrency(festival.totalExpense)}</dd></div>
+              <div><dt>Balance</dt><dd>{formatCurrency(festival.balanceAmount)}</dd></div>
+            </dl>
+            <div className="festival-mobile-actions">
+              <Link className="button-link secondary" to={`/society/festivals/${festival.id}/expenses`}>Expenses</Link>
+              <Link className="button-link secondary" to={`/society/festivals/${festival.id}/report`}>Report</Link>
+              <button onClick={() => navigate(`/society/festival-collections/${festival.id}`)}>Collections</button>
+              {canManage && <button onClick={() => navigate(`/society/festivals/${festival.id}/edit`)}>Edit</button>}
+              {canManage && festival.status !== 'ACTIVE' && <button onClick={() => updateStatus(festival.id, 'ACTIVE')}>Activate</button>}
+              {canManage && festival.status !== 'CLOSED' && <button onClick={() => updateStatus(festival.id, 'CLOSED')}>Close</button>}
+              {canManage && <button className="danger" onClick={() => remove(festival.id)}>Delete</button>}
+            </div>
+          </article>
+        ))}
+        {!loading && visibleFestivals.length === 0 && <p className="festival-mobile-empty">{status === 'ALL' ? 'No festival or sports events found.' : `No ${status.toLowerCase()} events${year ? ` for ${year}` : ''}.`}</p>}
+      </div>
       {loading && <p className="muted">Loading events...</p>}
+      </div>
     </Shell>
   )
 }

@@ -1,5 +1,5 @@
 import { useAuthStore } from '../store/authStore'
-import { Navigate } from 'react-router-dom'
+import { Navigate, useLocation } from 'react-router-dom'
 import { useIsMobileOrTabletDevice } from '../utils/device'
 
 export const ProtectedRoute = ({ children, requireSystemAdmin = false }) => {
@@ -7,9 +7,10 @@ export const ProtectedRoute = ({ children, requireSystemAdmin = false }) => {
   const isAppLocked = useAuthStore((state) => state.isAppLocked)
   const user = useAuthStore((state) => state.user)
   const isMobileOrTablet = useIsMobileOrTabletDevice()
+  const location = useLocation()
 
   if (!isAuthenticated) {
-    return <Navigate to="/login" replace />
+    return <Navigate to="/login" replace state={{ returnTo: `${location.pathname}${location.search}${location.hash}` }} />
   }
 
   // The lock overlay is rendered at the application root. Avoid mounting the

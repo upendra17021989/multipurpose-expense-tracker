@@ -42,10 +42,6 @@ export const FestivalCollectionForm = ({ collectionId: selectedCollectionId, onC
   const handleSubmit = async (event) => {
     event.preventDefault()
     if (saving || !collection || currentAccount?.role === 'MEMBER') return
-    if ((form.paymentMode === 'UPI' || form.paymentMode === 'NEFT') && !form.utr.trim()) {
-      toast.error('UTR is required for UPI/NEFT')
-      return
-    }
     if (form.paymentMode === 'CHEQUE' && !form.chequeNumber.trim()) {
       toast.error('Cheque number is required for cheque payments')
       return
@@ -121,8 +117,8 @@ export const FestivalCollectionForm = ({ collectionId: selectedCollectionId, onC
           </label>
           {(form.paymentMode === 'UPI' || form.paymentMode === 'NEFT') && (
             <label>
-              UTR
-              <input value={form.utr} onChange={(event) => update('utr', event.target.value)} required />
+              UTR (optional)
+              <input value={form.utr} onChange={(event) => update('utr', event.target.value)} placeholder="Optional reference" />
             </label>
           )}
           {form.paymentMode === 'CHEQUE' && (

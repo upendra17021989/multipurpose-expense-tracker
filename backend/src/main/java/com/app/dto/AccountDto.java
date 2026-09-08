@@ -21,6 +21,7 @@ public class AccountDto {
     private String societyName;
     private String storeName;
     private UserRole role;
+    private String assignedBlockName;
     private Boolean active;
     private LocalDateTime createdAt;
 }
