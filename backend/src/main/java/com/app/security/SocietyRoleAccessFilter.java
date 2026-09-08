@@ -61,7 +61,7 @@ public class SocietyRoleAccessFilter extends OncePerRequestFilter {
                 && path.matches("/society/festival-collections/\\d+/payments");
         boolean permitted = role == UserRole.ADMIN || role == UserRole.SUPERVISOR
                 || !creatingFestival && role == UserRole.TREASURER && TREASURER_WRITE_PATHS.stream().anyMatch(path::startsWith)
-                || (role == UserRole.COMMITTEE_MEMBER || role == UserRole.BLOCK_REPRESENTATIVE) && addingFestivalPayment;
+                || role == UserRole.BLOCK_REPRESENTATIVE && addingFestivalPayment;
         if (!permitted) {
             response.setStatus(HttpServletResponse.SC_FORBIDDEN);
             response.setContentType("application/json");
@@ -76,7 +76,7 @@ public class SocietyRoleAccessFilter extends OncePerRequestFilter {
         return membershipRepository.findByAccountIdAndUserIdAndActiveTrue(account.getId(), userId)
                 .map(membership -> membership.getRole() == UserRole.MEMBER
                         && "Committee member".equalsIgnoreCase(membership.getRequestedRelation())
-                        ? UserRole.COMMITTEE_MEMBER : membership.getRole())
+                        ? UserRole.BLOCK_REPRESENTATIVE : membership.getRole())
                 .orElse(UserRole.MEMBER);
     }
 

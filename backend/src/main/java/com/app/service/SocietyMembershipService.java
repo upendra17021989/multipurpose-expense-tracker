@@ -66,8 +66,8 @@ public class SocietyMembershipService {
     public SocietyMembershipRequestDto updateRole(Long accountId, Long adminUserId, Long membershipId, UserRole role) {
         requireAdmin(accountId, adminUserId);
         if (role != UserRole.ADMIN && role != UserRole.SUPERVISOR && role != UserRole.TREASURER
-                && role != UserRole.COMMITTEE_MEMBER && role != UserRole.BLOCK_REPRESENTATIVE && role != UserRole.MEMBER) {
-            throw new ValidationException("Society role must be ADMIN, SUPERVISOR, TREASURER, COMMITTEE_MEMBER, BLOCK_REPRESENTATIVE, or MEMBER");
+                && role != UserRole.BLOCK_REPRESENTATIVE && role != UserRole.MEMBER) {
+            throw new ValidationException("Society role must be ADMIN, SUPERVISOR, TREASURER, BLOCK_REPRESENTATIVE, or MEMBER");
         }
         AccountUserMembership membership = membershipRepository.findById(membershipId)
                 .orElseThrow(() -> new ValidationException("Society member not found"));
@@ -130,7 +130,7 @@ public class SocietyMembershipService {
         membership.setRequestedFlatNumber(flat.getFlatNumber());
         membership.setRequestedRelation(relation);
         if (membership.getRole() == UserRole.MEMBER && "Committee member".equalsIgnoreCase(relation)) {
-            membership.setRole(UserRole.COMMITTEE_MEMBER);
+            membership.setRole(UserRole.BLOCK_REPRESENTATIVE);
         }
         membership.setUpdatedAt(LocalDateTime.now());
         return toDto(membershipRepository.save(membership), flatMember);

@@ -269,7 +269,7 @@ public class AuthService {
             if (Boolean.TRUE.equals(account.getActive())) {
                 UserRole membershipRole = membership.getRole() == UserRole.MEMBER
                         && "Committee member".equalsIgnoreCase(membership.getRequestedRelation())
-                        ? UserRole.COMMITTEE_MEMBER : membership.getRole();
+                        ? UserRole.BLOCK_REPRESENTATIVE : membership.getRole();
                 accounts.put(account.getId(), mapToAccountDto(account, membershipRole, userId, membership.getRequestedBlockName()));
             }
         });

@@ -12,8 +12,7 @@ import './FestivalCollectionList.css'
 export const FestivalCollectionList = () => {
   const { festivalEventId } = useParams()
   const { currentAccount } = useAuthStore()
-  const canManageDemand = currentAccount?.role !== 'MEMBER' && currentAccount?.role !== 'COMMITTEE_MEMBER'
-    && currentAccount?.role !== 'BLOCK_REPRESENTATIVE'
+  const canManageDemand = currentAccount?.role !== 'MEMBER' && currentAccount?.role !== 'BLOCK_REPRESENTATIVE'
   const canAddPayment = currentAccount?.role !== 'MEMBER'
   const assignedBlock = currentAccount?.role === 'BLOCK_REPRESENTATIVE' ? currentAccount?.assignedBlockName : ''
   const [festival, setFestival] = useState(null)

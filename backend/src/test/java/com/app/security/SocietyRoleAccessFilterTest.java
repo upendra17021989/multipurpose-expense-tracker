@@ -54,12 +54,6 @@ class SocietyRoleAccessFilterTest {
         check(UserRole.MEMBER, "GET", "/society/festivals", "/api", true);
     }
 
-    @Test void committeeMemberCanAddPaymentsButCannotChangeDemands() throws Exception {
-        check(UserRole.COMMITTEE_MEMBER, "POST", "/society/festival-collections/5/payments", "/api", true);
-        check(UserRole.COMMITTEE_MEMBER, "POST", "/society/festival-collections/generate-demand", "/api", false);
-        check(UserRole.COMMITTEE_MEMBER, "PUT", "/society/festival-collections/5/demand", "/api", false);
-    }
-
     @Test void blockRepresentativeCanAddPaymentsButCannotChangeDemands() throws Exception {
         check(UserRole.BLOCK_REPRESENTATIVE, "POST", "/society/festival-collections/5/payments", "/api", true);
         check(UserRole.BLOCK_REPRESENTATIVE, "POST", "/society/festival-collections/generate-demand", "/api", false);
