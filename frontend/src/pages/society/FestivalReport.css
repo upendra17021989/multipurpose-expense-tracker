@@ -15,7 +15,7 @@
 .festival-report-breakdown { padding: 22px; border: 1px solid #dce7ea; border-radius: 12px; margin-top: 22px; }
 .festival-report-breakdown > div { display: flex; justify-content: space-between; gap: 14px; padding: 10px 0; border-bottom: 1px solid #edf1f3; }
 .festival-report .report-hidden, .festival-report .report-search-hidden { display: none; }
-@media (max-width: 700px) { .festival-report-reconciliation { grid-template-columns: repeat(2, minmax(0, 1fr)); } .festival-report-controls input { width: 100%; } }
+@media (max-width: 700px) { .festival-report-reconciliation { grid-template-columns: repeat(2, minmax(0, 1fr)); } .festival-report-controls > div { display: grid; grid-template-columns: 1fr; width: 100%; } .festival-report-controls input { width: 100%; } }
 @media print {
   body:has(.festival-report) .app-layout > :not(main), body:has(.festival-report) .page-header, .festival-report-actions, .festival-report-controls, .festival-report-no-results { display: none !important; }
   body:has(.festival-report) .app-layout, body:has(.festival-report) .app-main-content { display: block !important; margin: 0 !important; padding: 0 !important; width: 100% !important; max-width: none !important; }
