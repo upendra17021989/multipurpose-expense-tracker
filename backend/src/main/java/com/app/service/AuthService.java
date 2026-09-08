@@ -12,10 +12,12 @@ import com.app.entity.Account;
 import com.app.entity.AccountType;
 import com.app.entity.User;
 import com.app.entity.UserRole;
+import com.app.entity.StaffAccessStatus;
 import com.app.exception.UnauthorizedException;
 import com.app.exception.ValidationException;
 import com.app.repository.AccountRepository;
 import com.app.repository.AccountUserMembershipRepository;
+import com.app.repository.SocietyStaffAccessRepository;
 import com.app.repository.UserRepository;
 import com.app.util.JwtTokenProvider;
 import lombok.extern.slf4j.Slf4j;
@@ -35,6 +37,7 @@ public class AuthService {
     private final UserRepository userRepository;
     private final AccountRepository accountRepository;
     private final AccountUserMembershipRepository membershipRepository;
+    private final SocietyStaffAccessRepository staffAccessRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider tokenProvider;
     private final ExpenseCategoryService expenseCategoryService;
@@ -42,12 +45,14 @@ public class AuthService {
 
     public AuthService(UserRepository userRepository, AccountRepository accountRepository,
                        AccountUserMembershipRepository membershipRepository,
+                       SocietyStaffAccessRepository staffAccessRepository,
                        PasswordEncoder passwordEncoder, JwtTokenProvider tokenProvider,
                        ExpenseCategoryService expenseCategoryService,
                        SharedInvitationService sharedInvitationService) {
         this.userRepository = userRepository;
         this.accountRepository = accountRepository;
         this.membershipRepository = membershipRepository;
+        this.staffAccessRepository = staffAccessRepository;
         this.passwordEncoder = passwordEncoder;
         this.tokenProvider = tokenProvider;
         this.expenseCategoryService = expenseCategoryService;
@@ -271,6 +276,12 @@ public class AuthService {
                         && "Committee member".equalsIgnoreCase(membership.getRequestedRelation())
                         ? UserRole.BLOCK_REPRESENTATIVE : membership.getRole();
                 accounts.put(account.getId(), mapToAccountDto(account, membershipRole, userId, membership.getRequestedBlockName()));
+            }
+        });
+        staffAccessRepository.findByUserIdAndStatus(userId, StaffAccessStatus.ACTIVE).forEach(access -> {
+            Account account = access.getAccount();
+            if (Boolean.TRUE.equals(account.getActive()) && Boolean.TRUE.equals(access.getStaff().getActive())) {
+                accounts.putIfAbsent(account.getId(), mapToAccountDto(account, access.getRole(), userId, null));
             }
         });
         return new ArrayList<>(accounts.values());

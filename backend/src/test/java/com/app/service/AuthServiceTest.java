@@ -8,6 +8,7 @@ import com.app.entity.UserRole;
 import com.app.exception.ValidationException;
 import com.app.repository.AccountRepository;
 import com.app.repository.AccountUserMembershipRepository;
+import com.app.repository.SocietyStaffAccessRepository;
 import com.app.repository.UserRepository;
 import com.app.util.JwtTokenProvider;
 import org.junit.jupiter.api.BeforeEach;
@@ -29,6 +30,7 @@ class AuthServiceTest {
     private UserRepository users;
     private AccountRepository accounts;
     private AccountUserMembershipRepository memberships;
+    private SocietyStaffAccessRepository staffAccess;
     private PasswordEncoder passwordEncoder;
     private JwtTokenProvider tokenProvider;
     private ExpenseCategoryService expenseCategoryService;
@@ -40,11 +42,12 @@ class AuthServiceTest {
         users = mock(UserRepository.class);
         accounts = mock(AccountRepository.class);
         memberships = mock(AccountUserMembershipRepository.class);
+        staffAccess = mock(SocietyStaffAccessRepository.class);
         passwordEncoder = mock(PasswordEncoder.class);
         tokenProvider = mock(JwtTokenProvider.class);
         expenseCategoryService = mock(ExpenseCategoryService.class);
         sharedInvitationService = mock(SharedInvitationService.class);
-        service = new AuthService(users, accounts, memberships, passwordEncoder, tokenProvider,
+        service = new AuthService(users, accounts, memberships, staffAccess, passwordEncoder, tokenProvider,
                 expenseCategoryService, sharedInvitationService);
     }
 
@@ -80,6 +83,7 @@ class AuthServiceTest {
         when(accounts.save(any(Account.class))).thenReturn(saved);
         when(accounts.findByUserIdAndActive(7L, true)).thenReturn(List.of(saved));
         when(memberships.findByUserIdAndActiveTrue(7L)).thenReturn(List.of());
+        when(staffAccess.findByUserIdAndStatus(7L, com.app.entity.StaffAccessStatus.ACTIVE)).thenReturn(List.of());
         when(tokenProvider.generateToken(7L, 42L)).thenReturn("workspace-token");
 
         var response = service.addWorkspace(7L, 1L, RegisterRequest.builder()
@@ -92,5 +96,28 @@ class AuthServiceTest {
         assertEquals(AccountType.SPORTS, response.getCurrentAccount().getAccountType());
         verify(expenseCategoryService).seedDefaultCategories(saved);
         verify(sharedInvitationService).claimPendingInvitations(user);
+    }
+
+    @Test
+    void activeStaffSupervisorReceivesSocietyWorkspaceWithoutMembership() {
+        User user = User.builder().id(9L).name("Ramesh").mobile("9888888888").active(true).build();
+        Account society = Account.builder().id(50L).user(User.builder().id(1L).build())
+                .accountType(AccountType.SOCIETY).accountName("Green Residency")
+                .role(UserRole.ADMIN).active(true).build();
+        var staff = com.app.entity.SocietyStaff.builder().id(70L).account(society).staffName("Ramesh").active(true).build();
+        var access = com.app.entity.SocietyStaffAccess.builder().account(society).staff(staff).user(user)
+                .role(UserRole.STAFF_SUPERVISOR).status(com.app.entity.StaffAccessStatus.ACTIVE).build();
+
+        when(users.findById(9L)).thenReturn(Optional.of(user));
+        when(accounts.findByUserIdAndActive(9L, true)).thenReturn(List.of());
+        when(memberships.findByUserIdAndActiveTrue(9L)).thenReturn(List.of());
+        when(staffAccess.findByUserIdAndStatus(9L, com.app.entity.StaffAccessStatus.ACTIVE)).thenReturn(List.of(access));
+        when(tokenProvider.generateToken(9L, 50L)).thenReturn("staff-token");
+
+        var response = service.switchAccount(9L, 50L);
+
+        assertEquals("staff-token", response.getToken());
+        assertEquals(UserRole.STAFF_SUPERVISOR, response.getCurrentAccount().getRole());
+        assertEquals(50L, response.getCurrentAccount().getId());
     }
 }

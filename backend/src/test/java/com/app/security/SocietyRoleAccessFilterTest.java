@@ -3,6 +3,7 @@ package com.app.security;
 import com.app.entity.*;
 import com.app.repository.AccountRepository;
 import com.app.repository.AccountUserMembershipRepository;
+import com.app.repository.SocietyStaffAccessRepository;
 import jakarta.servlet.FilterChain;
 import java.util.Optional;
 import org.junit.jupiter.api.AfterEach;
@@ -20,15 +21,22 @@ class SocietyRoleAccessFilterTest {
     private void check(UserRole role, String method, String path, String context, boolean permitted) throws Exception {
         var accounts = mock(AccountRepository.class);
         var memberships = mock(AccountUserMembershipRepository.class);
-        var account = Account.builder().id(2L).accountType(AccountType.SOCIETY).role(role).user(User.builder().id(1L).build()).build();
+        var staffAccess = mock(SocietyStaffAccessRepository.class);
+        boolean staffUser = role == UserRole.STAFF_SUPERVISOR;
+        long userId = staffUser ? 9L : 1L;
+        var account = Account.builder().id(2L).accountType(AccountType.SOCIETY).role(staffUser ? UserRole.ADMIN : role).user(User.builder().id(1L).build()).build();
         when(accounts.findById(2L)).thenReturn(Optional.of(account));
-        var principal = UserPrincipal.builder().userId(1L).accountId(2L).build();
+        if (staffUser) {
+            when(staffAccess.findByAccountIdAndUserIdAndStatus(2L, 9L, StaffAccessStatus.ACTIVE))
+                    .thenReturn(Optional.of(SocietyStaffAccess.builder().role(UserRole.STAFF_SUPERVISOR).build()));
+        }
+        var principal = UserPrincipal.builder().userId(userId).accountId(2L).build();
         SecurityContextHolder.getContext().setAuthentication(new UsernamePasswordAuthenticationToken(principal, null, principal.getAuthorities()));
         var request = new MockHttpServletRequest(method, context + path);
         request.setContextPath(context);
         var response = new MockHttpServletResponse();
         var chain = mock(FilterChain.class);
-        new SocietyRoleAccessFilter(accounts, memberships).doFilter(request, response, chain);
+        new SocietyRoleAccessFilter(accounts, memberships, staffAccess).doFilter(request, response, chain);
         if (permitted) verify(chain).doFilter(request, response);
         else { assertEquals(403, response.getStatus()); verifyNoInteractions(chain); }
     }
@@ -52,6 +60,11 @@ class SocietyRoleAccessFilterTest {
         check(UserRole.TREASURER, "POST", "/society/festival-collections/5/payments", "/api", true);
         check(UserRole.TREASURER, "PUT", "/society/festivals/5", "/api", true);
         check(UserRole.MEMBER, "GET", "/society/festivals", "/api", true);
+    }
+    @Test void staffSupervisorCanOperateButCannotManageAccessOrMemberRoles() throws Exception {
+        check(UserRole.STAFF_SUPERVISOR, "POST", "/society/flats", "/api", true);
+        check(UserRole.STAFF_SUPERVISOR, "PATCH", "/society/staff/5/access/status", "/api", false);
+        check(UserRole.STAFF_SUPERVISOR, "PUT", "/society/membership-requests/5/role", "/api", false);
     }
 
     @Test void blockRepresentativeCanAddPaymentsButCannotChangeDemands() throws Exception {

@@ -218,7 +218,10 @@ export const societyStaffAPI = {
   getStaffMember: (staffId) => axiosInstance.get(`/society/staff/${staffId}`),
   createStaff: (data) => axiosInstance.post('/society/staff', data),
   updateStaff: (staffId, data) => axiosInstance.put(`/society/staff/${staffId}`, data),
-  deleteStaff: (staffId) => axiosInstance.delete(`/society/staff/${staffId}`)
+  deleteStaff: (staffId) => axiosInstance.delete(`/society/staff/${staffId}`),
+  getAccess: (staffId) => axiosInstance.get(`/society/staff/${staffId}/access`),
+  grantAccess: (staffId, data = {}) => axiosInstance.post(`/society/staff/${staffId}/access`, data),
+  updateAccessStatus: (staffId, status) => axiosInstance.patch(`/society/staff/${staffId}/access/status`, { status })
 }
 export const societyVendorAPI = {
   getVendors: () => axiosInstance.get('/society/vendors'),

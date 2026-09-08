@@ -3,8 +3,10 @@ package com.app.security;
 import com.app.entity.Account;
 import com.app.entity.AccountType;
 import com.app.entity.UserRole;
+import com.app.entity.StaffAccessStatus;
 import com.app.repository.AccountRepository;
 import com.app.repository.AccountUserMembershipRepository;
+import com.app.repository.SocietyStaffAccessRepository;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -28,13 +30,13 @@ public class SocietyRoleAccessFilter extends OncePerRequestFilter {
 
     private final AccountRepository accountRepository;
     private final AccountUserMembershipRepository membershipRepository;
+    private final SocietyStaffAccessRepository staffAccessRepository;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
             throws ServletException, IOException {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (!(authentication != null && authentication.getPrincipal() instanceof UserPrincipal principal)
-                || isReadRequest(request.getMethod())) {
+        if (!(authentication != null && authentication.getPrincipal() instanceof UserPrincipal principal)) {
             chain.doFilter(request, response);
             return;
         }
@@ -56,16 +58,25 @@ public class SocietyRoleAccessFilter extends OncePerRequestFilter {
         }
 
         UserRole role = resolveRole(account, principal.getUserId());
+        if (role == null) {
+            deny(response, "Your society access is no longer active");
+            return;
+        }
+        if (isReadRequest(request.getMethod())) {
+            chain.doFilter(request, response);
+            return;
+        }
         boolean creatingFestival = "POST".equals(request.getMethod()) && "/society/festivals".equals(path);
         boolean addingFestivalPayment = "POST".equals(request.getMethod())
                 && path.matches("/society/festival-collections/\\d+/payments");
+        boolean managingStaffAccess = path.matches("/society/staff/\\d+/access(?:/status)?");
+        boolean managingMembershipRoles = path.startsWith("/society/membership-requests");
         boolean permitted = role == UserRole.ADMIN || role == UserRole.SUPERVISOR
+                || role == UserRole.STAFF_SUPERVISOR && !managingStaffAccess && !managingMembershipRoles
                 || !creatingFestival && role == UserRole.TREASURER && TREASURER_WRITE_PATHS.stream().anyMatch(path::startsWith)
                 || role == UserRole.BLOCK_REPRESENTATIVE && addingFestivalPayment;
         if (!permitted) {
-            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
-            response.setContentType("application/json");
-            response.getWriter().write("{\"error\":\"Forbidden\",\"message\":\"Your society role does not allow this action\"}");
+            deny(response, "Your society role does not allow this action");
             return;
         }
         chain.doFilter(request, response);
@@ -77,7 +88,15 @@ public class SocietyRoleAccessFilter extends OncePerRequestFilter {
                 .map(membership -> membership.getRole() == UserRole.MEMBER
                         && "Committee member".equalsIgnoreCase(membership.getRequestedRelation())
                         ? UserRole.BLOCK_REPRESENTATIVE : membership.getRole())
-                .orElse(UserRole.MEMBER);
+                .or(() -> staffAccessRepository.findByAccountIdAndUserIdAndStatus(
+                        account.getId(), userId, StaffAccessStatus.ACTIVE).map(access -> access.getRole()))
+                .orElse(null);
+    }
+
+    private void deny(HttpServletResponse response, String message) throws IOException {
+        response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+        response.setContentType("application/json");
+        response.getWriter().write("{\"error\":\"Forbidden\",\"message\":\"" + message + "\"}");
     }
 
     private boolean isReadRequest(String method) {
