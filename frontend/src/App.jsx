@@ -35,6 +35,7 @@ import { StaffInvitation } from './pages/society/StaffInvitation'
 import { AgencyList } from './pages/society/AgencyList'
 import { Roster } from './pages/society/Roster'
 import { Attendance } from './pages/society/Attendance'
+import { AttendanceReports } from './pages/society/AttendanceReports'
 import { FestivalList } from './pages/society/FestivalList'
 import { FestivalExpenses } from './pages/society/FestivalExpenses'
 import { FestivalReport } from './pages/society/FestivalReport'
@@ -332,6 +333,7 @@ function App() {
           <Route path="/society/agencies" element={<ProtectedRoute><AgencyList /></ProtectedRoute>} />
           <Route path="/society/roster" element={<ProtectedRoute><Roster /></ProtectedRoute>} />
           <Route path="/society/attendance" element={<ProtectedRoute><Attendance /></ProtectedRoute>} />
+          <Route path="/society/attendance/reports" element={<ProtectedRoute><AttendanceReports /></ProtectedRoute>} />
           <Route
             path="/society/festivals"
             element={
@@ -623,6 +625,5 @@ function App() {
 }
 
 export default App
-
 
 

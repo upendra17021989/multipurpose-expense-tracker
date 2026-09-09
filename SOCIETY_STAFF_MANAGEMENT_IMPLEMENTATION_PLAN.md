@@ -723,14 +723,14 @@ Status legend: `[x]` complete, `[ ]` pending. A phase is checked only when every
 
 **Outcome:** A supervisor can log in to the society without appearing as a resident.
 
-### [ ] Phase 2: Attendance foundation (in progress)
+### [x] Phase 2: Attendance foundation (complete)
 
 - [x] Add agencies and agency workers.
 - [x] Add shifts, posts, and roster assignments.
 - [x] Build today's attendance screen and bulk submission.
 - [x] Support replacement workers and shortage calculation.
 - [x] Add lock and correction workflow.
-- [ ] Add daily and monthly reports.
+- [x] Add daily and monthly reports.
 
 **Outcome:** The supervisor can reliably record direct and agency staff attendance.
 
@@ -832,4 +832,3 @@ Build the smallest useful release in this order:
 6. Daily supervisor report and admin review.
 
 This MVP provides secure staff access, workforce accountability, and evidence of daily work while leaving payroll automation, biometrics, and advanced integrations for later releases.
-

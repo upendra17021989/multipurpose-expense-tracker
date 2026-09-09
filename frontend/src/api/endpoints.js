@@ -320,6 +320,8 @@ export const societyRosterAPI = {
 export const societyAttendanceAPI = {
   getDay: (date) => axiosInstance.get('/society/attendance', { params: { date } }),
   getShortages: (date) => axiosInstance.get('/society/attendance/shortages', { params: { date } }),
+  getDailyReport: (date) => axiosInstance.get('/society/attendance/reports/daily', { params: { date } }),
+  getMonthlyReport: (year, month) => axiosInstance.get('/society/attendance/reports/monthly', { params: { year, month } }),
   saveBulk: (attendanceDate, entries) => axiosInstance.post('/society/attendance/bulk', { attendanceDate, entries })
 }
 export const societyAttendanceWorkflowAPI = {
@@ -381,7 +383,6 @@ export const sportsAPI = {
   getReceipts: (collectionId) => axiosInstance.get(`/sports/collections/${collectionId}/receipts`),
   voidReceipt: (receiptId, data) => axiosInstance.post(`/sports/receipts/${receiptId}/void`, data)
 }
-
 
 
 
