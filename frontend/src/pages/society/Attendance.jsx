@@ -1,0 +1,23 @@
+import { useEffect, useMemo, useState } from 'react'
+import { toast } from 'react-toastify'
+import { societyAgencyAPI, societyAttendanceAPI } from '../../api/endpoints'
+import { Shell, SummaryGrid } from '../DashboardRouter'
+
+const today = new Date().toISOString().slice(0,10)
+const statuses=['PRESENT','ABSENT','LATE','HALF_DAY','ON_LEAVE','WEEKLY_OFF','HOLIDAY','NOT_SCHEDULED']
+export const Attendance=()=>{
+ const [date,setDate]=useState(today),[rows,setRows]=useState([]),[agencies,setAgencies]=useState([]),[shortages,setShortages]=useState([]),[loading,setLoading]=useState(true),[saving,setSaving]=useState(false)
+ const load=()=>{setLoading(true);Promise.all([societyAttendanceAPI.getDay(date),societyAgencyAPI.list(),societyAttendanceAPI.getShortages(date)]).then(([r,a,s])=>{setRows(r.data||[]);setAgencies(a.data||[]);setShortages(s.data||[])}).catch(e=>toast.error(e.response?.data?.message||'Unable to load attendance')).finally(()=>setLoading(false))}
+ useEffect(()=>{load()},[date])
+ const update=(id,key,value)=>setRows(v=>v.map(x=>x.rosterAssignmentId===id?{...x,[key]:value}:x))
+ const markAll=status=>setRows(v=>v.map(x=>({...x,status,replacementAgencyWorkerId:status==='ABSENT'?x.replacementAgencyWorkerId:null})))
+ const replacements=row=>(agencies.find(a=>a.id===row.agencyId)?.workers||[]).filter(w=>w.workerName!==row.assigneeName)
+ const save=async()=>{if(!rows.length)return;setSaving(true);try{const entries=rows.map(x=>({rosterAssignmentId:x.rosterAssignmentId,status:x.status,checkIn:x.checkIn||null,checkOut:x.checkOut||null,replacementAgencyWorkerId:x.replacementAgencyWorkerId?Number(x.replacementAgencyWorkerId):null,notes:x.notes||null}));const r=await societyAttendanceAPI.saveBulk(date,entries);setRows(r.data||[]);const s=await societyAttendanceAPI.getShortages(date);setShortages(s.data||[]);toast.success('Attendance and shortages updated')}catch(e){toast.error(e.response?.data?.message||'Unable to save attendance')}finally{setSaving(false)}}
+ const counts=useMemo(()=>Object.fromEntries(statuses.map(s=>[s,rows.filter(x=>x.status===s).length])),[rows])
+ return <Shell title="Today's Attendance" eyebrow="Society workforce" actions={<button className="primary" disabled={saving||!rows.length} onClick={save}>{saving?'Saving...':'Save attendance'}</button>}>
+  <SummaryGrid items={[["Expected",rows.length],["Present",counts.PRESENT||0],["Absent",counts.ABSENT||0],["Total shortage",shortages.reduce((n,x)=>n+Number(x.shortage||0),0)]]}/>
+  {!!shortages.length&&<section className="report-panel"><h2>Agency staffing</h2><div className="table-wrap"><table><thead><tr><th>Agency</th><th>Required</th><th>Present</th><th>Replacements</th><th>Shortage</th></tr></thead><tbody>{shortages.map(x=><tr key={x.agencyId}><td>{x.agencyName}</td><td>{x.required}</td><td>{x.present}</td><td>{x.replacements}</td><td><strong>{x.shortage}</strong></td></tr>)}</tbody></table></div></section>}
+  <section className="toolbar-panel"><label>Attendance date <input type="date" value={date} onChange={e=>setDate(e.target.value)}/></label><div className="table-actions"><button onClick={()=>markAll('PRESENT')}>Mark all present</button><button onClick={()=>markAll('ABSENT')}>Mark all absent</button></div></section>
+  <div className="table-wrap"><table><thead><tr><th>Person</th><th>Agency</th><th>Shift / Post</th><th>Status</th><th>Replacement</th><th>Check in</th><th>Check out</th><th>Notes</th></tr></thead><tbody>{rows.map(x=><tr key={x.rosterAssignmentId}><td>{x.assigneeName}</td><td>{x.agencyName||'Direct'}</td><td>{x.shiftName} {x.scheduledStart}-{x.scheduledEnd}<br/><small>{x.postName}</small></td><td><select value={x.status} onChange={e=>update(x.rosterAssignmentId,'status',e.target.value)}>{statuses.map(s=><option key={s} value={s}>{s.replaceAll('_',' ')}</option>)}</select></td><td>{x.agencyId&&x.status==='ABSENT'?<select value={x.replacementAgencyWorkerId||''} onChange={e=>update(x.rosterAssignmentId,'replacementAgencyWorkerId',e.target.value)}><option value="">No replacement</option>{replacements(x).map(w=><option key={w.id} value={w.id}>{w.workerName}</option>)}</select>:x.replacementWorkerName||'-'}</td><td><input type="time" value={x.checkIn||''} onChange={e=>update(x.rosterAssignmentId,'checkIn',e.target.value)}/></td><td><input type="time" value={x.checkOut||''} onChange={e=>update(x.rosterAssignmentId,'checkOut',e.target.value)}/></td><td><input value={x.notes||''} onChange={e=>update(x.rosterAssignmentId,'notes',e.target.value)}/></td></tr>)}{!loading&&!rows.length&&<tr><td colSpan="8" className="empty-state">No active roster assignments for this date.</td></tr>}</tbody></table></div>{loading&&<p className="muted">Loading attendance...</p>}
+ </Shell>
+}

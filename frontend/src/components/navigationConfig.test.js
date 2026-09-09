@@ -28,7 +28,7 @@ describe('sidebar navigation configuration', () => {
 
   it('limits staff supervisors to operational navigation', () => {
     const items = getNavigationGroups('SOCIETY', false, 'STAFF_SUPERVISOR').flatMap((group) => group.items.map((item) => item.label))
-    expect(items).toEqual(['Staff', 'Agencies & Workers', 'Shifts & Roster', 'Vendors', 'Feedback'])
+    expect(items).toEqual(["Today's Attendance", 'Staff', 'Agencies & Workers', 'Shifts & Roster', 'Vendors', 'Feedback'])
   })
 
   it('matches nested routes while keeping dashboard and sports overview exact', () => {

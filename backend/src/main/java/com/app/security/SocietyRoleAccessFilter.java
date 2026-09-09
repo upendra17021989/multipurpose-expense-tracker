@@ -102,9 +102,9 @@ public class SocietyRoleAccessFilter extends OncePerRequestFilter {
 
     private boolean staffSupervisorPermitted(String method, String path) {
         if ("GET".equals(method) || "HEAD".equals(method)) {
-            return path.matches("/society/staff(?:/\\d+)?") || path.matches("/society/vendors(?:/\\d+)?") || path.matches("/society/agencies(?:/\\d+)?(?:/workers(?:/\\d+)?)?") || path.matches("/society/shifts(?:/\\d+)?") || path.matches("/society/roster-assignments(?:/\\d+)?");
+            return path.matches("/society/staff(?:/\\d+)?") || path.matches("/society/vendors(?:/\\d+)?") || path.matches("/society/agencies(?:/\\d+)?(?:/workers(?:/\\d+)?)?") || path.matches("/society/shifts(?:/\\d+)?") || path.matches("/society/roster-assignments(?:/\\d+)?") || path.matches("/society/attendance(?:/shortages)?");
         }
-        return "PUT".equals(method) && path.matches("/society/vendors/\\d+");
+        return "PUT".equals(method) && path.matches("/society/vendors/\\d+") || "POST".equals(method) && path.equals("/society/attendance/bulk");
     }
 
     private void deny(HttpServletResponse response, String message) throws IOException {

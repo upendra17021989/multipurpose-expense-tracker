@@ -317,6 +317,11 @@ export const societyRosterAPI = {
   assign: (data) => axiosInstance.post('/society/roster-assignments', data),
   removeAssignment: (id) => axiosInstance.delete(`/society/roster-assignments/${id}`)
 }
+export const societyAttendanceAPI = {
+  getDay: (date) => axiosInstance.get('/society/attendance', { params: { date } }),
+  getShortages: (date) => axiosInstance.get('/society/attendance/shortages', { params: { date } }),
+  saveBulk: (attendanceDate, entries) => axiosInstance.post('/society/attendance/bulk', { attendanceDate, entries })
+}
 
 export const festivalCollectionAPI = {
   downloadReceipt: (collectionId, receiptId) => axiosInstance.get(`/society/festival-collections/${collectionId}/receipts/${receiptId}/pdf`, { responseType: 'blob' }),

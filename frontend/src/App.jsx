@@ -34,6 +34,7 @@ import { StaffForm } from './pages/society/StaffForm'
 import { StaffInvitation } from './pages/society/StaffInvitation'
 import { AgencyList } from './pages/society/AgencyList'
 import { Roster } from './pages/society/Roster'
+import { Attendance } from './pages/society/Attendance'
 import { FestivalList } from './pages/society/FestivalList'
 import { FestivalExpenses } from './pages/society/FestivalExpenses'
 import { FestivalReport } from './pages/society/FestivalReport'
@@ -330,6 +331,7 @@ function App() {
           <Route path="/staff-invitation" element={<ProtectedRoute><StaffInvitation /></ProtectedRoute>} />
           <Route path="/society/agencies" element={<ProtectedRoute><AgencyList /></ProtectedRoute>} />
           <Route path="/society/roster" element={<ProtectedRoute><Roster /></ProtectedRoute>} />
+          <Route path="/society/attendance" element={<ProtectedRoute><Attendance /></ProtectedRoute>} />
           <Route
             path="/society/festivals"
             element={
