@@ -15,6 +15,8 @@ public class SocietyStaffDto {
     private String email;
     private String address;
     private LocalDate joiningDate;
+    private String employmentType;
+    private String agencyName;
     private BigDecimal monthlySalary;
     private Boolean active;
     private LocalDateTime createdAt;

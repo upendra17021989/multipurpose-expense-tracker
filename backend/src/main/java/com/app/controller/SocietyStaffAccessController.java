@@ -3,6 +3,8 @@ package com.app.controller;
 import com.app.dto.GrantSocietyStaffAccessRequest;
 import com.app.dto.SocietyStaffAccessDto;
 import com.app.dto.UpdateSocietyStaffAccessStatusRequest;
+import com.app.dto.AcceptStaffInvitationRequest;
+import com.app.dto.SocietyStaffInvitationDto;
 import com.app.security.UserPrincipal;
 import com.app.service.SocietyStaffAccessService;
 import jakarta.validation.Valid;
@@ -39,5 +41,16 @@ public class SocietyStaffAccessController {
                                               @PathVariable Long staffId,
                                               @Valid @RequestBody UpdateSocietyStaffAccessStatusRequest request) {
         return service.updateStatus(principal.getAccountId(), principal.getUserId(), staffId, request.getStatus());
+    }
+
+    @PostMapping("/invitations")
+    public ResponseEntity<SocietyStaffInvitationDto> invite(@AuthenticationPrincipal UserPrincipal principal, @PathVariable Long staffId) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(service.invite(principal.getAccountId(), principal.getUserId(), staffId));
+    }
+
+    @GetMapping("/invitations/latest")
+    public ResponseEntity<SocietyStaffInvitationDto> latest(@AuthenticationPrincipal UserPrincipal principal, @PathVariable Long staffId) {
+        SocietyStaffInvitationDto result = service.latestInvitation(principal.getAccountId(), principal.getUserId(), staffId);
+        return result == null ? ResponseEntity.noContent().build() : ResponseEntity.ok(result);
     }
 }

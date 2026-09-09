@@ -708,54 +708,58 @@ The migration must never automatically assume that every current supervisor-role
 
 ## 20. Delivery Plan
 
-### Phase 1: Staff identity and secure workspace access
+Status legend: `[x]` complete, `[ ]` pending. A phase is checked only when every item in that phase is complete.
 
-- Extend the staff profile with employment type and agency link.
-- Add staff invitations and `SocietyStaffAccess`.
-- Add staff workspace switching.
-- Implement permission-based backend authorization.
-- Add access grant, suspend, revoke, and invitation UI.
-- Add audit events for access changes.
+### [x] Phase 1: Staff identity and secure workspace access (complete)
+
+- [x] Extend the staff profile with employment type and agency link.
+- [x] Add the `SocietyStaffAccess` association and persistence model.
+- [x] Add secure, expiring staff invitations with acceptance and contact verification.
+- [x] Include active staff-access workspaces in the user's workspace list/switching flow.
+- [x] Enforce the staff role and active access status in backend society authorization.
+- [x] Add admin UI and APIs to grant, suspend, reactivate, and revoke access.
+- [x] Add invitation UI, including resend and expiry handling.
+- [x] Add immutable audit events for access changes.
 
 **Outcome:** A supervisor can log in to the society without appearing as a resident.
 
-### Phase 2: Attendance foundation
+### [ ] Phase 2: Attendance foundation (pending)
 
-- Add agencies and agency workers.
-- Add shifts, posts, and roster assignments.
-- Build today's attendance screen and bulk submission.
-- Support replacement workers and shortage calculation.
-- Add lock and correction workflow.
-- Add daily and monthly reports.
+- [ ] Add agencies and agency workers.
+- [ ] Add shifts, posts, and roster assignments.
+- [ ] Build today's attendance screen and bulk submission.
+- [ ] Support replacement workers and shortage calculation.
+- [ ] Add lock and correction workflow.
+- [ ] Add daily and monthly reports.
 
 **Outcome:** The supervisor can reliably record direct and agency staff attendance.
 
-### Phase 3: Work orders and complaint integration
+### [ ] Phase 3: Work orders and complaint integration (pending)
 
-- Add work orders, assignments, updates, attachments, and verification.
-- Connect complaints, vendors, staff, agencies, and expenses.
-- Add recurring work.
-- Add overdue and priority notifications.
+- [ ] Add work orders, assignments, updates, attachments, and verification.
+- [ ] Connect complaints, vendors, staff, agencies, and expenses.
+- [ ] Add recurring work.
+- [ ] Add overdue and priority notifications.
 
 **Outcome:** Everyday society work has an owner, status, evidence, cost, and completion trail.
 
-### Phase 4: Daily operations
+### [ ] Phase 4: Daily operations (pending)
 
-- Add configurable daily checklists.
-- Add incident and inspection registers.
-- Add shift handover.
-- Generate and submit daily reports.
-- Add admin dashboards and acknowledgements.
+- [ ] Add configurable daily checklists.
+- [ ] Add incident and inspection registers.
+- [ ] Add shift handover.
+- [ ] Generate and submit daily reports.
+- [ ] Add admin dashboards and acknowledgements.
 
 **Outcome:** Admins can review a complete daily operational picture without relying on chat messages or paper registers.
 
-### Phase 5: Reporting and automation
+### [ ] Phase 5: Reporting and automation (pending)
 
-- Agency compliance and supervisor performance reports.
-- CSV/PDF exports.
-- Recurring schedules and escalations.
-- Optional QR/biometric import adapters.
-- Optional limited worker self-service.
+- [ ] Agency compliance and supervisor performance reports.
+- [ ] CSV/PDF exports.
+- [ ] Recurring schedules and escalations.
+- [ ] Optional QR/biometric import adapters.
+- [ ] Optional limited worker self-service.
 
 ## 21. Testing Strategy
 

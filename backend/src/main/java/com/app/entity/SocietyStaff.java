@@ -23,6 +23,8 @@ public class SocietyStaff {
     private String email;
     private String address;
     private LocalDate joiningDate;
+    @Column(nullable = false) @Builder.Default private String employmentType = "DIRECT";
+    private String agencyName;
     @Column(nullable = false, precision = 12, scale = 2)
     @Builder.Default private BigDecimal monthlySalary = BigDecimal.ZERO;
     @Column(nullable = false) @Builder.Default private Boolean active = true;
@@ -35,6 +37,7 @@ public class SocietyStaff {
         if (updatedAt == null) updatedAt = now;
         if (monthlySalary == null) monthlySalary = BigDecimal.ZERO;
         if (active == null) active = true;
+        if (employmentType == null) employmentType = "DIRECT";
     }
     @PreUpdate void onUpdate() { updatedAt = LocalDateTime.now(); }
 }

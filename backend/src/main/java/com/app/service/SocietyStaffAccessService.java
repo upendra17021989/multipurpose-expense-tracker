@@ -11,6 +11,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.nio.charset.StandardCharsets;
+import java.security.*;
+import java.util.Base64;
 import java.util.Optional;
 
 @Service
@@ -21,6 +24,8 @@ public class SocietyStaffAccessService {
     private final SocietyStaffRepository staffRepository;
     private final SocietyStaffAccessRepository accessRepository;
     private final UserRepository userRepository;
+    private final SocietyStaffInvitationRepository invitationRepository;
+    private final SocietyAuditEventRepository auditRepository;
 
     @Transactional(readOnly = true)
     public SocietyStaffAccessDto get(Long accountId, Long actorUserId, Long staffId) {
@@ -63,7 +68,9 @@ public class SocietyStaffAccessService {
         access.setActivatedAt(now);
         access.setSuspendedAt(null);
         access.setRevokedAt(null);
-        return map(accessRepository.save(access));
+        SocietyStaffAccess saved = accessRepository.save(access);
+        audit(account, actor, "STAFF_ACCESS_GRANTED", saved.getId(), "staffId=" + staffId + ", userId=" + user.getId());
+        return map(saved);
     }
 
     @Transactional
@@ -84,8 +91,68 @@ public class SocietyStaffAccessService {
         } else {
             access.setRevokedAt(now);
         }
-        return map(accessRepository.save(access));
+        SocietyStaffAccess saved = accessRepository.save(access);
+        audit(saved.getAccount(), userRepository.findById(actorUserId).orElse(null), "STAFF_ACCESS_" + status.name(), saved.getId(), "staffId=" + staffId);
+        return map(saved);
     }
+
+    @Transactional
+    public com.app.dto.SocietyStaffInvitationDto invite(Long accountId, Long actorUserId, Long staffId) {
+        Account account = requireAdmin(accountId, actorUserId);
+        SocietyStaff staff = requireStaff(accountId, staffId);
+        String contact = clean(staff.getEmail()) != null ? clean(staff.getEmail()).toLowerCase() : clean(staff.getMobile());
+        if (contact == null) throw new ValidationException("Staff email or mobile is required");
+        invitationRepository.findByAccountIdAndStaffIdAndStatus(accountId, staffId, "PENDING")
+                .forEach(value -> { value.setStatus("REVOKED"); invitationRepository.save(value); });
+        String code = newToken();
+        User actor = userRepository.findById(actorUserId).orElseThrow(() -> new ValidationException("Admin user not found"));
+        SocietyStaffInvitation saved = invitationRepository.save(SocietyStaffInvitation.builder()
+                .account(account).staff(staff).invitedBy(actor).contact(contact).tokenHash(hash(code))
+                .expiresAt(LocalDateTime.now().plusDays(7)).build());
+        audit(account, actor, "STAFF_INVITATION_SENT", saved.getId(), "staffId=" + staffId + ", contact=" + contact);
+        return invitationDto(saved, code);
+    }
+
+    @Transactional(readOnly = true)
+    public com.app.dto.SocietyStaffInvitationDto latestInvitation(Long accountId, Long actorUserId, Long staffId) {
+        requireAdmin(accountId, actorUserId); requireStaff(accountId, staffId);
+        return invitationRepository.findFirstByAccountIdAndStaffIdOrderByCreatedAtDesc(accountId, staffId)
+                .map(value -> invitationDto(value, null)).orElse(null);
+    }
+
+    @Transactional
+    public SocietyStaffAccessDto accept(Long actorUserId, String code) {
+        User user = userRepository.findById(actorUserId).orElseThrow(() -> new ValidationException("User not found"));
+        SocietyStaffInvitation invitation = invitationRepository.findByTokenHash(hash(code))
+                .orElseThrow(() -> new ValidationException("Invalid invitation code"));
+        if (!"PENDING".equals(invitation.getStatus())) throw new ValidationException("Invitation is no longer active");
+        if (invitation.getExpiresAt().isBefore(LocalDateTime.now())) { invitation.setStatus("EXPIRED"); invitationRepository.save(invitation); throw new ValidationException("Invitation has expired"); }
+        String contact = invitation.getContact();
+        boolean matches = contact.equalsIgnoreCase(clean(user.getEmail())) || contact.equals(clean(user.getMobile()));
+        if (!matches) throw new ValidationException("Invitation contact does not match your account");
+        Long accountId = invitation.getAccount().getId();
+        if (membershipRepository.findByAccountIdAndUserId(accountId, user.getId()).isPresent()) throw new ValidationException("This user already accesses the society as a member");
+        SocietyStaffAccess access = accessRepository.findByAccountIdAndStaffId(accountId, invitation.getStaff().getId())
+                .orElseGet(() -> SocietyStaffAccess.builder().account(invitation.getAccount()).staff(invitation.getStaff()).build());
+        access.setUser(user); access.setGrantedBy(invitation.getInvitedBy()); access.setRole(UserRole.STAFF_SUPERVISOR);
+        access.setStatus(StaffAccessStatus.ACTIVE); access.setActivatedAt(LocalDateTime.now()); access.setSuspendedAt(null); access.setRevokedAt(null);
+        SocietyStaffAccess saved = accessRepository.save(access);
+        invitation.setStatus("ACCEPTED"); invitation.setAcceptedAt(LocalDateTime.now()); invitationRepository.save(invitation);
+        audit(invitation.getAccount(), user, "STAFF_INVITATION_ACCEPTED", saved.getId(), "staffId=" + invitation.getStaff().getId());
+        return map(saved);
+    }
+
+    private com.app.dto.SocietyStaffInvitationDto invitationDto(SocietyStaffInvitation value, String code) {
+        return com.app.dto.SocietyStaffInvitationDto.builder().id(value.getId()).staffId(value.getStaff().getId())
+                .contact(value.getContact()).status(value.getStatus()).expiresAt(value.getExpiresAt())
+                .acceptedAt(value.getAcceptedAt()).createdAt(value.getCreatedAt()).invitationCode(code).build();
+    }
+    private void audit(Account account, User actor, String action, Long entityId, String details) {
+        auditRepository.save(SocietyAuditEvent.builder().account(account).actor(actor).action(action)
+                .entityType("SOCIETY_STAFF_ACCESS").entityId(entityId).details(details).build());
+    }
+    private String newToken() { byte[] bytes = new byte[24]; new SecureRandom().nextBytes(bytes); return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes); }
+    private String hash(String value) { try { byte[] bytes = MessageDigest.getInstance("SHA-256").digest(value.getBytes(StandardCharsets.UTF_8)); return java.util.HexFormat.of().formatHex(bytes); } catch (NoSuchAlgorithmException e) { throw new IllegalStateException(e); } }
 
     private User resolveUser(GrantSocietyStaffAccessRequest request, SocietyStaff staff) {
         String mobile = clean(request == null ? null : request.getMobile());

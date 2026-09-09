@@ -19,6 +19,8 @@ class SocietyStaffAccessServiceTest {
     private SocietyStaffRepository staff;
     private SocietyStaffAccessRepository access;
     private UserRepository users;
+    private SocietyStaffInvitationRepository invitations;
+    private SocietyAuditEventRepository audits;
     private SocietyStaffAccessService service;
 
     @BeforeEach
@@ -28,7 +30,9 @@ class SocietyStaffAccessServiceTest {
         staff = mock(SocietyStaffRepository.class);
         access = mock(SocietyStaffAccessRepository.class);
         users = mock(UserRepository.class);
-        service = new SocietyStaffAccessService(accounts, memberships, staff, access, users);
+        invitations = mock(SocietyStaffInvitationRepository.class);
+        audits = mock(SocietyAuditEventRepository.class);
+        service = new SocietyStaffAccessService(accounts, memberships, staff, access, users, invitations, audits);
     }
 
     @Test
@@ -52,6 +56,7 @@ class SocietyStaffAccessServiceTest {
             saved.setId(30L);
             return saved;
         });
+        when(audits.save(any(SocietyAuditEvent.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         var result = service.grant(10L, 1L, 20L, new GrantSocietyStaffAccessRequest());
 

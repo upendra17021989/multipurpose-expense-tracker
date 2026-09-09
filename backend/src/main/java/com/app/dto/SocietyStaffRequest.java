@@ -13,5 +13,7 @@ public class SocietyStaffRequest {
     @Email(message = "Enter a valid email") private String email;
     private String address;
     private LocalDate joiningDate;
+    @Pattern(regexp = "DIRECT|AGENCY|CONTRACT", message = "Invalid employment type") private String employmentType;
+    private String agencyName;
     @PositiveOrZero(message = "Monthly salary cannot be negative") private BigDecimal monthlySalary;
 }

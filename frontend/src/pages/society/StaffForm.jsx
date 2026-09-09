@@ -5,14 +5,14 @@ import { societyStaffAPI } from '../../api/endpoints'
 import { useAuthStore } from '../../store/authStore'
 import { Shell } from '../DashboardRouter'
 
-const initial = { staffName: '', designation: 'Supervisor', mobile: '', email: '', address: '', joiningDate: '', monthlySalary: '0' }
+const initial = { staffName: '', designation: 'Supervisor', employmentType: 'DIRECT', agencyName: '', mobile: '', email: '', address: '', joiningDate: '', monthlySalary: '0' }
 
 export const StaffForm = () => {
   const { staffId } = useParams(); const navigate = useNavigate(); const { currentAccount } = useAuthStore()
   const [form, setForm] = useState(initial); const [saving, setSaving] = useState(false); const isEdit = Boolean(staffId)
   useEffect(() => { if (!isEdit) return; societyStaffAPI.getStaffMember(staffId).then(({ data }) => setForm({
     staffName: data.staffName || '', designation: data.designation || '', mobile: data.mobile || '', email: data.email || '',
-    address: data.address || '', joiningDate: data.joiningDate || '', monthlySalary: data.monthlySalary || '0'
+    employmentType: data.employmentType || 'DIRECT', agencyName: data.agencyName || '', address: data.address || '', joiningDate: data.joiningDate || '', monthlySalary: data.monthlySalary || '0'
   })).catch((e) => toast.error(e.response?.data?.message || 'Unable to load staff member')) }, [isEdit, staffId])
   const submit = async (event) => { event.preventDefault(); setSaving(true); const payload = { ...form, monthlySalary: Number(form.monthlySalary || 0), joiningDate: form.joiningDate || null }
     try { if (isEdit) await societyStaffAPI.updateStaff(staffId, payload); else await societyStaffAPI.createStaff(payload); toast.success(isEdit ? 'Staff member updated' : 'Staff member added'); navigate('/society/staff') }
@@ -22,6 +22,8 @@ export const StaffForm = () => {
     <div className="form-grid two">
       <label>Name<input value={form.staffName} onChange={(e) => setForm({ ...form, staffName: e.target.value })} required /></label>
       <label>Designation<input value={form.designation} onChange={(e) => setForm({ ...form, designation: e.target.value })} required /></label>
+      <label>Employment Type<select value={form.employmentType} onChange={(e) => setForm({ ...form, employmentType: e.target.value, agencyName: e.target.value === 'AGENCY' ? form.agencyName : '' })}><option value="DIRECT">Direct</option><option value="AGENCY">Agency</option><option value="CONTRACT">Contract</option></select></label>
+      {form.employmentType === 'AGENCY' && <label>Agency Name<input value={form.agencyName} onChange={(e) => setForm({ ...form, agencyName: e.target.value })} required /></label>}
       <label>Mobile<input value={form.mobile} onChange={(e) => setForm({ ...form, mobile: e.target.value })} /></label>
       <label>Email<input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></label>
       <label>Joining Date<input type="date" value={form.joiningDate} onChange={(e) => setForm({ ...form, joiningDate: e.target.value })} /></label>

@@ -22,6 +22,7 @@ public class SocietyStaffService {
         return map(repository.save(SocietyStaff.builder().account(account).staffName(request.getStaffName().trim())
             .designation(request.getDesignation().trim()).mobile(trim(request.getMobile())).email(trim(request.getEmail()))
             .address(trim(request.getAddress())).joiningDate(request.getJoiningDate())
+            .employmentType(request.getEmploymentType() == null ? "DIRECT" : request.getEmploymentType()).agencyName(trim(request.getAgencyName()))
             .monthlySalary(request.getMonthlySalary() == null ? BigDecimal.ZERO : request.getMonthlySalary()).build()));
     }
     public SocietyStaffDto update(Long accountId, Long id, SocietyStaffRequest request) {
@@ -29,11 +30,12 @@ public class SocietyStaffService {
         staff.setStaffName(request.getStaffName().trim()); staff.setDesignation(request.getDesignation().trim());
         staff.setMobile(trim(request.getMobile())); staff.setEmail(trim(request.getEmail())); staff.setAddress(trim(request.getAddress()));
         staff.setJoiningDate(request.getJoiningDate()); staff.setMonthlySalary(request.getMonthlySalary() == null ? BigDecimal.ZERO : request.getMonthlySalary());
+        staff.setEmploymentType(request.getEmploymentType() == null ? "DIRECT" : request.getEmploymentType()); staff.setAgencyName(trim(request.getAgencyName()));
         return map(repository.save(staff));
     }
     public void delete(Long accountId, Long id) { SocietyStaff staff = find(accountId, id); staff.setActive(false); repository.save(staff); }
     private SocietyStaff find(Long accountId, Long id) { validateSociety(accountId); return repository.findByAccountIdAndIdAndActiveTrue(accountId, id).orElseThrow(() -> new ResourceNotFoundException("Staff member not found")); }
     private Account validateSociety(Long accountId) { Account a = accountRepository.findById(accountId).orElseThrow(() -> new ResourceNotFoundException("Account not found")); if (a.getAccountType() != AccountType.SOCIETY) throw new ValidationException("Staff are available only for society accounts"); return a; }
     private String trim(String value) { return value == null || value.isBlank() ? null : value.trim(); }
-    private SocietyStaffDto map(SocietyStaff s) { return SocietyStaffDto.builder().id(s.getId()).accountId(s.getAccount().getId()).staffName(s.getStaffName()).designation(s.getDesignation()).mobile(s.getMobile()).email(s.getEmail()).address(s.getAddress()).joiningDate(s.getJoiningDate()).monthlySalary(s.getMonthlySalary()).active(s.getActive()).createdAt(s.getCreatedAt()).build(); }
+    private SocietyStaffDto map(SocietyStaff s) { return SocietyStaffDto.builder().id(s.getId()).accountId(s.getAccount().getId()).staffName(s.getStaffName()).designation(s.getDesignation()).mobile(s.getMobile()).email(s.getEmail()).address(s.getAddress()).joiningDate(s.getJoiningDate()).employmentType(s.getEmploymentType()).agencyName(s.getAgencyName()).monthlySalary(s.getMonthlySalary()).active(s.getActive()).createdAt(s.getCreatedAt()).build(); }
 }

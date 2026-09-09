@@ -69,7 +69,7 @@ public class SocietyRoleAccessFilter extends OncePerRequestFilter {
         boolean creatingFestival = "POST".equals(request.getMethod()) && "/society/festivals".equals(path);
         boolean addingFestivalPayment = "POST".equals(request.getMethod())
                 && path.matches("/society/festival-collections/\\d+/payments");
-        boolean managingStaffAccess = path.matches("/society/staff/\\d+/access(?:/status)?");
+        boolean managingStaffAccess = path.matches("/society/staff/\\d+/access(?:/status|/invitations(?:/latest)?)?");
         boolean managingMembershipRoles = path.startsWith("/society/membership-requests");
         boolean permitted = role == UserRole.ADMIN || role == UserRole.SUPERVISOR
                 || role == UserRole.STAFF_SUPERVISOR && !managingStaffAccess && !managingMembershipRoles

@@ -31,6 +31,7 @@ import { VendorList } from './pages/society/VendorList'
 import { VendorForm } from './pages/society/VendorForm'
 import { StaffList } from './pages/society/StaffList'
 import { StaffForm } from './pages/society/StaffForm'
+import { StaffInvitation } from './pages/society/StaffInvitation'
 import { FestivalList } from './pages/society/FestivalList'
 import { FestivalExpenses } from './pages/society/FestivalExpenses'
 import { FestivalReport } from './pages/society/FestivalReport'
@@ -324,6 +325,7 @@ function App() {
               </ProtectedRoute>
             }
           />
+          <Route path="/staff-invitation" element={<ProtectedRoute><StaffInvitation /></ProtectedRoute>} />
           <Route
             path="/society/festivals"
             element={
