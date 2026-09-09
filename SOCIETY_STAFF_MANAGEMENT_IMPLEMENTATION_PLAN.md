@@ -729,7 +729,7 @@ Status legend: `[x]` complete, `[ ]` pending. A phase is checked only when every
 - [x] Add shifts, posts, and roster assignments.
 - [x] Build today's attendance screen and bulk submission.
 - [x] Support replacement workers and shortage calculation.
-- [ ] Add lock and correction workflow.
+- [x] Add lock and correction workflow.
 - [ ] Add daily and monthly reports.
 
 **Outcome:** The supervisor can reliably record direct and agency staff attendance.

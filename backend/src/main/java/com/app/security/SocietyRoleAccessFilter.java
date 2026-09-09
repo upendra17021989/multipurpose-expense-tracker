@@ -102,9 +102,9 @@ public class SocietyRoleAccessFilter extends OncePerRequestFilter {
 
     private boolean staffSupervisorPermitted(String method, String path) {
         if ("GET".equals(method) || "HEAD".equals(method)) {
-            return path.matches("/society/staff(?:/\\d+)?") || path.matches("/society/vendors(?:/\\d+)?") || path.matches("/society/agencies(?:/\\d+)?(?:/workers(?:/\\d+)?)?") || path.matches("/society/shifts(?:/\\d+)?") || path.matches("/society/roster-assignments(?:/\\d+)?") || path.matches("/society/attendance(?:/shortages)?");
+            return path.matches("/society/staff(?:/\\d+)?") || path.matches("/society/vendors(?:/\\d+)?") || path.matches("/society/agencies(?:/\\d+)?(?:/workers(?:/\\d+)?)?") || path.matches("/society/shifts(?:/\\d+)?") || path.matches("/society/roster-assignments(?:/\\d+)?") || path.matches("/society/attendance(?:/shortages)?") || path.equals("/society/attendance-workflow/status");
         }
-        return "PUT".equals(method) && path.matches("/society/vendors/\\d+") || "POST".equals(method) && path.equals("/society/attendance/bulk");
+        return "PUT".equals(method) && path.matches("/society/vendors/\\d+") || "POST".equals(method) && (path.equals("/society/attendance/bulk") || path.equals("/society/attendance-workflow/submit") || path.matches("/society/attendance-workflow/\\d+/corrections"));
     }
 
     private void deny(HttpServletResponse response, String message) throws IOException {

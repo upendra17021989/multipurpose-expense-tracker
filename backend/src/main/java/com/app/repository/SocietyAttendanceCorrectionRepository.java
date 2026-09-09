@@ -1,0 +1,2 @@
+package com.app.repository; import com.app.entity.SocietyAttendanceCorrection; import org.springframework.data.jpa.repository.JpaRepository; import java.util.*;
+public interface SocietyAttendanceCorrectionRepository extends JpaRepository<SocietyAttendanceCorrection,Long>{Optional<SocietyAttendanceCorrection> findByAccountIdAndId(Long accountId,Long id);List<SocietyAttendanceCorrection> findByAccountIdAndStatusOrderByCreatedAtDesc(Long accountId,String status);}

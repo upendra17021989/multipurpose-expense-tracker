@@ -322,6 +322,14 @@ export const societyAttendanceAPI = {
   getShortages: (date) => axiosInstance.get('/society/attendance/shortages', { params: { date } }),
   saveBulk: (attendanceDate, entries) => axiosInstance.post('/society/attendance/bulk', { attendanceDate, entries })
 }
+export const societyAttendanceWorkflowAPI = {
+  status: (date) => axiosInstance.get('/society/attendance-workflow/status', { params: { date } }),
+  submit: (attendanceDate) => axiosInstance.post('/society/attendance-workflow/submit', { attendanceDate }),
+  lock: (attendanceDate) => axiosInstance.post('/society/attendance-workflow/lock', { attendanceDate }),
+  requestCorrection: (attendanceId, data) => axiosInstance.post(`/society/attendance-workflow/${attendanceId}/corrections`, data),
+  pendingCorrections: () => axiosInstance.get('/society/attendance-workflow/corrections'),
+  approveCorrection: (id) => axiosInstance.post(`/society/attendance-workflow/corrections/${id}/approve`)
+}
 
 export const festivalCollectionAPI = {
   downloadReceipt: (collectionId, receiptId) => axiosInstance.get(`/society/festival-collections/${collectionId}/receipts/${receiptId}/pdf`, { responseType: 'blob' }),
