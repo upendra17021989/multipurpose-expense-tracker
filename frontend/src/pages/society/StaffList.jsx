@@ -8,7 +8,7 @@ import { Shell, SummaryGrid } from '../DashboardRouter'
 
 export const StaffList = () => {
   const navigate = useNavigate(); const { currentAccount } = useAuthStore(); const [staff, setStaff] = useState([]); const [search, setSearch] = useState(''); const [loading, setLoading] = useState(true); const [accessByStaff, setAccessByStaff] = useState({}); const [invitationByStaff, setInvitationByStaff] = useState({}); const [accessBusy, setAccessBusy] = useState(null)
-  const canWrite = currentAccount?.role !== 'MEMBER'
+  const canWrite = currentAccount?.role !== 'MEMBER' && currentAccount?.role !== 'STAFF_SUPERVISOR'
   const canManageAccess = currentAccount?.role === 'ADMIN'
   const load = () => { if (currentAccount?.accountType !== 'SOCIETY') return setLoading(false); setLoading(true); societyStaffAPI.getStaff().then(async ({ data }) => { const rows = Array.isArray(data) ? data : []; setStaff(rows); if (canManageAccess) { const entries = await Promise.all(rows.map(async (item) => { try { const response = await societyStaffAPI.getAccess(item.id); return [item.id, response.data || null] } catch { return [item.id, null] } })); const invitations = await Promise.all(rows.map(async (item) => { try { const response = await societyStaffAPI.getLatestInvitation(item.id); return [item.id, response.data || null] } catch { return [item.id, null] } })); setAccessByStaff(Object.fromEntries(entries)); setInvitationByStaff(Object.fromEntries(invitations)) } }).catch((e) => toast.error(e.response?.data?.message || 'Unable to load staff')).finally(() => setLoading(false)) }
   useEffect(load, [currentAccount?.accountType])

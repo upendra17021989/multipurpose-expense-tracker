@@ -62,6 +62,14 @@ public class SocietyRoleAccessFilter extends OncePerRequestFilter {
             deny(response, "Your society access is no longer active");
             return;
         }
+        if (role == UserRole.STAFF_SUPERVISOR) {
+            if (!staffSupervisorPermitted(request.getMethod(), path)) {
+                deny(response, "Your staff supervisor role does not allow this action");
+                return;
+            }
+            chain.doFilter(request, response);
+            return;
+        }
         if (isReadRequest(request.getMethod())) {
             chain.doFilter(request, response);
             return;
@@ -72,7 +80,6 @@ public class SocietyRoleAccessFilter extends OncePerRequestFilter {
         boolean managingStaffAccess = path.matches("/society/staff/\\d+/access(?:/status|/invitations(?:/latest)?)?");
         boolean managingMembershipRoles = path.startsWith("/society/membership-requests");
         boolean permitted = role == UserRole.ADMIN || role == UserRole.SUPERVISOR
-                || role == UserRole.STAFF_SUPERVISOR && !managingStaffAccess && !managingMembershipRoles
                 || !creatingFestival && role == UserRole.TREASURER && TREASURER_WRITE_PATHS.stream().anyMatch(path::startsWith)
                 || role == UserRole.BLOCK_REPRESENTATIVE && addingFestivalPayment;
         if (!permitted) {
@@ -91,6 +98,13 @@ public class SocietyRoleAccessFilter extends OncePerRequestFilter {
                 .or(() -> staffAccessRepository.findByAccountIdAndUserIdAndStatus(
                         account.getId(), userId, StaffAccessStatus.ACTIVE).map(access -> access.getRole()))
                 .orElse(null);
+    }
+
+    private boolean staffSupervisorPermitted(String method, String path) {
+        if ("GET".equals(method) || "HEAD".equals(method)) {
+            return path.matches("/society/staff(?:/\\d+)?") || path.matches("/society/vendors(?:/\\d+)?");
+        }
+        return "PUT".equals(method) && path.matches("/society/vendors/\\d+");
     }
 
     private void deny(HttpServletResponse response, String message) throws IOException {

@@ -55,7 +55,8 @@ export const Navbar = () => {
 
   const groups = getNavigationGroups(
     currentAccount?.accountType,
-    user?.systemAdmin
+    user?.systemAdmin,
+    currentAccount?.role
   )
   const closeDrawer = (restoreFocus = false) => {
     setDrawerOpen(false)

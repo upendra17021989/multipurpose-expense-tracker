@@ -61,9 +61,15 @@ class SocietyRoleAccessFilterTest {
         check(UserRole.TREASURER, "PUT", "/society/festivals/5", "/api", true);
         check(UserRole.MEMBER, "GET", "/society/festivals", "/api", true);
     }
-    @Test void staffSupervisorCanOperateButCannotManageAccessOrMemberRoles() throws Exception {
-        check(UserRole.STAFF_SUPERVISOR, "POST", "/society/flats", "/api", true);
+    @Test void staffSupervisorHasLeastPrivilegeOperationalAccess() throws Exception {
+        check(UserRole.STAFF_SUPERVISOR, "GET", "/society/staff", "/api", true);
+        check(UserRole.STAFF_SUPERVISOR, "GET", "/society/vendors", "/api", true);
+        check(UserRole.STAFF_SUPERVISOR, "PUT", "/society/vendors/5", "/api", true);
+        check(UserRole.STAFF_SUPERVISOR, "GET", "/expenses", "/api", false);
+        check(UserRole.STAFF_SUPERVISOR, "POST", "/society/flats", "/api", false);
+        check(UserRole.STAFF_SUPERVISOR, "DELETE", "/society/vendors/5", "/api", false);
         check(UserRole.STAFF_SUPERVISOR, "PATCH", "/society/staff/5/access/status", "/api", false);
+        check(UserRole.STAFF_SUPERVISOR, "POST", "/society/staff/5/access/invitations", "/api", false);
         check(UserRole.STAFF_SUPERVISOR, "PUT", "/society/membership-requests/5/role", "/api", false);
     }
 

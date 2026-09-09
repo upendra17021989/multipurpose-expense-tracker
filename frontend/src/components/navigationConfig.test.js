@@ -26,6 +26,11 @@ describe('sidebar navigation configuration', () => {
     expect(labels('INDIVIDUAL', true)).toContain('System Admin')
   })
 
+  it('limits staff supervisors to operational navigation', () => {
+    const items = getNavigationGroups('SOCIETY', false, 'STAFF_SUPERVISOR').flatMap((group) => group.items.map((item) => item.label))
+    expect(items).toEqual(['Staff', 'Vendors', 'Feedback'])
+  })
+
   it('matches nested routes while keeping dashboard and sports overview exact', () => {
     expect(
       isNavigationItemActive('/personal/shared-expenses/42/balances', {

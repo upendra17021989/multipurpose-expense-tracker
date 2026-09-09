@@ -78,8 +78,10 @@ export const ACCOUNT_NAVIGATION = {
   ]
 }
 
-export const getNavigationGroups = (accountType, isSystemAdmin = false) => {
-  const groups = [...(ACCOUNT_NAVIGATION[accountType] || [])]
+export const getNavigationGroups = (accountType, isSystemAdmin = false, role = null) => {
+  const groups = role === 'STAFF_SUPERVISOR'
+    ? [{ label: 'Operations', items: [{ label: 'Staff', to: '/society/staff' }, { label: 'Vendors', to: '/society/vendors' }] }]
+    : [...(ACCOUNT_NAVIGATION[accountType] || [])]
   if (isSystemAdmin)
     groups.push({
       label: 'Administration',
