@@ -272,7 +272,7 @@ const createDashboardExpenseForm = () => ({
 
 const SocietyDashboard = () => {
   const role = useAuthStore((state) => state.currentAccount?.role)
-  if (role === 'STAFF_SUPERVISOR') return <Shell title="Supervisor Dashboard" eyebrow="Society operations"><section className="report-panel"><h2>Operational workspace</h2><p className="muted">Your account has limited staff-supervisor access. Attendance and work-order tools will appear here as they are delivered in the next phases.</p><div className="dashboard-actions"><DashboardAction to="/society/staff" icon="St" title="Staff" text="View society staff records" /><DashboardAction to="/society/vendors" icon="Vn" title="Vendors" text="View and update vendor details" /></div></section></Shell>
+  if (role === 'STAFF_SUPERVISOR') return <Shell title="Supervisor Dashboard" eyebrow="Society operations"><section className="report-panel"><h2>Operational workspace</h2><p className="muted">Your account has limited staff-supervisor access. Attendance and work-order tools will appear here as they are delivered in the next phases.</p><div className="dashboard-actions"><DashboardAction to="/society/staff" icon="St" title="Staff" text="View society staff records" /><DashboardAction to="/society/agencies" icon="Ag" title="Agencies & Workers" text="Review outsourced workforce and headcount" /><DashboardAction to="/society/roster" icon="Sh" title="Shifts & Roster" text="Review posts and current assignments" /><DashboardAction to="/society/vendors" icon="Vn" title="Vendors" text="View and update vendor details" /></div></section></Shell>
   return <Shell title={accountLabels.SOCIETY}><SocietyOverview /></Shell>
 }
 

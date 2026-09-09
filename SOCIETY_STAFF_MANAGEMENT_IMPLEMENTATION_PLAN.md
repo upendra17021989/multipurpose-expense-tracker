@@ -723,10 +723,10 @@ Status legend: `[x]` complete, `[ ]` pending. A phase is checked only when every
 
 **Outcome:** A supervisor can log in to the society without appearing as a resident.
 
-### [ ] Phase 2: Attendance foundation (pending)
+### [ ] Phase 2: Attendance foundation (in progress)
 
-- [ ] Add agencies and agency workers.
-- [ ] Add shifts, posts, and roster assignments.
+- [x] Add agencies and agency workers.
+- [x] Add shifts, posts, and roster assignments.
 - [ ] Build today's attendance screen and bulk submission.
 - [ ] Support replacement workers and shortage calculation.
 - [ ] Add lock and correction workflow.

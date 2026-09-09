@@ -1,0 +1,2 @@
+package com.app.repository; import com.app.entity.SocietyRosterAssignment; import org.springframework.data.jpa.repository.JpaRepository; import java.util.*;
+public interface SocietyRosterAssignmentRepository extends JpaRepository<SocietyRosterAssignment,Long>{List<SocietyRosterAssignment> findByAccountIdAndActiveTrueOrderByPostNameAsc(Long accountId);Optional<SocietyRosterAssignment> findByAccountIdAndIdAndActiveTrue(Long accountId,Long id);}

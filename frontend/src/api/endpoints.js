@@ -299,6 +299,24 @@ export const festivalEventAPI = {
   restoreFestival: (festivalEventId) => axiosInstance.post(`/society/festivals/${festivalEventId}/restore`),
   permanentlyDeleteFestival: (festivalEventId) => axiosInstance.delete(`/society/festivals/${festivalEventId}/permanent`)
 }
+export const societyAgencyAPI = {
+  list: () => axiosInstance.get('/society/agencies'),
+  create: (data) => axiosInstance.post('/society/agencies', data),
+  update: (id, data) => axiosInstance.put(`/society/agencies/${id}`, data),
+  remove: (id) => axiosInstance.delete(`/society/agencies/${id}`),
+  addWorker: (id, data) => axiosInstance.post(`/society/agencies/${id}/workers`, data),
+  updateWorker: (id, workerId, data) => axiosInstance.put(`/society/agencies/${id}/workers/${workerId}`, data),
+  removeWorker: (id, workerId) => axiosInstance.delete(`/society/agencies/${id}/workers/${workerId}`)
+}
+export const societyRosterAPI = {
+  getShifts: () => axiosInstance.get('/society/shifts'),
+  createShift: (data) => axiosInstance.post('/society/shifts', data),
+  updateShift: (id, data) => axiosInstance.put(`/society/shifts/${id}`, data),
+  removeShift: (id) => axiosInstance.delete(`/society/shifts/${id}`),
+  getAssignments: () => axiosInstance.get('/society/roster-assignments'),
+  assign: (data) => axiosInstance.post('/society/roster-assignments', data),
+  removeAssignment: (id) => axiosInstance.delete(`/society/roster-assignments/${id}`)
+}
 
 export const festivalCollectionAPI = {
   downloadReceipt: (collectionId, receiptId) => axiosInstance.get(`/society/festival-collections/${collectionId}/receipts/${receiptId}/pdf`, { responseType: 'blob' }),

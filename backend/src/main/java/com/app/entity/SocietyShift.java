@@ -1,0 +1,4 @@
+package com.app.entity;
+import jakarta.persistence.*; import lombok.*; import java.time.*;
+@Entity @Table(name="society_shifts") @Data @Builder @NoArgsConstructor @AllArgsConstructor
+public class SocietyShift { @Id @GeneratedValue(strategy=GenerationType.IDENTITY) private Long id; @ManyToOne(fetch=FetchType.LAZY) @JoinColumn(name="account_id",nullable=false) private Account account; @Column(nullable=false) private String name; @Column(nullable=false) private LocalTime startTime; @Column(nullable=false) private LocalTime endTime; @Column(nullable=false) @Builder.Default private Integer graceMinutes=0; @Column(nullable=false) @Builder.Default private Boolean active=true; @Column(nullable=false,updatable=false) @Builder.Default private LocalDateTime createdAt=LocalDateTime.now(); @Column(nullable=false) @Builder.Default private LocalDateTime updatedAt=LocalDateTime.now(); @PreUpdate void touch(){updatedAt=LocalDateTime.now();} }

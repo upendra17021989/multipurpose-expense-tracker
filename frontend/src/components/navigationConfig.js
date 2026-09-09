@@ -37,7 +37,9 @@ export const ACCOUNT_NAVIGATION = {
         { label: 'Flats', to: '/society/flats' },
         { label: 'Member Directory', to: '/society/member-directory' },
         { label: 'Vendors', to: '/society/vendors' },
-        { label: 'Staff', to: '/society/staff' }
+        { label: 'Staff', to: '/society/staff' },
+        { label: 'Agencies & Workers', to: '/society/agencies' },
+        { label: 'Shifts & Roster', to: '/society/roster' }
       ]
     }
   ],
@@ -80,7 +82,7 @@ export const ACCOUNT_NAVIGATION = {
 
 export const getNavigationGroups = (accountType, isSystemAdmin = false, role = null) => {
   const groups = role === 'STAFF_SUPERVISOR'
-    ? [{ label: 'Operations', items: [{ label: 'Staff', to: '/society/staff' }, { label: 'Vendors', to: '/society/vendors' }] }]
+    ? [{ label: 'Operations', items: [{ label: 'Staff', to: '/society/staff' }, { label: 'Agencies & Workers', to: '/society/agencies' }, { label: 'Shifts & Roster', to: '/society/roster' }, { label: 'Vendors', to: '/society/vendors' }] }]
     : [...(ACCOUNT_NAVIGATION[accountType] || [])]
   if (isSystemAdmin)
     groups.push({
