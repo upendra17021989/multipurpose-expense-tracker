@@ -19,7 +19,7 @@ class FestivalEstimateServiceTest {
     @Test void rejectsOtherAccountsBeforeReadingOrWritingEstimates() {
         var festivals = mock(FestivalEventRepository.class);
         var jdbc = mock(JdbcTemplate.class);
-        when(festivals.findByAccountIdAndId(1L, 2L)).thenReturn(Optional.empty());
+        when(festivals.findByAccountIdAndIdAndDeletedAtIsNull(1L, 2L)).thenReturn(Optional.empty());
         var service = new FestivalEstimateService(festivals, jdbc);
         assertThrows(ResourceNotFoundException.class, () -> service.list(1L, 2L));
         assertThrows(ResourceNotFoundException.class, () -> service.save(1L, 2L, null, new FestivalEstimateRequest()));
@@ -29,7 +29,7 @@ class FestivalEstimateServiceTest {
     @Test void deleteIsScopedToSelectedFestival() {
         var festivals = mock(FestivalEventRepository.class);
         var jdbc = mock(JdbcTemplate.class);
-        when(festivals.findByAccountIdAndId(1L, 2L)).thenReturn(Optional.of(new FestivalEvent()));
+        when(festivals.findByAccountIdAndIdAndDeletedAtIsNull(1L, 2L)).thenReturn(Optional.of(new FestivalEvent()));
         assertThrows(ResourceNotFoundException.class, () -> new FestivalEstimateService(festivals, jdbc).delete(1L, 2L, 99L));
         verify(jdbc).update("DELETE FROM festival_expense_estimates WHERE id=? AND festival_event_id=?", 99L, 2L);
     }

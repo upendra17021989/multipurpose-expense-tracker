@@ -30,12 +30,13 @@ export const FestivalCollectionList = () => {
   const [generating, setGenerating] = useState(false)
   const [paymentCollection, setPaymentCollection] = useState(null)
   const [receiptCollection, setReceiptCollection] = useState(null)
+  const [mobileSection, setMobileSection] = useState('collections')
 
   const loadData = () => {
     setLoading(true)
     Promise.all([
       festivalEventAPI.getFestival(festivalEventId),
-      festivalCollectionAPI.getCollections(festivalEventId, { page, size: 20, search: filters.search, status: filters.status, blockName: assignedBlock }),
+      festivalCollectionAPI.getCollections(festivalEventId, { page, size: 10, search: filters.search, status: filters.status, blockName: assignedBlock }),
       festivalCollectionAPI.getSummary(festivalEventId)
     ])
       .then(([festivalResponse, collectionResponse, summaryResponse]) => {
@@ -123,8 +124,14 @@ export const FestivalCollectionList = () => {
   }
 
   return (
-    <Shell title={festival ? `${festival.festivalName} Collections` : 'Festival Collections'} eyebrow="Society module" actions={<div className="header-actions"><button type="button" onClick={sharePage}>Share</button><Link className="button-link" to="/society/festival-collections">All Festivals</Link></div>}>
+    <Shell title={festival ? `${festival.festivalName} Collections` : 'Festival Collections'} eyebrow="Society module" actions={<div className="header-actions collection-header-actions"><button type="button" onClick={sharePage}>Share</button><Link className="button-link" to="/society/festival-collections">All Festivals</Link></div>}>
       <div className="festival-collections-page">
+      <nav className="collection-mobile-tabs" aria-label="Collection sections">
+        <button type="button" aria-pressed={mobileSection === 'collections'} onClick={() => setMobileSection('collections')}>Collections <span>{totalElements}</span></button>
+        <button type="button" aria-pressed={mobileSection === 'overview'} onClick={() => setMobileSection('overview')}>Overview</button>
+        {canManageDemand && <button type="button" aria-pressed={mobileSection === 'demand'} onClick={() => setMobileSection('demand')}>Demand</button>}
+      </nav>
+      <section className={`collection-overview-section ${mobileSection !== 'overview' ? 'mobile-section-hidden' : ''}`} aria-label="Collection overview">
       <SummaryGrid items={[
         ['Expected', formatCurrency(summary?.totalExpected)],
         ['Collected', formatCurrency(summary?.totalCollected)],
@@ -136,8 +143,9 @@ export const FestivalCollectionList = () => {
         ['Excess Flats', summary?.excessFlats || 0]
       ]} />
       <div className="form-actions"><Link className="button-link secondary" to={`/society/festivals/${festivalEventId}/expenses`}>Expense details & estimates</Link><Link className="button-link secondary" to={`/society/festivals/${festivalEventId}/report`}>Collection & expense report</Link></div>
+      </section>
 
-      {canManageDemand && <form className="inline-form collection-demand-form" onSubmit={generateDemand}>
+      {canManageDemand && <form className={`inline-form collection-demand-form collection-demand-section ${mobileSection !== 'demand' ? 'mobile-section-hidden' : ''}`} onSubmit={generateDemand}>
         <label>
           Same Amount For All Flats
           <input type="number" min="0.01" step="0.01" value={expectedAmount} onChange={(event) => setExpectedAmount(event.target.value)} required placeholder="2500" />
@@ -149,6 +157,8 @@ export const FestivalCollectionList = () => {
         <button type="submit" className="primary" disabled={generating}>{generating ? 'Generating...' : 'Generate Demand'}</button>
       </form>}
 
+      <section className={`collection-records-section ${mobileSection !== 'collections' ? 'mobile-section-hidden' : ''}`} aria-label="Flat-wise collections">
+      <div className="collection-records-heading"><div><h2>Flat-wise collections</h2><p>Search a flat or open a row to record payments and view receipts.</p></div><strong>{totalElements} records</strong></div>
       <section className="toolbar-panel flat-toolbar">
         <input placeholder="Search flat, owner, status" value={filters.search} onChange={(event) => { setPage(0); setFilters({ ...filters, search: event.target.value }) }} />
         <select value={filters.status} onChange={(event) => { setPage(0); setFilters({ ...filters, status: event.target.value }) }}>
@@ -257,6 +267,7 @@ export const FestivalCollectionList = () => {
       </div>
       {totalPages > 1 && <nav className="table-pagination" aria-label="Collection pages"><button type="button" disabled={page === 0 || loading} onClick={() => setPage(0)}>«</button><button type="button" disabled={page === 0 || loading} onClick={() => setPage((value) => Math.max(0, value - 1))}>‹</button><span>Page {page + 1} of {totalPages}</span><button type="button" disabled={page + 1 >= totalPages || loading} onClick={() => setPage((value) => Math.min(totalPages - 1, value + 1))}>›</button><button type="button" disabled={page + 1 >= totalPages || loading} onClick={() => setPage(totalPages - 1)}>»</button></nav>}
       {loading && <p className="muted">Loading collections...</p>}
+      </section>
       {canAddPayment && paymentCollection && <FestivalPaymentModal collection={paymentCollection} onClose={() => setPaymentCollection(null)} onSaved={(receipt) => { setReceiptCollection({ id: paymentCollection.id, receiptId: receipt.id }); setPaymentCollection(null); loadData() }} />}
       {receiptCollection && <FestivalCollectionReceipt collectionId={receiptCollection.id} initialReceiptId={receiptCollection.receiptId} onClose={() => setReceiptCollection(null)} />}
       </div>

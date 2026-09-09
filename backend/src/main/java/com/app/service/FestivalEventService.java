@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -32,8 +33,8 @@ public class FestivalEventService {
 
     public List<FestivalEventDto> getFestivalEvents(Long accountId, Integer year) {
         List<FestivalEvent> events = year != null
-                ? festivalEventRepository.findByAccountIdAndYear(accountId, year)
-                : festivalEventRepository.findByAccountId(accountId);
+                ? festivalEventRepository.findByAccountIdAndYearAndDeletedAtIsNull(accountId, year)
+                : festivalEventRepository.findByAccountIdAndDeletedAtIsNull(accountId);
         return events.stream().map(this::mapToDto).collect(Collectors.toList());
     }
 
@@ -88,11 +89,40 @@ public class FestivalEventService {
 
     public void deleteFestivalEvent(Long accountId, Long festivalEventId) {
         FestivalEvent event = findAccessibleEvent(accountId, festivalEventId);
+        event.setDeletedAt(LocalDateTime.now());
+        festivalEventRepository.save(event);
+    }
+
+    public List<FestivalEventDto> getDeletedFestivalEvents(Long accountId) {
+        return festivalEventRepository.findByAccountIdAndDeletedAtIsNotNullOrderByDeletedAtDesc(accountId)
+                .stream().map(this::mapToDto).collect(Collectors.toList());
+    }
+
+    public FestivalEventDto restoreFestivalEvent(Long accountId, Long festivalEventId) {
+        FestivalEvent event = findDeletedEvent(accountId, festivalEventId);
+        if (event.getDeletedAt().isBefore(LocalDateTime.now().minusDays(30))) {
+            throw new ValidationException("The 30-day restoration period has expired");
+        }
+        event.setDeletedAt(null);
+        return mapToDto(festivalEventRepository.save(event));
+    }
+
+    public void permanentlyDeleteFestivalEvent(Long accountId, Long festivalEventId) {
+        FestivalEvent event = findDeletedEvent(accountId, festivalEventId);
         festivalEventRepository.delete(event);
     }
 
+    private FestivalEvent findDeletedEvent(Long accountId, Long festivalEventId) {
+        FestivalEvent event = festivalEventRepository.findByAccountIdAndId(accountId, festivalEventId)
+                .orElseThrow(() -> new ResourceNotFoundException("Deleted festival event not found"));
+        if (event.getDeletedAt() == null) {
+            throw new ValidationException("Only events in Trash can be restored or permanently deleted");
+        }
+        return event;
+    }
+
     private FestivalEvent findAccessibleEvent(Long accountId, Long festivalEventId) {
-        return festivalEventRepository.findByAccountIdAndId(accountId, festivalEventId)
+        return festivalEventRepository.findByAccountIdAndIdAndDeletedAtIsNull(accountId, festivalEventId)
                 .orElseThrow(() -> new ResourceNotFoundException("Festival event not found"));
     }
 
@@ -133,6 +163,7 @@ public class FestivalEventService {
                 .balanceAmount(event.getBalanceAmount())
                 .status(event.getStatus())
                 .createdAt(event.getCreatedAt())
+                .deletedAt(event.getDeletedAt())
                 .build();
     }
 }

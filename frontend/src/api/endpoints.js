@@ -287,11 +287,14 @@ export const festivalEventAPI = {
   updateEstimate: (id, estimateId, data) => axiosInstance.put(`/society/festivals/${id}/estimates/${estimateId}`, data),
   deleteEstimate: (id, estimateId) => axiosInstance.delete(`/society/festivals/${id}/estimates/${estimateId}`),
   getFestivals: (year) => axiosInstance.get('/society/festivals', { params: year ? { year } : {} }),
+  getDeletedFestivals: () => axiosInstance.get('/society/festivals/trash'),
   getFestival: (festivalEventId) => axiosInstance.get(`/society/festivals/${festivalEventId}`),
   createFestival: (data) => axiosInstance.post('/society/festivals', data),
   updateFestival: (festivalEventId, data) => axiosInstance.put(`/society/festivals/${festivalEventId}`, data),
   updateFestivalStatus: (festivalEventId, status) => axiosInstance.put(`/society/festivals/${festivalEventId}/status`, { status }),
-  deleteFestival: (festivalEventId) => axiosInstance.delete(`/society/festivals/${festivalEventId}`)
+  deleteFestival: (festivalEventId) => axiosInstance.delete(`/society/festivals/${festivalEventId}`),
+  restoreFestival: (festivalEventId) => axiosInstance.post(`/society/festivals/${festivalEventId}/restore`),
+  permanentlyDeleteFestival: (festivalEventId) => axiosInstance.delete(`/society/festivals/${festivalEventId}/permanent`)
 }
 
 export const festivalCollectionAPI = {

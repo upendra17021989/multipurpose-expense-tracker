@@ -9,7 +9,9 @@ import java.util.Optional;
 
 @Repository
 public interface FestivalEventRepository extends JpaRepository<FestivalEvent, Long> {
-    List<FestivalEvent> findByAccountId(Long accountId);
+    List<FestivalEvent> findByAccountIdAndDeletedAtIsNull(Long accountId);
     Optional<FestivalEvent> findByAccountIdAndId(Long accountId, Long festivalEventId);
-    List<FestivalEvent> findByAccountIdAndYear(Long accountId, Integer year);
+    Optional<FestivalEvent> findByAccountIdAndIdAndDeletedAtIsNull(Long accountId, Long festivalEventId);
+    List<FestivalEvent> findByAccountIdAndYearAndDeletedAtIsNull(Long accountId, Integer year);
+    List<FestivalEvent> findByAccountIdAndDeletedAtIsNotNullOrderByDeletedAtDesc(Long accountId);
 }

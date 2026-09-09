@@ -26,4 +26,5 @@ public class FestivalEventDto {
     private BigDecimal balanceAmount;
     private FestivalEventStatus status;
     private LocalDateTime createdAt;
+    private LocalDateTime deletedAt;
 }

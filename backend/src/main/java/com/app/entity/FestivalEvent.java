@@ -64,6 +64,8 @@ public class FestivalEvent {
     @Column(nullable = false)
     private LocalDateTime updatedAt = LocalDateTime.now();
 
+    private LocalDateTime deletedAt;
+
     @PrePersist
     protected void onCreate() {
         LocalDateTime now = LocalDateTime.now();

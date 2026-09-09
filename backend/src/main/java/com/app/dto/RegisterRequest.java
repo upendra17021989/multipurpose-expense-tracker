@@ -4,6 +4,7 @@ import com.app.entity.AccountType;
 import com.app.entity.UserRole;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -15,6 +16,8 @@ import lombok.NoArgsConstructor;
 @Builder
 public class RegisterRequest {
     private String name;
+    @NotBlank(message = "Mobile is required")
+    @Pattern(regexp = "\\d+", message = "Mobile number must contain digits only")
     private String mobile;
     @NotBlank(message = "Email is required for registration")
     @Email(message = "Please enter a valid email address")

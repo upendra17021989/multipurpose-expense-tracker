@@ -81,7 +81,7 @@ public class FestivalCollectionService {
 
     @Transactional
     public List<FestivalCollectionDto> generateDemand(Long accountId, FestivalCollectionDemandRequest request) {
-        FestivalEvent festivalEvent = festivalEventRepository.findByAccountIdAndId(accountId, request.getFestivalEventId())
+        FestivalEvent festivalEvent = festivalEventRepository.findByAccountIdAndIdAndDeletedAtIsNull(accountId, request.getFestivalEventId())
                 .orElseThrow(() -> new ResourceNotFoundException("Festival event not found"));
         Account account = accountRepository.findById(accountId)
                 .orElseThrow(() -> new ResourceNotFoundException("Account not found"));

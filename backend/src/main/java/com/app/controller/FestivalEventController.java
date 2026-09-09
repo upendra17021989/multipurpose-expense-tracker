@@ -49,6 +49,12 @@ public class FestivalEventController {
         return ResponseEntity.ok(festivalEventService.getFestivalEvent(userPrincipal.getAccountId(), festivalEventId));
     }
 
+    @GetMapping("/trash")
+    public ResponseEntity<List<FestivalEventDto>> getDeletedFestivalEvents(
+            @AuthenticationPrincipal UserPrincipal userPrincipal) {
+        return ResponseEntity.ok(festivalEventService.getDeletedFestivalEvents(userPrincipal.getAccountId()));
+    }
+
     @PostMapping
     public ResponseEntity<FestivalEventDto> createFestivalEvent(
             @AuthenticationPrincipal UserPrincipal userPrincipal,
@@ -78,6 +84,21 @@ public class FestivalEventController {
             @AuthenticationPrincipal UserPrincipal userPrincipal,
             @PathVariable Long festivalEventId) {
         festivalEventService.deleteFestivalEvent(userPrincipal.getAccountId(), festivalEventId);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/{festivalEventId}/restore")
+    public ResponseEntity<FestivalEventDto> restoreFestivalEvent(
+            @AuthenticationPrincipal UserPrincipal userPrincipal,
+            @PathVariable Long festivalEventId) {
+        return ResponseEntity.ok(festivalEventService.restoreFestivalEvent(userPrincipal.getAccountId(), festivalEventId));
+    }
+
+    @DeleteMapping("/{festivalEventId}/permanent")
+    public ResponseEntity<Void> permanentlyDeleteFestivalEvent(
+            @AuthenticationPrincipal UserPrincipal userPrincipal,
+            @PathVariable Long festivalEventId) {
+        festivalEventService.permanentlyDeleteFestivalEvent(userPrincipal.getAccountId(), festivalEventId);
         return ResponseEntity.noContent().build();
     }
 

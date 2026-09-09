@@ -1,10 +1,57 @@
 .festival-collection-mobile-list {
   display: none;
 }
+.collection-mobile-tabs { display: none; }
+.collection-records-heading { display: flex; align-items: end; justify-content: space-between; gap: 16px; margin: 22px 0 10px; }
+.collection-records-heading h2 { margin: 0; color: #1e293b; font-size: 18px; }
+.collection-records-heading p { margin: 4px 0 0; color: #64748b; font-size: 12px; }
+.collection-records-heading > strong { color: #0f766e; font-size: 13px; white-space: nowrap; }
+
+/* Keep a complete 10-row collection page within a typical desktop viewport. */
+@media (min-width: 901px) {
+  body:has(.festival-collections-page) .page-shell { max-width: none; padding-top: 1.25rem; padding-bottom: 1.25rem; }
+  body:has(.festival-collections-page) .page-header { margin-bottom: .9rem; }
+  body:has(.festival-collections-page) .page-header h1 { font-size: clamp(1.65rem, 2.3vw, 2.1rem); }
+  .festival-collections-page .summary-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .65rem; margin-bottom: .75rem; }
+  .festival-collections-page .summary-card { min-height: 68px; padding: .65rem .8rem; }
+  .festival-collections-page .summary-card span { font-size: .72rem; }
+  .festival-collections-page .summary-card strong { font-size: 1.05rem; }
+  .festival-collections-page > .collection-overview-section > .form-actions { margin-bottom: .7rem; }
+  .festival-collections-page > .collection-overview-section > .form-actions > * { min-height: 34px; padding: .45rem .7rem; font-size: .78rem; }
+  .festival-collections-page .collection-demand-form { margin-bottom: .7rem; padding: .7rem; }
+  .collection-records-heading { margin: .65rem 0 .4rem; }
+  .collection-records-heading h2 { font-size: 1rem; }
+  .collection-records-heading p { margin-top: 2px; font-size: .7rem; }
+  .festival-collections-page .flat-toolbar { min-height: 0; margin-bottom: .55rem; padding: .55rem .7rem; }
+  .festival-collections-page .flat-toolbar input,
+  .festival-collections-page .flat-toolbar select { min-height: 36px; padding-top: .4rem; padding-bottom: .4rem; }
+  .festival-collections-table th,
+  .festival-collections-table td { height: 42px; padding: .42rem .7rem; font-size: .78rem; }
+  .festival-collections-table .table-actions button { min-height: 30px; padding: .35rem .6rem; }
+  .festival-collections-page .table-pagination { margin-top: .45rem; }
+}
+
+@media (min-width: 1350px) {
+  .festival-collections-page .summary-grid { grid-template-columns: repeat(8, minmax(0, 1fr)); }
+}
 
 /* Compact expandable rows, matching the site's other mobile data lists. */
 @media (max-width: 600px) {
-  .festival-collections-page > .table-wrap {
+  .collection-header-actions { display: grid !important; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px !important; width: 100%; }
+  .collection-header-actions > * { width: 100% !important; min-height: 40px; margin: 0 !important; }
+  .festival-collections-page { display: flex; flex-direction: column; }
+  .collection-mobile-tabs { position: sticky; top: 0; z-index: 12; display: flex; gap: 4px; order: -2; margin: 0 0 10px; padding: 4px; background: #eaf2f1; border: 1px solid #d7e5e2; border-radius: 10px; box-shadow: 0 5px 14px #0f172a0d; }
+  .collection-mobile-tabs button { flex: 1 1 0; min-width: 0; min-height: 38px; padding: 7px 5px; color: #526570; background: transparent; border: 0; border-radius: 7px; font-size: 11px; font-weight: 700; }
+  .collection-mobile-tabs button[aria-pressed=true] { color: #fff; background: #0f766e; box-shadow: 0 3px 9px #0f766e33; }
+  .collection-mobile-tabs button span { display: inline-grid; min-width: 18px; margin-left: 3px; padding: 1px 4px; place-items: center; color: inherit; background: #ffffff29; border-radius: 10px; font-size: 9px; }
+  .collection-records-section { order: -1; }
+  .mobile-section-hidden { display: none !important; }
+  .collection-records-heading { align-items: center; margin: 0 0 8px; padding: 9px 11px; background: #f7faf9; border: 1px solid #e2ebe9; border-radius: 9px; }
+  .collection-records-heading h2 { font-size: 15px; }
+  .collection-records-heading p { display: none; }
+  .collection-records-heading > strong { font-size: 11px; }
+  .festival-collections-page > .table-wrap,
+  .collection-records-section > .table-wrap {
     display: none;
   }
 
@@ -170,7 +217,8 @@
     font-size: 12px;
   }
 
-  .festival-collections-page > .table-wrap {
+  .festival-collections-page > .table-wrap,
+  .collection-records-section > .table-wrap {
     display: none;
   }
 

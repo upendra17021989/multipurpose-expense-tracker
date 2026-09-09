@@ -53,7 +53,7 @@ export const Register = () => {
 
   const handleInputChange = (event) => {
     const { name, value } = event.target
-    setFormData(prev => ({ ...prev, [name]: value }))
+    setFormData(prev => ({ ...prev, [name]: name === 'mobile' ? value.replace(/\D/g, '') : value }))
   }
 
   const handleSubmit = async (event) => {
@@ -62,6 +62,7 @@ export const Register = () => {
 
     const payload = {
       ...formData,
+      mobile: formData.mobile.replace(/\D/g, ''),
       role: resolveRole(formData.accountType, formData.societyMode),
       societyId: formData.accountType === 'SOCIETY' && formData.societyMode === 'JOIN'
         ? Number(formData.societyId) : null,
@@ -101,7 +102,7 @@ export const Register = () => {
 
             <div style={styles.formGroup}>
               <RequiredLabel htmlFor="mobile">Mobile</RequiredLabel>
-              <input id="mobile" name="mobile" type="tel" value={formData.mobile} onChange={handleInputChange} required style={styles.input} />
+              <input id="mobile" name="mobile" type="tel" inputMode="numeric" autoComplete="tel" pattern="[0-9]+" title="Enter digits only" value={formData.mobile} onChange={handleInputChange} required style={styles.input} />
             </div>
           </div>
 

@@ -21,7 +21,7 @@ public class FestivalEstimateService {
             BigDecimal quantity, BigDecimal unitCost, BigDecimal amount, String remarks) {}
 
     private void checkAccess(Long accountId, Long festivalId) {
-        festivals.findByAccountIdAndId(accountId, festivalId)
+        festivals.findByAccountIdAndIdAndDeletedAtIsNull(accountId, festivalId)
                 .orElseThrow(() -> new ResourceNotFoundException("Festival event not found"));
     }
 

@@ -299,7 +299,7 @@ public class ExpenseService {
         if (expenseType != ExpenseType.FESTIVAL && expenseType != ExpenseType.SPORTS) {
             return null;
         }
-        return festivalEventRepository.findByAccountIdAndId(accountId, festivalEventId)
+        return festivalEventRepository.findByAccountIdAndIdAndDeletedAtIsNull(accountId, festivalEventId)
                 .orElseThrow(() -> new ResourceNotFoundException("Festival or sports event not found"));
     }
 
