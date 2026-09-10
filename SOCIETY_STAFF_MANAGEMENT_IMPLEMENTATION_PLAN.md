@@ -736,7 +736,7 @@ Status legend: `[x]` complete, `[ ]` pending. A phase is checked only when every
 
 ### [ ] Phase 3: Work orders and complaint integration (pending)
 
-- [ ] Add work orders, assignments, updates, attachments, and verification.
+- [ ] Add work orders, assignments, updates, attachments, and verification. Core lifecycle, assignment history, audit trail, generic attachment reference, and admin verification implemented; dedicated attachment UX remains.
 - [ ] Connect complaints, vendors, staff, agencies, and expenses.
 - [ ] Add recurring work.
 - [ ] Add overdue and priority notifications.

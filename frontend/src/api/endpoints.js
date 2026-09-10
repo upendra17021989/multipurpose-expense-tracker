@@ -332,6 +332,16 @@ export const societyAttendanceWorkflowAPI = {
   pendingCorrections: () => axiosInstance.get('/society/attendance-workflow/corrections'),
   approveCorrection: (id) => axiosInstance.post(`/society/attendance-workflow/corrections/${id}/approve`)
 }
+export const societyWorkOrderAPI = {
+  list: () => axiosInstance.get('/society/work-orders'),
+  get: (id) => axiosInstance.get(`/society/work-orders/${id}`),
+  create: (data) => axiosInstance.post('/society/work-orders', data),
+  assign: (id, data) => axiosInstance.post(`/society/work-orders/${id}/assignments`, data),
+  update: (id, data) => axiosInstance.post(`/society/work-orders/${id}/updates`, data),
+  complete: (id, data) => axiosInstance.post(`/society/work-orders/${id}/complete`, data),
+  verify: (id, data) => axiosInstance.post(`/society/work-orders/${id}/verify`, data),
+  reopen: (id, data) => axiosInstance.post(`/society/work-orders/${id}/reopen`, data)
+}
 
 export const festivalCollectionAPI = {
   downloadReceipt: (collectionId, receiptId) => axiosInstance.get(`/society/festival-collections/${collectionId}/receipts/${receiptId}/pdf`, { responseType: 'blob' }),

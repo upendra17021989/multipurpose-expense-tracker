@@ -1,0 +1,4 @@
+package com.app.entity;
+import jakarta.persistence.*; import lombok.*; import java.time.LocalDateTime;
+@Entity @Table(name="society_work_updates") @Getter @Builder @NoArgsConstructor @AllArgsConstructor
+public class SocietyWorkUpdate {@Id @GeneratedValue(strategy=GenerationType.IDENTITY) private Long id; @ManyToOne(fetch=FetchType.LAZY) @JoinColumn(name="account_id",nullable=false) private Account account; @ManyToOne(fetch=FetchType.LAZY) @JoinColumn(name="work_order_id",nullable=false) private SocietyWorkOrder workOrder; @ManyToOne(fetch=FetchType.LAZY) @JoinColumn(name="created_by_user_id",nullable=false) private User createdBy; @Column(nullable=false,length=30) private String updateType; private String previousStatus; private String newStatus; @Column(length=2000) private String notes; @Column(nullable=false,updatable=false) @Builder.Default private LocalDateTime createdAt=LocalDateTime.now();}

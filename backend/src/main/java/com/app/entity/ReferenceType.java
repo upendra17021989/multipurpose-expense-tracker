@@ -4,5 +4,6 @@ public enum ReferenceType {
     EXPENSE,
     FESTIVAL_COLLECTION,
     SALE,
-    PURCHASE
+    PURCHASE,
+    WORK_ORDER
 }

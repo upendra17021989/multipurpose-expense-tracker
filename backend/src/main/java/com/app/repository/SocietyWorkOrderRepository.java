@@ -1,0 +1,2 @@
+package com.app.repository; import com.app.entity.SocietyWorkOrder; import org.springframework.data.jpa.repository.JpaRepository; import java.util.*;
+public interface SocietyWorkOrderRepository extends JpaRepository<SocietyWorkOrder,Long>{List<SocietyWorkOrder> findByAccountIdOrderByCreatedAtDesc(Long accountId);Optional<SocietyWorkOrder> findByAccountIdAndId(Long accountId,Long id);long countByAccountId(Long accountId);}
