@@ -138,6 +138,11 @@
 .festival-expense-detail table.hide-expense-amount tr > :nth-child(7) {
   display: none;
 }
+.festival-block-total-row > * {
+  border-top: 2px solid #9ccbc2;
+  background: #edf7f4;
+  font-weight: 700;
+}
 .festival-report-breakdown {
   padding: 22px;
   border: 1px solid #dce7ea;

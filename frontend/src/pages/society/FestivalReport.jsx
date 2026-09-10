@@ -23,6 +23,17 @@ const incomeColumnOptions = [
   ['refunded', 'Refunded'],
   ['status', 'Status']
 ]
+const blockColumnOptions = [
+  ['block', 'Block'],
+  ['flats', 'Flats'],
+  ['paid', 'Paid'],
+  ['partial', 'Partial'],
+  ['expected', 'Expected'],
+  ['collected', 'Collected'],
+  ['pending', 'Pending'],
+  ['excess', 'Excess'],
+  ['refunded', 'Refunded']
+]
 const expenseColumnOptions = [
   ['date', 'Date'],
   ['description', 'Description / line items'],
@@ -52,6 +63,9 @@ export const FestivalReport = () => {
   const [includeExpenses, setIncludeExpenses] = useState(true)
   const [incomeColumns, setIncomeColumns] = useState(
     incomeColumnOptions.map(([key]) => key)
+  )
+  const [blockColumns, setBlockColumns] = useState(
+    blockColumnOptions.map(([key]) => key)
   )
   const [expenseColumns, setExpenseColumns] = useState(
     expenseColumnOptions.map(([key]) => key)
@@ -210,6 +224,15 @@ export const FestivalReport = () => {
   const visibleBlockCollections = selectedBlock
     ? blockCollections.filter((row) => row.block === selectedBlock)
     : blockCollections
+  const blockTotals = blockCollections.reduce(
+    (totals, row) => {
+      blockColumnOptions.slice(1).forEach(([key]) => {
+        totals[key] += Number(row[key] || 0)
+      })
+      return totals
+    },
+    Object.fromEntries(blockColumnOptions.slice(1).map(([key]) => [key, 0]))
+  )
   const selectedBlockPayments = selectedBlock
     ? selectedCollections.filter(
         (row) =>
@@ -418,6 +441,23 @@ export const FestivalReport = () => {
                           incomeColumns.includes(key)
                         }
                         onChange={() => toggleColumn(setIncomeColumns, key)}
+                      />
+                      {label}
+                    </label>
+                  ))}
+                </fieldset>
+                <fieldset>
+                  <legend>Block-wise income columns</legend>
+                  {blockColumnOptions.map(([key, label]) => (
+                    <label key={key}>
+                      <input
+                        type="checkbox"
+                        checked={blockColumns.includes(key)}
+                        disabled={
+                          blockColumns.length === 1 &&
+                          blockColumns.includes(key)
+                        }
+                        onChange={() => toggleColumn(setBlockColumns, key)}
                       />
                       {label}
                     </label>
@@ -686,41 +726,88 @@ export const FestivalReport = () => {
               <table>
                 <thead>
                   <tr>
-                    <th>Block</th>
-                    <th>Flats</th>
-                    <th>Paid</th>
-                    <th>Partial</th>
-                    <th>Expected</th>
-                    <th>Collected</th>
-                    <th>Pending</th>
-                    <th>Excess</th>
-                    <th>Refunded</th>
+                    {blockColumns.includes('block') && <th>Block</th>}
+                    {blockColumns.includes('flats') && <th>Flats</th>}
+                    {blockColumns.includes('paid') && <th>Paid</th>}
+                    {blockColumns.includes('partial') && <th>Partial</th>}
+                    {blockColumns.includes('expected') && <th>Expected</th>}
+                    {blockColumns.includes('collected') && <th>Collected</th>}
+                    {blockColumns.includes('pending') && <th>Pending</th>}
+                    {blockColumns.includes('excess') && <th>Excess</th>}
+                    {blockColumns.includes('refunded') && <th>Refunded</th>}
                   </tr>
                 </thead>
                 <tbody>
                   {visibleBlockCollections.map((row) => (
                     <tr key={row.block}>
-                      <td>
-                        <strong>{row.block}</strong>
-                      </td>
-                      <td>{row.flats}</td>
-                      <td>{row.paid}</td>
-                      <td>{row.partial}</td>
-                      <td>{formatCurrency(row.expected)}</td>
-                      <td>{formatCurrency(row.collected)}</td>
-                      <td>{formatCurrency(row.pending)}</td>
-                      <td>{formatCurrency(row.excess)}</td>
-                      <td>{formatCurrency(row.refunded)}</td>
+                      {blockColumns.includes('block') && (
+                        <td>
+                          <strong>{row.block}</strong>
+                        </td>
+                      )}
+                      {blockColumns.includes('flats') && <td>{row.flats}</td>}
+                      {blockColumns.includes('paid') && <td>{row.paid}</td>}
+                      {blockColumns.includes('partial') && (
+                        <td>{row.partial}</td>
+                      )}
+                      {blockColumns.includes('expected') && (
+                        <td>{formatCurrency(row.expected)}</td>
+                      )}
+                      {blockColumns.includes('collected') && (
+                        <td>{formatCurrency(row.collected)}</td>
+                      )}
+                      {blockColumns.includes('pending') && (
+                        <td>{formatCurrency(row.pending)}</td>
+                      )}
+                      {blockColumns.includes('excess') && (
+                        <td>{formatCurrency(row.excess)}</td>
+                      )}
+                      {blockColumns.includes('refunded') && (
+                        <td>{formatCurrency(row.refunded)}</td>
+                      )}
                     </tr>
                   ))}
                   {!visibleBlockCollections.length && (
                     <tr>
-                      <td colSpan={9} className="empty-state">
+                      <td colSpan={blockColumns.length} className="empty-state">
                         No block collection data available.
                       </td>
                     </tr>
                   )}
                 </tbody>
+                {!!blockCollections.length && (
+                  <tfoot>
+                    <tr className="festival-block-total-row">
+                      {blockColumns.includes('block') && (
+                        <th scope="row">Total all blocks</th>
+                      )}
+                      {blockColumns.includes('flats') && (
+                        <td>{blockTotals.flats}</td>
+                      )}
+                      {blockColumns.includes('paid') && (
+                        <td>{blockTotals.paid}</td>
+                      )}
+                      {blockColumns.includes('partial') && (
+                        <td>{blockTotals.partial}</td>
+                      )}
+                      {blockColumns.includes('expected') && (
+                        <td>{formatCurrency(blockTotals.expected)}</td>
+                      )}
+                      {blockColumns.includes('collected') && (
+                        <td>{formatCurrency(blockTotals.collected)}</td>
+                      )}
+                      {blockColumns.includes('pending') && (
+                        <td>{formatCurrency(blockTotals.pending)}</td>
+                      )}
+                      {blockColumns.includes('excess') && (
+                        <td>{formatCurrency(blockTotals.excess)}</td>
+                      )}
+                      {blockColumns.includes('refunded') && (
+                        <td>{formatCurrency(blockTotals.refunded)}</td>
+                      )}
+                    </tr>
+                  </tfoot>
+                )}
               </table>
             </div>
             {selectedBlock && (
