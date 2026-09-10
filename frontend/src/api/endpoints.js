@@ -342,6 +342,13 @@ export const societyWorkOrderAPI = {
   verify: (id, data) => axiosInstance.post(`/society/work-orders/${id}/verify`, data),
   reopen: (id, data) => axiosInstance.post(`/society/work-orders/${id}/reopen`, data)
 }
+export const societyComplaintAPI = {
+  list: () => axiosInstance.get('/society/complaints'),
+  get: (id) => axiosInstance.get(`/society/complaints/${id}`),
+  create: (data) => axiosInstance.post('/society/complaints', data),
+  update: (id, data) => axiosInstance.post(`/society/complaints/${id}/updates`, data),
+  convert: (id, data) => axiosInstance.post(`/society/complaints/${id}/work-order`, data)
+}
 
 export const festivalCollectionAPI = {
   downloadReceipt: (collectionId, receiptId) => axiosInstance.get(`/society/festival-collections/${collectionId}/receipts/${receiptId}/pdf`, { responseType: 'blob' }),

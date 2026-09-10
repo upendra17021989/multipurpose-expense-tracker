@@ -1,0 +1,4 @@
+package com.app.entity;
+import jakarta.persistence.*; import lombok.*; import java.time.LocalDateTime;
+@Entity @Table(name="society_complaint_updates") @Getter @Builder @NoArgsConstructor @AllArgsConstructor
+public class SocietyComplaintUpdate {@Id @GeneratedValue(strategy=GenerationType.IDENTITY) private Long id; @ManyToOne(fetch=FetchType.LAZY) @JoinColumn(name="account_id",nullable=false) private Account account; @ManyToOne(fetch=FetchType.LAZY) @JoinColumn(name="complaint_id",nullable=false) private SocietyComplaint complaint; @ManyToOne(fetch=FetchType.LAZY) @JoinColumn(name="created_by_user_id",nullable=false) private User createdBy; private String status; @Column(nullable=false,length=2000) private String notes; @Column(nullable=false) private Boolean residentVisible; @Column(nullable=false,updatable=false) @Builder.Default private LocalDateTime createdAt=LocalDateTime.now();}

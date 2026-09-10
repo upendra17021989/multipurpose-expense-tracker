@@ -72,6 +72,8 @@ class SocietyRoleAccessFilterTest {
         check(UserRole.STAFF_SUPERVISOR, "GET", "/society/attendance/reports/monthly", "/api", true);
         check(UserRole.STAFF_SUPERVISOR, "POST", "/society/attendance/bulk", "/api", true);
         check(UserRole.STAFF_SUPERVISOR, "GET", "/society/work-orders/5", "/api", true);
+        check(UserRole.STAFF_SUPERVISOR, "GET", "/society/complaints/5", "/api", true);
+        check(UserRole.STAFF_SUPERVISOR, "POST", "/society/complaints/5/work-order", "/api", true);
         check(UserRole.STAFF_SUPERVISOR, "POST", "/society/work-orders/5/updates", "/api", true);
         check(UserRole.STAFF_SUPERVISOR, "POST", "/society/work-orders/5/verify", "/api", false);
         check(UserRole.STAFF_SUPERVISOR, "POST", "/attachments", "/api", true);
@@ -86,6 +88,9 @@ class SocietyRoleAccessFilterTest {
     }
 
     @Test void blockRepresentativeCanAddPaymentsButCannotChangeDemands() throws Exception {
+        check(UserRole.MEMBER, "POST", "/society/complaints", "/api", true);
+        check(UserRole.MEMBER, "POST", "/society/complaints/5/updates", "/api", true);
+        check(UserRole.MEMBER, "POST", "/society/complaints/5/work-order", "/api", false);
         check(UserRole.BLOCK_REPRESENTATIVE, "POST", "/society/festival-collections/5/payments", "/api", true);
         check(UserRole.BLOCK_REPRESENTATIVE, "POST", "/society/festival-collections/generate-demand", "/api", false);
         check(UserRole.BLOCK_REPRESENTATIVE, "PUT", "/society/festival-collections/5/demand", "/api", false);

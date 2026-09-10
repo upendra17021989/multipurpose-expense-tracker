@@ -42,7 +42,8 @@ export const ACCOUNT_NAVIGATION = {
         { label: 'Shifts & Roster', to: '/society/roster' },
         { label: "Today's Attendance", to: '/society/attendance', exact: true },
         { label: 'Attendance Reports', to: '/society/attendance/reports' },
-        { label: 'Work Orders', to: '/society/work-orders' }
+        { label: 'Work Orders', to: '/society/work-orders' },
+        { label: 'Complaints', to: '/society/complaints' }
       ]
     }
   ],
@@ -85,7 +86,7 @@ export const ACCOUNT_NAVIGATION = {
 
 export const getNavigationGroups = (accountType, isSystemAdmin = false, role = null) => {
   const groups = role === 'STAFF_SUPERVISOR'
-    ? [{ label: 'Operations', items: [{ label: 'Work Orders', to: '/society/work-orders' }, { label: "Today's Attendance", to: '/society/attendance', exact: true }, { label: 'Attendance Reports', to: '/society/attendance/reports' }, { label: 'Staff', to: '/society/staff' }, { label: 'Agencies & Workers', to: '/society/agencies' }, { label: 'Shifts & Roster', to: '/society/roster' }, { label: 'Vendors', to: '/society/vendors' }] }]
+    ? [{ label: 'Operations', items: [{ label: 'Work Orders', to: '/society/work-orders' }, { label: 'Complaints', to: '/society/complaints' }, { label: "Today's Attendance", to: '/society/attendance', exact: true }, { label: 'Attendance Reports', to: '/society/attendance/reports' }, { label: 'Staff', to: '/society/staff' }, { label: 'Agencies & Workers', to: '/society/agencies' }, { label: 'Shifts & Roster', to: '/society/roster' }, { label: 'Vendors', to: '/society/vendors' }] }]
     : [...(ACCOUNT_NAVIGATION[accountType] || [])]
   if (isSystemAdmin)
     groups.push({

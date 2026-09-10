@@ -737,7 +737,7 @@ Status legend: `[x]` complete, `[ ]` pending. A phase is checked only when every
 ### [ ] Phase 3: Work orders and complaint integration (pending)
 
 - [x] Add work orders, assignments, updates, attachments, and verification.
-- [ ] Connect complaints, vendors, staff, agencies, and expenses.
+- [ ] Connect complaints, vendors, staff, agencies, and expenses. Complaint register, resident/internal updates, flat ownership, and complaint-to-work-order conversion implemented; expense linking remains.
 - [ ] Add recurring work.
 - [ ] Add overdue and priority notifications.
 
