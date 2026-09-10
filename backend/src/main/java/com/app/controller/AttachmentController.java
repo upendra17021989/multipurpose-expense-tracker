@@ -63,7 +63,7 @@ public class AttachmentController {
     public ResponseEntity<Void> deleteAttachment(
             @AuthenticationPrincipal UserPrincipal userPrincipal,
             @PathVariable Long attachmentId) {
-        attachmentService.deleteAttachment(userPrincipal.getAccountId(), attachmentId);
+        attachmentService.deleteAttachment(userPrincipal.getAccountId(), userPrincipal.getUserId(), attachmentId);
         return ResponseEntity.noContent().build();
     }
 }

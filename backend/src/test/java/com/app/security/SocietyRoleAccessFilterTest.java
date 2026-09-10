@@ -71,6 +71,11 @@ class SocietyRoleAccessFilterTest {
         check(UserRole.STAFF_SUPERVISOR, "GET", "/society/attendance/reports/daily", "/api", true);
         check(UserRole.STAFF_SUPERVISOR, "GET", "/society/attendance/reports/monthly", "/api", true);
         check(UserRole.STAFF_SUPERVISOR, "POST", "/society/attendance/bulk", "/api", true);
+        check(UserRole.STAFF_SUPERVISOR, "GET", "/society/work-orders/5", "/api", true);
+        check(UserRole.STAFF_SUPERVISOR, "POST", "/society/work-orders/5/updates", "/api", true);
+        check(UserRole.STAFF_SUPERVISOR, "POST", "/society/work-orders/5/verify", "/api", false);
+        check(UserRole.STAFF_SUPERVISOR, "POST", "/attachments", "/api", true);
+        check(UserRole.STAFF_SUPERVISOR, "GET", "/attachments/7/download", "/api", true);
         check(UserRole.STAFF_SUPERVISOR, "PUT", "/society/vendors/5", "/api", true);
         check(UserRole.STAFF_SUPERVISOR, "GET", "/expenses", "/api", false);
         check(UserRole.STAFF_SUPERVISOR, "POST", "/society/flats", "/api", false);

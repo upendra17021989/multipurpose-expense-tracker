@@ -9,6 +9,9 @@ import com.app.exception.ResourceNotFoundException;
 import com.app.exception.ValidationException;
 import com.app.repository.AttachmentRepository;
 import com.app.repository.ExpenseRepository;
+import com.app.repository.SocietyAuditEventRepository;
+import com.app.repository.SocietyWorkOrderRepository;
+import com.app.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
@@ -33,16 +36,25 @@ public class AttachmentService {
 
     private final AttachmentRepository attachmentRepository;
     private final ExpenseRepository expenseRepository;
+    private final SocietyWorkOrderRepository workOrderRepository;
+    private final SocietyAuditEventRepository auditRepository;
+    private final UserRepository userRepository;
     private final Path uploadRoot;
     private final long maxFileSize;
 
     public AttachmentService(
             AttachmentRepository attachmentRepository,
             ExpenseRepository expenseRepository,
+            SocietyWorkOrderRepository workOrderRepository,
+            SocietyAuditEventRepository auditRepository,
+            UserRepository userRepository,
             @Value("${app.file.upload.dir:./uploads}") String uploadDir,
             @Value("${app.file.max-size:5242880}") long maxFileSize) {
         this.attachmentRepository = attachmentRepository;
         this.expenseRepository = expenseRepository;
+        this.workOrderRepository = workOrderRepository;
+        this.auditRepository = auditRepository;
+        this.userRepository = userRepository;
         this.uploadRoot = Paths.get(uploadDir).toAbsolutePath().normalize();
         this.maxFileSize = maxFileSize;
     }
@@ -59,6 +71,7 @@ public class AttachmentService {
     @Transactional
     public AttachmentDto upload(Long accountId, Long userId, ReferenceType referenceType, Long referenceId, MultipartFile file) {
         validateReference(accountId, referenceType, referenceId);
+        ensureMutableWorkOrder(accountId, referenceType, referenceId);
         validateFile(file);
 
         try {
@@ -83,7 +96,9 @@ public class AttachmentService {
                     .fileType(file.getContentType() != null ? file.getContentType() : extension)
                     .uploadedBy(String.valueOf(userId))
                     .build();
-            return mapToDto(attachmentRepository.save(attachment));
+            Attachment saved = attachmentRepository.save(attachment);
+            auditWorkOrderAttachment(accountId, userId, referenceType, referenceId, saved.getId(), "UPLOADED", originalName);
+            return mapToDto(saved);
         } catch (IOException ex) {
             throw new ValidationException("Unable to store uploaded file");
         }
@@ -113,8 +128,11 @@ public class AttachmentService {
     }
 
     @Transactional
-    public void deleteAttachment(Long accountId, Long attachmentId) {
+    public void deleteAttachment(Long accountId, Long userId, Long attachmentId) {
         Attachment attachment = findAttachment(accountId, attachmentId);
+        validateReference(accountId, attachment.getReferenceType(), attachment.getReferenceId());
+        ensureMutableWorkOrder(accountId, attachment.getReferenceType(), attachment.getReferenceId());
+        auditWorkOrderAttachment(accountId, userId, attachment.getReferenceType(), attachment.getReferenceId(), attachmentId, "DELETED", attachment.getFileName());
         attachmentRepository.delete(attachment);
         try {
             Files.deleteIfExists(uploadRoot.resolve(attachment.getFileUrl()).normalize());
@@ -130,6 +148,11 @@ public class AttachmentService {
     }
 
     private void validateReference(Long accountId, ReferenceType referenceType, Long referenceId) {
+        if (referenceType == ReferenceType.WORK_ORDER) {
+            workOrderRepository.findByAccountIdAndId(accountId, referenceId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Work order not found"));
+            return;
+        }
         if (referenceType != ReferenceType.EXPENSE) {
             return;
         }
@@ -138,6 +161,25 @@ public class AttachmentService {
         if (!expense.getAccount().getId().equals(accountId) || Boolean.TRUE.equals(expense.getSoftDeleted())) {
             throw new ResourceNotFoundException("Expense not accessible");
         }
+    }
+
+    private void ensureMutableWorkOrder(Long accountId, ReferenceType type, Long referenceId) {
+        if (type != ReferenceType.WORK_ORDER) return;
+        var workOrder = workOrderRepository.findByAccountIdAndId(accountId, referenceId)
+                .orElseThrow(() -> new ResourceNotFoundException("Work order not found"));
+        if (Set.of("VERIFIED", "CANCELLED").contains(workOrder.getStatus())) {
+            throw new ValidationException("Evidence cannot be changed after the work order is closed");
+        }
+    }
+
+    private void auditWorkOrderAttachment(Long accountId, Long userId, ReferenceType type, Long referenceId,
+                                          Long attachmentId, String action, String fileName) {
+        if (type != ReferenceType.WORK_ORDER) return;
+        Account account = new Account(); account.setId(accountId);
+        auditRepository.save(com.app.entity.SocietyAuditEvent.builder().account(account)
+                .actor(userRepository.findById(userId).orElse(null)).action("WORK_ORDER_ATTACHMENT_" + action)
+                .entityType("WORK_ORDER").entityId(referenceId)
+                .details("attachmentId=" + attachmentId + "; file=" + fileName).build());
     }
 
     private void validateFile(MultipartFile file) {
