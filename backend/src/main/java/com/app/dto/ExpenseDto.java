@@ -28,6 +28,7 @@ public class ExpenseDto {
     private String categoryName;
     private ExpenseType expenseType;
     private Long festivalEventId;
+    private Long workOrderId;
     private String vendorName;
     private String description;
     private BigDecimal amount;

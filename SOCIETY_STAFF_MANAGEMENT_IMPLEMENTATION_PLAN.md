@@ -734,12 +734,12 @@ Status legend: `[x]` complete, `[ ]` pending. A phase is checked only when every
 
 **Outcome:** The supervisor can reliably record direct and agency staff attendance.
 
-### [ ] Phase 3: Work orders and complaint integration (pending)
+### [x] Phase 3: Work orders and complaint integration (complete)
 
 - [x] Add work orders, assignments, updates, attachments, and verification.
-- [ ] Connect complaints, vendors, staff, agencies, and expenses. Complaint register, resident/internal updates, flat ownership, and complaint-to-work-order conversion implemented; expense linking remains.
-- [ ] Add recurring work.
-- [ ] Add overdue and priority notifications.
+- [x] Connect complaints, vendors, staff, agencies, and expenses.
+- [x] Add recurring work.
+- [x] Add overdue and priority notifications.
 
 **Outcome:** Everyday society work has an owner, status, evidence, cost, and completion trail.
 

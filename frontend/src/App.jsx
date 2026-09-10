@@ -38,6 +38,7 @@ import { Attendance } from './pages/society/Attendance'
 import { AttendanceReports } from './pages/society/AttendanceReports'
 import { WorkOrders } from './pages/society/WorkOrders'
 import { Complaints } from './pages/society/Complaints'
+import { Notifications } from './pages/society/Notifications'
 import { FestivalList } from './pages/society/FestivalList'
 import { FestivalExpenses } from './pages/society/FestivalExpenses'
 import { FestivalReport } from './pages/society/FestivalReport'
@@ -338,6 +339,7 @@ function App() {
           <Route path="/society/attendance/reports" element={<ProtectedRoute><AttendanceReports /></ProtectedRoute>} />
           <Route path="/society/work-orders" element={<ProtectedRoute><WorkOrders /></ProtectedRoute>} />
           <Route path="/society/complaints" element={<ProtectedRoute><Complaints /></ProtectedRoute>} />
+          <Route path="/society/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
           <Route
             path="/society/festivals"
             element={

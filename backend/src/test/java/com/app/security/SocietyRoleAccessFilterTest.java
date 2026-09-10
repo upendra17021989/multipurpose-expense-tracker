@@ -72,6 +72,13 @@ class SocietyRoleAccessFilterTest {
         check(UserRole.STAFF_SUPERVISOR, "GET", "/society/attendance/reports/monthly", "/api", true);
         check(UserRole.STAFF_SUPERVISOR, "POST", "/society/attendance/bulk", "/api", true);
         check(UserRole.STAFF_SUPERVISOR, "GET", "/society/work-orders/5", "/api", true);
+        check(UserRole.STAFF_SUPERVISOR, "GET", "/society/work-orders/5/expense-requests", "/api", true);
+        check(UserRole.STAFF_SUPERVISOR, "POST", "/society/work-orders/5/expense-requests", "/api", true);
+        check(UserRole.STAFF_SUPERVISOR, "GET", "/expenses/categories", "/api", true);
+        check(UserRole.STAFF_SUPERVISOR, "GET", "/society/notifications", "/api", true);
+        check(UserRole.STAFF_SUPERVISOR, "GET", "/society/notifications/unread-count", "/api", true);
+        check(UserRole.STAFF_SUPERVISOR, "POST", "/society/notifications/8/read", "/api", true);
+        check(UserRole.STAFF_SUPERVISOR, "POST", "/society/notifications/read-all", "/api", true);
         check(UserRole.STAFF_SUPERVISOR, "GET", "/society/complaints/5", "/api", true);
         check(UserRole.STAFF_SUPERVISOR, "POST", "/society/complaints/5/work-order", "/api", true);
         check(UserRole.STAFF_SUPERVISOR, "POST", "/society/work-orders/5/updates", "/api", true);
@@ -94,5 +101,11 @@ class SocietyRoleAccessFilterTest {
         check(UserRole.BLOCK_REPRESENTATIVE, "POST", "/society/festival-collections/5/payments", "/api", true);
         check(UserRole.BLOCK_REPRESENTATIVE, "POST", "/society/festival-collections/generate-demand", "/api", false);
         check(UserRole.BLOCK_REPRESENTATIVE, "PUT", "/society/festival-collections/5/demand", "/api", false);
+    }
+
+    @Test void onlyAdminCanApproveSocietyExpenses() throws Exception {
+        check(UserRole.ADMIN, "POST", "/expenses/5/approve", "/api", true);
+        check(UserRole.SUPERVISOR, "POST", "/expenses/5/approve", "/api", false);
+        check(UserRole.TREASURER, "POST", "/expenses/5/reject", "/api", false);
     }
 }

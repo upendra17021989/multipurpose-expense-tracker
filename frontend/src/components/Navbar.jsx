@@ -27,6 +27,7 @@ const glyphs = {
   'Member Directory': 'M',
   Vendors: 'V',
   Staff: 'S',
+  Notifications: 'N',
   Sales: 'S',
   Purchases: 'P',
   Products: 'P',

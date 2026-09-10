@@ -313,6 +313,7 @@ public class ExpenseService {
                 .categoryName(expense.getCategory().getCategoryName())
                 .expenseType(expense.getExpenseType())
                 .festivalEventId(expense.getFestivalEvent() != null ? expense.getFestivalEvent().getId() : null)
+                .workOrderId(expense.getWorkOrder() != null ? expense.getWorkOrder().getId() : null)
                 .vendorName(expense.getVendorName())
                 .description(expense.getDescription())
                 .amount(expense.getAmount())

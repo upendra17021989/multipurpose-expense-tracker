@@ -72,6 +72,10 @@ public class Expense {
 
     private String sourceReference;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "work_order_id")
+    private SocietyWorkOrder workOrder;
+
     private String importBatchId;
 
     @Builder.Default

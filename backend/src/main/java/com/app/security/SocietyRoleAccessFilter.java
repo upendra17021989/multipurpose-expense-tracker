@@ -76,6 +76,11 @@ public class SocietyRoleAccessFilter extends OncePerRequestFilter {
             deny(response, "Only a society admin can verify or reopen completed work");
             return;
         }
+        if ("POST".equals(request.getMethod()) && path.matches("/expenses/\\d+/(?:approve|reject)")
+                && role != UserRole.ADMIN) {
+            deny(response, "Only a society admin can approve or reject expenses");
+            return;
+        }
         if (isReadRequest(request.getMethod())) {
             chain.doFilter(request, response);
             return;
@@ -87,7 +92,9 @@ public class SocietyRoleAccessFilter extends OncePerRequestFilter {
         boolean managingMembershipRoles = path.startsWith("/society/membership-requests");
         boolean complaintSelfService = "POST".equals(request.getMethod())
                 && (path.equals("/society/complaints") || path.matches("/society/complaints/\\d+/updates"));
-        boolean permitted = complaintSelfService || role == UserRole.ADMIN || role == UserRole.SUPERVISOR
+        boolean notificationSelfService = "POST".equals(request.getMethod())
+                && (path.equals("/society/notifications/read-all") || path.matches("/society/notifications/\\d+/read"));
+        boolean permitted = complaintSelfService || notificationSelfService || role == UserRole.ADMIN || role == UserRole.SUPERVISOR
                 || !creatingFestival && role == UserRole.TREASURER && TREASURER_WRITE_PATHS.stream().anyMatch(path::startsWith)
                 || role == UserRole.BLOCK_REPRESENTATIVE && addingFestivalPayment;
         if (!permitted) {
@@ -110,9 +117,9 @@ public class SocietyRoleAccessFilter extends OncePerRequestFilter {
 
     private boolean staffSupervisorPermitted(String method, String path) {
         if ("GET".equals(method) || "HEAD".equals(method)) {
-            return path.matches("/attachments(?:/\\d+/download)?") || path.matches("/society/complaints(?:/\\d+)?") || path.matches("/society/staff(?:/\\d+)?") || path.matches("/society/vendors(?:/\\d+)?") || path.matches("/society/agencies(?:/\\d+)?(?:/workers(?:/\\d+)?)?") || path.matches("/society/shifts(?:/\\d+)?") || path.matches("/society/roster-assignments(?:/\\d+)?") || path.matches("/society/attendance(?:/shortages|/reports/(?:daily|monthly))?") || path.equals("/society/attendance-workflow/status") || path.matches("/society/work-orders(?:/\\d+)?");
+            return path.matches("/attachments(?:/\\d+/download)?") || path.equals("/expenses/categories") || path.matches("/society/notifications(?:/unread-count)?") || path.matches("/society/complaints(?:/\\d+)?") || path.matches("/society/staff(?:/\\d+)?") || path.matches("/society/vendors(?:/\\d+)?") || path.matches("/society/agencies(?:/\\d+)?(?:/workers(?:/\\d+)?)?") || path.matches("/society/shifts(?:/\\d+)?") || path.matches("/society/roster-assignments(?:/\\d+)?") || path.matches("/society/attendance(?:/shortages|/reports/(?:daily|monthly))?") || path.equals("/society/attendance-workflow/status") || path.matches("/society/work-orders(?:/\\d+(?:/expense-requests)?)?");
         }
-        return "PUT".equals(method) && path.matches("/society/vendors/\\d+") || "POST".equals(method) && (path.equals("/attachments") || path.equals("/society/complaints") || path.matches("/society/complaints/\\d+/(?:updates|work-order)") || path.equals("/society/attendance/bulk") || path.equals("/society/attendance-workflow/submit") || path.matches("/society/attendance-workflow/\\d+/corrections") || path.equals("/society/work-orders") || path.matches("/society/work-orders/\\d+/(?:assignments|updates|complete)")) || "DELETE".equals(method) && path.matches("/attachments/\\d+");
+        return "PUT".equals(method) && path.matches("/society/vendors/\\d+") || "POST".equals(method) && (path.equals("/attachments") || path.equals("/society/notifications/read-all") || path.matches("/society/notifications/\\d+/read") || path.equals("/society/complaints") || path.matches("/society/complaints/\\d+/(?:updates|work-order)") || path.equals("/society/attendance/bulk") || path.equals("/society/attendance-workflow/submit") || path.matches("/society/attendance-workflow/\\d+/corrections") || path.equals("/society/work-orders") || path.matches("/society/work-orders/\\d+/(?:assignments|updates|complete|expense-requests)")) || "DELETE".equals(method) && path.matches("/attachments/\\d+");
     }
 
     private void deny(HttpServletResponse response, String message) throws IOException {

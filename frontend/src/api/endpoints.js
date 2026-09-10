@@ -340,7 +340,9 @@ export const societyWorkOrderAPI = {
   update: (id, data) => axiosInstance.post(`/society/work-orders/${id}/updates`, data),
   complete: (id, data) => axiosInstance.post(`/society/work-orders/${id}/complete`, data),
   verify: (id, data) => axiosInstance.post(`/society/work-orders/${id}/verify`, data),
-  reopen: (id, data) => axiosInstance.post(`/society/work-orders/${id}/reopen`, data)
+  reopen: (id, data) => axiosInstance.post(`/society/work-orders/${id}/reopen`, data),
+  getExpenseRequests: (id) => axiosInstance.get(`/society/work-orders/${id}/expense-requests`),
+  requestExpense: (id, data) => axiosInstance.post(`/society/work-orders/${id}/expense-requests`, data)
 }
 export const societyComplaintAPI = {
   list: () => axiosInstance.get('/society/complaints'),
@@ -348,6 +350,12 @@ export const societyComplaintAPI = {
   create: (data) => axiosInstance.post('/society/complaints', data),
   update: (id, data) => axiosInstance.post(`/society/complaints/${id}/updates`, data),
   convert: (id, data) => axiosInstance.post(`/society/complaints/${id}/work-order`, data)
+}
+export const societyNotificationAPI = {
+  list: () => axiosInstance.get('/society/notifications'),
+  unreadCount: () => axiosInstance.get('/society/notifications/unread-count'),
+  read: (id) => axiosInstance.post(`/society/notifications/${id}/read`),
+  readAll: () => axiosInstance.post('/society/notifications/read-all')
 }
 
 export const festivalCollectionAPI = {
