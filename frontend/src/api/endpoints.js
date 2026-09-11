@@ -395,7 +395,11 @@ export const festivalCollectionAPI = {
   generateDemand: (data) => axiosInstance.post('/society/festival-collections/generate-demand', data),
   updateDemand: (collectionId, data) => axiosInstance.put(`/society/festival-collections/${collectionId}/demand`, data),
   addPayment: (collectionId, data) => axiosInstance.post(`/society/festival-collections/${collectionId}/payments`, data),
-  getReceipts: (collectionId) => axiosInstance.get(`/society/festival-collections/${collectionId}/receipts`)
+  getReceipts: (collectionId) => axiosInstance.get(`/society/festival-collections/${collectionId}/receipts`),
+  getOtherCollections: (festivalEventId) => axiosInstance.get(`/society/festivals/${festivalEventId}/other-collections`),
+  addOtherCollection: (festivalEventId, data) => axiosInstance.post(`/society/festivals/${festivalEventId}/other-collections`, data),
+  updateOtherCollection: (festivalEventId, id, data) => axiosInstance.put(`/society/festivals/${festivalEventId}/other-collections/${id}`, data),
+  deleteOtherCollection: (festivalEventId, id) => axiosInstance.delete(`/society/festivals/${festivalEventId}/other-collections/${id}`)
 }
 export const attachmentAPI = {
   getAttachments: (referenceType, referenceId) => axiosInstance.get('/attachments', { params: { referenceType, referenceId } }),

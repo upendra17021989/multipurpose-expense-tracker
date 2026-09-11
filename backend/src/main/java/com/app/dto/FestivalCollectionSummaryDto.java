@@ -15,6 +15,8 @@ public class FestivalCollectionSummaryDto {
     private Long festivalEventId;
     private BigDecimal totalExpected;
     private BigDecimal totalCollected;
+    private BigDecimal flatCollected;
+    private BigDecimal otherCollected;
     private BigDecimal totalPending;
     private BigDecimal totalExcess;
     private BigDecimal totalRefunded;

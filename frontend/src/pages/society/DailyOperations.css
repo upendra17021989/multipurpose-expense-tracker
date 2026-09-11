@@ -1,0 +1,322 @@
+.daily-operations-tabs {
+  margin-bottom: 0;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.daily-operations-tabs button {
+  flex: 0 0 auto;
+}
+
+.daily-checklist-panel {
+  min-height: 0;
+}
+
+.daily-checklist-heading {
+  align-items: flex-start;
+  margin: 0 0 1rem;
+}
+
+.daily-checklist-heading h2,
+.daily-checklist-heading p {
+  margin-top: 0;
+}
+
+.daily-checklist-heading p {
+  margin-bottom: 0;
+}
+
+.daily-checklist-list {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.daily-checklist-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 1rem;
+  align-items: center;
+  min-width: 0;
+  padding: 0.85rem 0.9rem;
+  border: 1px solid #d9e2ec;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.daily-checklist-item.is-complete {
+  border-color: #99f6e4;
+  background: #f0fdfa;
+}
+
+.daily-checklist-content {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+  min-width: 0;
+  cursor: pointer;
+}
+
+.daily-checklist-content input {
+  flex: 0 0 auto;
+  width: 1rem;
+  height: 1rem;
+  margin: 0.2rem 0 0;
+}
+
+.daily-checklist-copy {
+  display: grid;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.daily-checklist-copy strong,
+.daily-checklist-copy span,
+.daily-checklist-copy small {
+  overflow-wrap: anywhere;
+}
+
+.daily-checklist-completion {
+  color: #0f766e;
+  font-weight: 700;
+}
+
+.daily-checklist-remove {
+  align-self: center;
+}
+
+.daily-report-workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1rem;
+  align-items: start;
+  margin-top: 1rem;
+}
+
+.daily-report-editor,
+.daily-report-history {
+  min-width: 0;
+  min-height: 0;
+}
+
+.daily-report-section-header {
+  margin-bottom: 1rem;
+}
+
+.daily-report-section-header h2,
+.daily-report-section-header p {
+  margin-top: 0;
+}
+
+.daily-report-section-header h2 {
+  margin-bottom: 0.35rem;
+}
+
+.daily-report-section-header p {
+  max-width: 72ch;
+  margin-bottom: 0;
+}
+
+.daily-report-fields {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.daily-report-fields label {
+  display: grid;
+  gap: 0.4rem;
+  min-width: 0;
+  font-weight: 700;
+}
+
+.daily-report-fields textarea {
+  width: 100%;
+  min-height: 7.5rem;
+  resize: vertical;
+}
+
+.daily-report-actions {
+  margin-top: 1rem;
+}
+
+.daily-report-history-list {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.daily-report-history-card {
+  min-width: 0;
+  padding: 1rem;
+  border: 1px solid #d9e2ec;
+  border-radius: 10px;
+  background: #fff;
+}
+
+.daily-report-history-card > header {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.daily-report-history-card > header > div {
+  display: grid;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.daily-report-history-card > header small {
+  color: #64748b;
+}
+
+.daily-report-narrative {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin: 0.9rem 0;
+}
+
+.daily-report-narrative section {
+  min-width: 0;
+  padding: 0.8rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.daily-report-narrative h3 {
+  margin: 0 0 0.4rem;
+  color: #0f766e;
+  font-size: 0.78rem;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.daily-report-narrative p {
+  margin: 0;
+  color: #334155;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.daily-report-submitter {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.35rem 1rem;
+  margin: 0 0 0.9rem;
+  color: #64748b;
+  font-size: 0.78rem;
+}
+
+.daily-report-snapshot {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(115px, 1fr));
+  gap: 0.5rem;
+  margin: 0;
+}
+
+.daily-report-snapshot > div {
+  min-width: 0;
+  padding: 0.55rem 0.65rem;
+  border-radius: 7px;
+  background: #f8fafc;
+}
+
+.daily-report-snapshot dt {
+  color: #64748b;
+  font-size: 0.72rem;
+  overflow-wrap: anywhere;
+}
+
+.daily-report-snapshot dd {
+  margin: 0.2rem 0 0;
+  color: #18212f;
+  font-weight: 800;
+  overflow-wrap: anywhere;
+}
+
+.daily-report-admin-comment {
+  display: grid;
+  gap: 0.25rem;
+  margin: 0.85rem 0 0;
+  padding: 0.75rem;
+  border-left: 3px solid #0f766e;
+  background: #f0fdfa;
+  overflow-wrap: anywhere;
+}
+
+.daily-report-history-card footer {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 0.85rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid #e2e8f0;
+}
+
+@media (min-width: 1050px) {
+  .daily-report-workspace {
+    grid-template-columns: minmax(360px, 0.85fr) minmax(440px, 1.15fr);
+  }
+
+  .daily-report-editor {
+    position: sticky;
+    top: 1rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .daily-operations-tabs {
+    flex-wrap: nowrap;
+    margin-inline: -0.85rem;
+    padding-inline: 0.85rem;
+  }
+
+  .daily-checklist-heading {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .daily-checklist-heading > button {
+    width: 100%;
+  }
+
+  .daily-checklist-item {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.75rem;
+  }
+
+  .daily-checklist-remove {
+    width: 100%;
+  }
+
+  .daily-report-editor,
+  .daily-report-history,
+  .daily-report-history-card {
+    padding: 0.85rem;
+  }
+
+  .daily-report-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .daily-report-actions button,
+  .daily-report-history-card footer button {
+    width: 100%;
+  }
+
+  .daily-report-snapshot {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .daily-report-narrative {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 380px) {
+  .daily-report-snapshot {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

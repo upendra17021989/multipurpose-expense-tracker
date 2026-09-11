@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useParams, useSearchParams } from 'react-router-dom'
+import { toast } from 'react-toastify'
 import {
   expenseAPI,
   festivalCollectionAPI,
@@ -44,13 +45,24 @@ const expenseColumnOptions = [
   ['amount', 'Amount']
 ]
 
+const blankOtherContribution = () => ({
+  sourceType: 'DONATION', contributionKind: 'MONETARY', contributorName: '',
+  contactDetails: '', itemName: '', quantity: '', amount: '',
+  paymentDate: new Date().toISOString().slice(0, 10), paymentMode: 'CASH',
+  transactionReference: '', collectedBy: '', description: '',
+  specialMention: false, anonymous: false
+})
+
 export const FestivalReport = () => {
   const { festivalEventId } = useParams()
+  const [searchParams] = useSearchParams()
   const account = useAuthStore((state) => state.currentAccount)
   const [data, setData] = useState(null)
   const [error, setError] = useState('')
   const [revision, setRevision] = useState(0)
-  const [view, setView] = useState('collections')
+  const [otherForm, setOtherForm] = useState(blankOtherContribution)
+  const [editingOtherId, setEditingOtherId] = useState(null)
+  const [view, setView] = useState(searchParams.get('view') === 'other' ? 'other' : 'collections')
   const [search, setSearch] = useState('')
   const [selectedBlock, setSelectedBlock] = useState('')
   const [blockPdfMode, setBlockPdfMode] = useState(false)
@@ -78,13 +90,14 @@ export const FestivalReport = () => {
     setExpenseStatuses(null)
     const loadReport = async () => {
       try {
-        const [festival, firstCollections, expenses] = await Promise.all([
+        const [festival, firstCollections, expenses, otherCollections] = await Promise.all([
           festivalEventAPI.getFestival(festivalEventId),
           festivalCollectionAPI.getCollections(festivalEventId, {
             page: 0,
             size: 100
           }),
-          expenseAPI.getExpenses()
+          expenseAPI.getExpenses(),
+          festivalCollectionAPI.getOtherCollections(festivalEventId)
         ])
         const firstPage = firstCollections.data || {}
         const remainingPages = Array.from(
@@ -107,6 +120,7 @@ export const FestivalReport = () => {
           setData({
             festival: festival.data,
             collections: allCollections,
+            otherCollections: otherCollections.data || [],
             expenses: (expenses.data || []).filter(
               (row) =>
                 String(row.festivalEventId) === String(festivalEventId) &&
@@ -128,6 +142,14 @@ export const FestivalReport = () => {
     rows.reduce((total, row) => total + Number(row[key] || 0), 0)
   const collections = data?.collections || []
   const expenses = data?.expenses || []
+  const otherCollections = data?.otherCollections || []
+  const monetaryContributions = otherCollections.filter(row => (row.contributionKind || 'MONETARY') === 'MONETARY')
+  const otherCollected = sum(monetaryContributions, 'amount')
+  const canManageOther = ['ADMIN', 'SUPERVISOR', 'TREASURER'].includes(account?.role)
+  const resetOtherForm = () => { setEditingOtherId(null); setOtherForm(blankOtherContribution()) }
+  const saveOtherCollection = async (event) => { event.preventDefault(); try { const payload={...otherForm,amount:otherForm.amount?Number(otherForm.amount):null,paymentMode:otherForm.contributionKind==='MONETARY'?otherForm.paymentMode:null,transactionReference:otherForm.contributionKind==='MONETARY'?otherForm.transactionReference:''}; if(editingOtherId) await festivalCollectionAPI.updateOtherCollection(festivalEventId,editingOtherId,payload); else await festivalCollectionAPI.addOtherCollection(festivalEventId,payload); toast.success(editingOtherId?'Contribution updated':'Contribution added'); resetOtherForm(); setRevision(value=>value+1) } catch(error){ toast.error(error.response?.data?.message||'Unable to save contribution') } }
+  const editOtherCollection = row => { setEditingOtherId(row.id); setOtherForm({ sourceType:row.sourceType,contributionKind:row.contributionKind||'MONETARY',contributorName:row.anonymous?'':row.contributorName||'',contactDetails:row.contactDetails||'',itemName:row.itemName||'',quantity:row.quantity||'',amount:row.amount??'',paymentDate:row.paymentDate,paymentMode:row.paymentMode||'CASH',transactionReference:row.transactionReference||'',collectedBy:row.collectedBy||'',description:row.description||'',specialMention:Boolean(row.specialMention),anonymous:Boolean(row.anonymous) }); setView('other') }
+  const deleteOtherCollection = async id => { if(!window.confirm('Delete this other collection?'))return; try{await festivalCollectionAPI.deleteOtherCollection(festivalEventId,id);toast.success('Other collection deleted');setRevision(value=>value+1)}catch(error){toast.error(error.response?.data?.message||'Unable to delete other collection')} }
   const availableIncomeStatuses = [
     ...new Set(collections.map((row) => row.paymentStatus).filter(Boolean))
   ].sort()
@@ -155,7 +177,7 @@ export const FestivalReport = () => {
         : [],
     [expenses, includeExpenses, expenseStatuses]
   )
-  const collected = sum(selectedCollections, 'collectedAmount')
+  const collected = sum(selectedCollections, 'collectedAmount') + (includeIncome ? otherCollected : 0)
   const refunded = sum(selectedCollections, 'refundedAmount')
   const paid = sum(
     selectedExpenses.filter((row) => row.status === 'PAID'),
@@ -589,6 +611,15 @@ export const FestivalReport = () => {
                 Block-wise report ({blockCollections.length})
               </button>
               <button
+                aria-pressed={view === 'other'}
+                onClick={() => {
+                  setView('other')
+                  setSearch('')
+                }}
+              >
+                Other collections ({otherCollections.length})
+              </button>
+              <button
                 aria-pressed={view === 'expenses'}
                 onClick={() => {
                   setView('expenses')
@@ -713,6 +744,28 @@ export const FestivalReport = () => {
                   No collections match your search.
                 </p>
               )}
+          </section>
+          <section className={`festival-report-detail festival-income-detail ${view !== 'other' ? 'report-hidden' : ''} ${!includeIncome ? 'report-excluded' : ''}`}>
+            <div className="section-heading-row"><div><h3>Contributions & special mentions</h3><p>Record money, donated items, sponsored materials, and volunteered services separately from flat collections.</p></div><strong>Cash received: {formatCurrency(otherCollected)}</strong></div>
+            {canManageOther && <form className="form-panel festival-contribution-form" onSubmit={saveOtherCollection}>
+              <h3>{editingOtherId ? 'Edit contribution' : 'Add contribution'}</h3>
+              <div className="form-grid two">
+                <label>Contribution kind<select value={otherForm.contributionKind} onChange={e=>setOtherForm({...otherForm,contributionKind:e.target.value})}><option value="MONETARY">Money</option><option value="IN_KIND">Item / material</option><option value="SERVICE">Volunteered service</option></select></label>
+                <label>Source type<select value={otherForm.sourceType} onChange={e=>setOtherForm({...otherForm,sourceType:e.target.value})}>{['DONATION','SPONSORSHIP','STALL_FEE','ADVERTISEMENT','VENDOR_CONTRIBUTION','COMMITTEE_CONTRIBUTION','INTEREST','OTHER'].map(value=><option key={value} value={value}>{value.replaceAll('_',' ')}</option>)}</select></label>
+                <label>Contributor / source name<input disabled={otherForm.anonymous} value={otherForm.contributorName} onChange={e=>setOtherForm({...otherForm,contributorName:e.target.value})} required={!otherForm.anonymous}/></label>
+                {otherForm.contributionKind!=='MONETARY'&&<><label>Item / service name<input value={otherForm.itemName} onChange={e=>setOtherForm({...otherForm,itemName:e.target.value})} placeholder="e.g. Ganesh idol, flowers, Day 1 prasad" required/></label><label>Quantity / period<input value={otherForm.quantity} onChange={e=>setOtherForm({...otherForm,quantity:e.target.value})} placeholder="e.g. 25 garlands or Day 1"/></label></>}
+                <label>{otherForm.contributionKind==='MONETARY'?'Amount':'Estimated value (optional)'}<input type="number" min="0.01" step="0.01" value={otherForm.amount} onChange={e=>setOtherForm({...otherForm,amount:e.target.value})} required={otherForm.contributionKind==='MONETARY'}/></label>
+                <label>Contribution date<input type="date" value={otherForm.paymentDate} onChange={e=>setOtherForm({...otherForm,paymentDate:e.target.value})} required/></label>
+                {otherForm.contributionKind==='MONETARY'&&<><label>Payment mode<select value={otherForm.paymentMode} onChange={e=>setOtherForm({...otherForm,paymentMode:e.target.value})}>{['CASH','BANK','UPI','CARD','NEFT','CHEQUE'].map(value=><option key={value}>{value}</option>)}</select></label><label>Transaction reference<input value={otherForm.transactionReference} onChange={e=>setOtherForm({...otherForm,transactionReference:e.target.value})}/></label></>}
+                <label>Received / recorded by<input value={otherForm.collectedBy} onChange={e=>setOtherForm({...otherForm,collectedBy:e.target.value})} required/></label>
+                <label>Contact details<input value={otherForm.contactDetails} onChange={e=>setOtherForm({...otherForm,contactDetails:e.target.value})}/></label>
+                <label className="document-wide">Description / acknowledgement<textarea value={otherForm.description} onChange={e=>setOtherForm({...otherForm,description:e.target.value})} placeholder="Details to include in the festival report or donor acknowledgement"/></label>
+                <label><input type="checkbox" checked={otherForm.specialMention} onChange={e=>setOtherForm({...otherForm,specialMention:e.target.checked})}/> Show as special contribution mention</label>
+                <label><input type="checkbox" checked={otherForm.anonymous} onChange={e=>setOtherForm({...otherForm,anonymous:e.target.checked,contributorName:e.target.checked?'':otherForm.contributorName})}/> Anonymous contribution</label>
+              </div>
+              <div className="form-actions">{editingOtherId&&<button type="button" onClick={resetOtherForm}>Cancel edit</button>}<button className="primary">{editingOtherId?'Update contribution':'Add contribution'}</button></div>
+            </form>}
+            <div className="table-wrap"><table><thead><tr><th>Date</th><th>Kind / source</th><th>Contributor</th><th>Contribution / special mention</th><th>Payment</th><th>Recorded by</th><th className="numeric">Amount / value</th>{canManageOther&&<th>Actions</th>}</tr></thead><tbody>{otherCollections.map(row=><tr key={row.id}><td>{formatDate(row.paymentDate)}</td><td><strong>{(row.contributionKind||'MONETARY').replaceAll('_',' ')}</strong><br/><small>{row.sourceType.replaceAll('_',' ')}</small></td><td><strong>{row.contributorName}</strong>{row.contactDetails&&<><br/><small>{row.contactDetails}</small></>}</td><td>{row.specialMention&&<span className="status-pill approved">Special mention</span>} {row.itemName&&<><strong>{row.itemName}</strong>{row.quantity&&<> · {row.quantity}</>}<br/></>}{row.description||(!row.itemName?'-':'')}</td><td>{row.paymentMode||'Not applicable'}{row.transactionReference&&<><br/><small>{row.transactionReference}</small></>}</td><td>{row.collectedBy}</td><td className="numeric">{row.amount!=null?formatCurrency(row.amount):'-'}{row.amount!=null&&(row.contributionKind||'MONETARY')!=='MONETARY'&&<><br/><small>Estimated value</small></>}</td>{canManageOther&&<td className="table-actions"><button onClick={()=>editOtherCollection(row)}>Edit</button><button className="danger" onClick={()=>deleteOtherCollection(row.id)}>Delete</button></td>}</tr>)}{!otherCollections.length&&<tr><td colSpan={canManageOther?8:7} className="empty-state">No contributions recorded for this festival.</td></tr>}</tbody></table></div>
           </section>
           <section
             className={`festival-report-detail festival-block-report festival-income-detail ${view !== 'blocks' ? 'report-hidden' : ''} ${!includeIncome ? 'report-excluded' : ''}`}
@@ -1003,7 +1056,7 @@ export const FestivalReport = () => {
               )}
           </section>
           <section
-            className={`festival-report-breakdown ${view !== 'expenses' ? 'report-hidden' : ''} ${!includeExpenses ? 'report-excluded' : ''}`}
+            className={`festival-report-breakdown festival-expense-category-breakdown ${view !== 'expenses' ? 'report-hidden' : ''} ${!includeExpenses ? 'report-excluded' : ''}`}
           >
             <h3>Recorded expenses by category</h3>
             {categories.map(([name, amount]) => (

@@ -180,6 +180,8 @@
   .festival-report-actions,
   .festival-report-customizer,
   .festival-report-controls,
+  .festival-contribution-form,
+  .festival-expense-category-breakdown,
   .festival-report-no-results {
     display: none !important;
   }

@@ -18,6 +18,7 @@ import com.app.repository.AccountRepository;
 import com.app.repository.AccountUserMembershipRepository;
 import com.app.repository.FestivalCollectionReceiptRepository;
 import com.app.repository.FestivalCollectionRepository;
+import com.app.repository.FestivalOtherCollectionRepository;
 import com.app.repository.FestivalEventRepository;
 import com.app.repository.FlatRepository;
 import lombok.extern.slf4j.Slf4j;
@@ -37,6 +38,7 @@ public class FestivalCollectionService {
 
     private final FestivalCollectionRepository collectionRepository;
     private final FestivalCollectionReceiptRepository receiptRepository;
+    private final FestivalOtherCollectionRepository otherCollectionRepository;
     private final FestivalEventRepository festivalEventRepository;
     private final FlatRepository flatRepository;
     private final AccountRepository accountRepository;
@@ -45,12 +47,14 @@ public class FestivalCollectionService {
     public FestivalCollectionService(
             FestivalCollectionRepository collectionRepository,
             FestivalCollectionReceiptRepository receiptRepository,
+            FestivalOtherCollectionRepository otherCollectionRepository,
             FestivalEventRepository festivalEventRepository,
             FlatRepository flatRepository,
             AccountRepository accountRepository,
             AccountUserMembershipRepository membershipRepository) {
         this.collectionRepository = collectionRepository;
         this.receiptRepository = receiptRepository;
+        this.otherCollectionRepository = otherCollectionRepository;
         this.festivalEventRepository = festivalEventRepository;
         this.flatRepository = flatRepository;
         this.accountRepository = accountRepository;
@@ -195,7 +199,9 @@ public class FestivalCollectionService {
         return FestivalCollectionSummaryDto.builder()
                 .festivalEventId(festivalEventId)
                 .totalExpected(expected)
-                .totalCollected(collected)
+                .flatCollected(collected)
+                .otherCollected(otherTotal(accountId, festivalEventId))
+                .totalCollected(collected.add(otherTotal(accountId, festivalEventId)))
                 .totalPending(pending)
                 .totalExcess(excess)
                 .totalRefunded(refunded)
@@ -252,8 +258,15 @@ public class FestivalCollectionService {
                 .map(FestivalCollection::getCollectedAmount)
                 .map(this::nonNull)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
-        festivalEvent.setCollectedAmount(total);
+        festivalEvent.setCollectedAmount(total.add(otherTotal(festivalEvent.getAccount().getId(), festivalEvent.getId())));
         festivalEventRepository.save(festivalEvent);
+    }
+
+    private BigDecimal otherTotal(Long accountId, Long festivalEventId) {
+        return otherCollectionRepository.findByAccountIdAndFestivalEventIdOrderByPaymentDateDescCreatedAtDesc(accountId, festivalEventId)
+                .stream().filter(item -> "MONETARY".equals(item.getContributionKind()))
+                .map(com.app.entity.FestivalOtherCollection::getAmount).filter(java.util.Objects::nonNull)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
     private String buildReceiptNumber(FestivalCollection collection) {
