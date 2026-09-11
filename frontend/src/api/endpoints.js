@@ -322,7 +322,10 @@ export const societyAttendanceAPI = {
   getShortages: (date) => axiosInstance.get('/society/attendance/shortages', { params: { date } }),
   getDailyReport: (date) => axiosInstance.get('/society/attendance/reports/daily', { params: { date } }),
   getMonthlyReport: (year, month) => axiosInstance.get('/society/attendance/reports/monthly', { params: { year, month } }),
-  saveBulk: (attendanceDate, entries) => axiosInstance.post('/society/attendance/bulk', { attendanceDate, entries })
+  saveBulk: (attendanceDate, entries) => axiosInstance.post('/society/attendance/bulk', { attendanceDate, entries }),
+  importEvidence: (method, file) => { const data=new FormData();data.append('file',file);return axiosInstance.post('/society/attendance/imports',data,{params:{method},headers:{'Content-Type':'multipart/form-data'}}) },
+  getSelf: () => axiosInstance.get('/society/attendance/self'),
+  recordSelf: (action) => axiosInstance.post('/society/attendance/self', { action })
 }
 export const societyAttendanceWorkflowAPI = {
   status: (date) => axiosInstance.get('/society/attendance-workflow/status', { params: { date } }),
@@ -376,6 +379,12 @@ export const societyDailyOperationsAPI = {
   saveReport: (data) => axiosInstance.post('/society/daily-operations/reports/draft', data),
   submitReport: (data) => axiosInstance.post('/society/daily-operations/reports/submit', data),
   acknowledgeReport: (id, comment) => axiosInstance.post(`/society/daily-operations/reports/${id}/acknowledge`, { comment })
+}
+export const societyOperationsReportAPI = {
+  agencyCompliance: (year, month) => axiosInstance.get('/society/operations-reports/agency-compliance', { params: { year, month } }),
+  supervisorPerformance: (from, to) => axiosInstance.get('/society/operations-reports/supervisor-performance', { params: { from, to } }),
+  exportAgency: (year, month, format) => axiosInstance.get('/society/operations-reports/agency-compliance/export', { params: { year, month, format }, responseType: 'blob' }),
+  exportSupervisor: (from, to, format) => axiosInstance.get('/society/operations-reports/supervisor-performance/export', { params: { from, to, format }, responseType: 'blob' })
 }
 
 export const festivalCollectionAPI = {

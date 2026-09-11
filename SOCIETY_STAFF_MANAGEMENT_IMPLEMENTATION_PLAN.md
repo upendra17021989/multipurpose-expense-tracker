@@ -753,13 +753,13 @@ Status legend: `[x]` complete, `[ ]` pending. A phase is checked only when every
 
 **Outcome:** Admins can review a complete daily operational picture without relying on chat messages or paper registers.
 
-### [ ] Phase 5: Reporting and automation (pending)
+### [x] Phase 5: Reporting and automation (complete)
 
-- [ ] Agency compliance and supervisor performance reports.
-- [ ] CSV/PDF exports.
-- [ ] Recurring schedules and escalations.
-- [ ] Optional QR/biometric import adapters.
-- [ ] Optional limited worker self-service.
+- [x] Agency compliance and supervisor performance reports.
+- [x] CSV/PDF exports.
+- [x] Recurring schedules and escalations.
+- [x] Optional QR/biometric import adapters.
+- [x] Optional limited worker self-service.
 
 ## 21. Testing Strategy
 

@@ -1,0 +1,1 @@
+ALTER TABLE society_attendance ADD COLUMN recording_method VARCHAR(30) NOT NULL DEFAULT 'SUPERVISOR_ENTRY';

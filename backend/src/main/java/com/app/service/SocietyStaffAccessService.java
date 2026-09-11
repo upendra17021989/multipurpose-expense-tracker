@@ -63,7 +63,7 @@ public class SocietyStaffAccessService {
                         .account(account).staff(staff).user(user).grantedBy(actor).build());
         access.setUser(user);
         access.setGrantedBy(actor);
-        access.setRole(UserRole.STAFF_SUPERVISOR);
+        access.setRole(resolveAccessRole(request.getAccessRole()));
         access.setStatus(StaffAccessStatus.ACTIVE);
         access.setActivatedAt(now);
         access.setSuspendedAt(null);
@@ -210,5 +210,10 @@ public class SocietyStaffAccessService {
 
     private String clean(String value) {
         return value == null || value.isBlank() ? null : value.trim();
+    }
+    private UserRole resolveAccessRole(String value) {
+        if (value == null || value.isBlank() || "STAFF_SUPERVISOR".equalsIgnoreCase(value)) return UserRole.STAFF_SUPERVISOR;
+        if ("STAFF".equalsIgnoreCase(value)) return UserRole.STAFF;
+        throw new ValidationException("Access role must be STAFF_SUPERVISOR or STAFF");
     }
 }

@@ -6,4 +6,5 @@ import lombok.Data;
 public class GrantSocietyStaffAccessRequest {
     private String mobile;
     private String email;
+    private String accessRole;
 }

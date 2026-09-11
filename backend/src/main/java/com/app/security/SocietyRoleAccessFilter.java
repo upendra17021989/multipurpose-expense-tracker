@@ -70,6 +70,14 @@ public class SocietyRoleAccessFilter extends OncePerRequestFilter {
             chain.doFilter(request, response);
             return;
         }
+        if (role == UserRole.STAFF) {
+            if (path.equals("/society/attendance/self") && (isReadRequest(request.getMethod()) || "POST".equals(request.getMethod()))) {
+                chain.doFilter(request, response);
+            } else {
+                deny(response, "Worker self-service access is limited to the worker's own attendance");
+            }
+            return;
+        }
         if (!isReadRequest(request.getMethod()) && path.matches("/society/daily-operations/reports/\\d+/acknowledge")
                 && role != UserRole.ADMIN) {
             deny(response, "Only a society admin can acknowledge a daily report");

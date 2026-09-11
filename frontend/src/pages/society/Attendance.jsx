@@ -28,6 +28,7 @@ export const Attendance = () => {
     [corrections, setCorrections] = useState([]),
     [loading, setLoading] = useState(true),
     [saving, setSaving] = useState(false),
+    [importMethod, setImportMethod] = useState('QR'),
     [agency, setAgency] = useState('all')
   const load = () => {
     setLoading(true)
@@ -130,6 +131,7 @@ export const Attendance = () => {
       [rows]
     ),
     draft = sheet.status === 'DRAFT'
+  const importEvidence = async (file) => { if (!file) return; try { const { data } = await societyAttendanceAPI.importEvidence(importMethod,file); toast.success(`${data.imported} attendance rows imported`); load() } catch(e){ toast.error(e.response?.data?.message || 'Unable to import attendance') } }
   const agencyKey = (row) =>
     row.agencyId == null ? 'direct' : String(row.agencyId)
   const agencyTabs = Array.from(
@@ -245,6 +247,7 @@ export const Attendance = () => {
               onChange={(e) => setDate(e.target.value)}
             />
           </label>
+          {isAdmin && <label>Evidence import<select value={importMethod} onChange={e=>setImportMethod(e.target.value)}><option value="QR">QR</option><option value="BIOMETRIC_IMPORT">Biometric</option></select><input type="file" accept=".csv,text/csv" onChange={e=>importEvidence(e.target.files?.[0])}/></label>}
         </section>
         <div
           className="attendance-agency-tabs"
