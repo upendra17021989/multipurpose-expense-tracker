@@ -8,5 +8,6 @@ public enum PaymentMode {
     NEFT,
     CHEQUE,
     CREDIT,
-    MIXED
+    MIXED,
+    UNKNOWN
 }

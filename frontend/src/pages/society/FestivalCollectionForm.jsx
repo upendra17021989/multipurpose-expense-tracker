@@ -109,6 +109,7 @@ export const FestivalCollectionForm = ({ collectionId: selectedCollectionId, onC
               <option value="BANK">Bank</option>
               <option value="NEFT">NEFT</option>
               <option value="CHEQUE">Cheque</option>
+              <option value="UNKNOWN">Unknown</option>
             </select>
           </label>
           <label>
