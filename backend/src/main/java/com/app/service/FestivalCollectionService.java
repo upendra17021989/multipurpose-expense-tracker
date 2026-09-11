@@ -271,7 +271,15 @@ public class FestivalCollectionService {
 
     private String buildReceiptNumber(FestivalCollection collection) {
         long count = receiptRepository.findByFestivalCollectionId(collection.getId()).size() + 1L;
-        return "FEST-" + collection.getFestivalEvent().getId() + "-" + collection.getFlat().getFlatNumber() + "-" + count;
+        Flat flat = collection.getFlat();
+        return "FEST-" + collection.getFestivalEvent().getId()
+                + "-" + receiptNumberPart(flat.getBlockName())
+                + "-" + receiptNumberPart(flat.getFlatNumber())
+                + "-" + count;
+    }
+
+    private String receiptNumberPart(String value) {
+        return value.trim().toUpperCase().replaceAll("[^A-Z0-9]+", "-").replaceAll("^-|-$", "");
     }
 
     private FestivalCollectionDto mapToDto(FestivalCollection collection) {
