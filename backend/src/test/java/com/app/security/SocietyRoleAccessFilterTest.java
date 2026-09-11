@@ -80,6 +80,7 @@ class SocietyRoleAccessFilterTest {
         check(UserRole.STAFF_SUPERVISOR, "POST", "/society/notifications/8/read", "/api", true);
         check(UserRole.STAFF_SUPERVISOR, "POST", "/society/notifications/read-all", "/api", true);
         check(UserRole.STAFF_SUPERVISOR, "GET", "/society/complaints/5", "/api", true);
+        check(UserRole.STAFF_SUPERVISOR, "GET", "/society/flats", "/api", true);
         check(UserRole.STAFF_SUPERVISOR, "POST", "/society/complaints/5/work-order", "/api", true);
         check(UserRole.STAFF_SUPERVISOR, "POST", "/society/work-orders/5/updates", "/api", true);
         check(UserRole.STAFF_SUPERVISOR, "POST", "/society/work-orders/5/verify", "/api", false);
