@@ -70,6 +70,16 @@ public class SocietyRoleAccessFilter extends OncePerRequestFilter {
             chain.doFilter(request, response);
             return;
         }
+        if (!isReadRequest(request.getMethod()) && path.matches("/society/daily-operations/reports/\\d+/acknowledge")
+                && role != UserRole.ADMIN) {
+            deny(response, "Only a society admin can acknowledge a daily report");
+            return;
+        }
+        if (!isReadRequest(request.getMethod()) && path.startsWith("/society/daily-operations/checklist/templates")
+                && role != UserRole.ADMIN) {
+            deny(response, "Only a society admin can configure daily checklist items");
+            return;
+        }
         if (!isReadRequest(request.getMethod())
                 && path.matches("/society/work-orders/\\d+/(?:verify|reopen)")
                 && role != UserRole.ADMIN) {
@@ -117,9 +127,9 @@ public class SocietyRoleAccessFilter extends OncePerRequestFilter {
 
     private boolean staffSupervisorPermitted(String method, String path) {
         if ("GET".equals(method) || "HEAD".equals(method)) {
-            return path.matches("/attachments(?:/\\d+/download)?") || path.equals("/expenses/categories") || path.matches("/society/notifications(?:/unread-count)?") || path.matches("/society/complaints(?:/\\d+)?") || path.matches("/society/staff(?:/\\d+)?") || path.matches("/society/vendors(?:/\\d+)?") || path.matches("/society/agencies(?:/\\d+)?(?:/workers(?:/\\d+)?)?") || path.matches("/society/shifts(?:/\\d+)?") || path.matches("/society/roster-assignments(?:/\\d+)?") || path.matches("/society/attendance(?:/shortages|/reports/(?:daily|monthly))?") || path.equals("/society/attendance-workflow/status") || path.matches("/society/work-orders(?:/\\d+(?:/expense-requests)?)?");
+            return path.startsWith("/society/daily-operations") || path.matches("/attachments(?:/\\d+/download)?") || path.equals("/expenses/categories") || path.matches("/society/notifications(?:/unread-count)?") || path.matches("/society/complaints(?:/\\d+)?") || path.matches("/society/staff(?:/\\d+)?") || path.matches("/society/vendors(?:/\\d+)?") || path.matches("/society/agencies(?:/\\d+)?(?:/workers(?:/\\d+)?)?") || path.matches("/society/shifts(?:/\\d+)?") || path.matches("/society/roster-assignments(?:/\\d+)?") || path.matches("/society/attendance(?:/shortages|/reports/(?:daily|monthly))?") || path.equals("/society/attendance-workflow/status") || path.matches("/society/work-orders(?:/\\d+(?:/expense-requests)?)?");
         }
-        return "PUT".equals(method) && path.matches("/society/vendors/\\d+") || "POST".equals(method) && (path.equals("/attachments") || path.equals("/society/notifications/read-all") || path.matches("/society/notifications/\\d+/read") || path.equals("/society/complaints") || path.matches("/society/complaints/\\d+/(?:updates|work-order)") || path.equals("/society/attendance/bulk") || path.equals("/society/attendance-workflow/submit") || path.matches("/society/attendance-workflow/\\d+/corrections") || path.equals("/society/work-orders") || path.matches("/society/work-orders/\\d+/(?:assignments|updates|complete|expense-requests)")) || "DELETE".equals(method) && path.matches("/attachments/\\d+");
+        return path.startsWith("/society/daily-operations") || "PUT".equals(method) && path.matches("/society/vendors/\\d+") || "POST".equals(method) && (path.equals("/attachments") || path.equals("/society/notifications/read-all") || path.matches("/society/notifications/\\d+/read") || path.equals("/society/complaints") || path.matches("/society/complaints/\\d+/(?:updates|work-order)") || path.equals("/society/attendance/bulk") || path.equals("/society/attendance-workflow/submit") || path.matches("/society/attendance-workflow/\\d+/corrections") || path.equals("/society/work-orders") || path.matches("/society/work-orders/\\d+/(?:assignments|updates|complete|expense-requests)")) || "DELETE".equals(method) && path.matches("/attachments/\\d+");
     }
 
     private void deny(HttpServletResponse response, String message) throws IOException {

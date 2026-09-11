@@ -357,6 +357,26 @@ export const societyNotificationAPI = {
   read: (id) => axiosInstance.post(`/society/notifications/${id}/read`),
   readAll: () => axiosInstance.post('/society/notifications/read-all')
 }
+export const societyDailyOperationsAPI = {
+  dashboard: (date) => axiosInstance.get('/society/daily-operations/dashboard', { params: { date } }),
+  checklist: (date) => axiosInstance.get('/society/daily-operations/checklist', { params: { date } }),
+  createChecklistTemplate: (data) => axiosInstance.post('/society/daily-operations/checklist/templates', data),
+  disableChecklistTemplate: (id) => axiosInstance.delete(`/society/daily-operations/checklist/templates/${id}`),
+  updateChecklist: (id, date, data) => axiosInstance.put(`/society/daily-operations/checklist/${id}`, data, { params: { date } }),
+  incidents: () => axiosInstance.get('/society/daily-operations/incidents'),
+  createIncident: (data) => axiosInstance.post('/society/daily-operations/incidents', data),
+  updateIncident: (id, data) => axiosInstance.put(`/society/daily-operations/incidents/${id}`, data),
+  inspections: () => axiosInstance.get('/society/daily-operations/inspections'),
+  createInspection: (data) => axiosInstance.post('/society/daily-operations/inspections', data),
+  completeInspection: (id, data) => axiosInstance.put(`/society/daily-operations/inspections/${id}/complete`, data),
+  handovers: () => axiosInstance.get('/society/daily-operations/handovers'),
+  createHandover: (data) => axiosInstance.post('/society/daily-operations/handovers', data),
+  acknowledgeHandover: (id) => axiosInstance.post(`/society/daily-operations/handovers/${id}/acknowledge`),
+  reports: () => axiosInstance.get('/society/daily-operations/reports'),
+  saveReport: (data) => axiosInstance.post('/society/daily-operations/reports/draft', data),
+  submitReport: (data) => axiosInstance.post('/society/daily-operations/reports/submit', data),
+  acknowledgeReport: (id, comment) => axiosInstance.post(`/society/daily-operations/reports/${id}/acknowledge`, { comment })
+}
 
 export const festivalCollectionAPI = {
   downloadReceipt: (collectionId, receiptId) => axiosInstance.get(`/society/festival-collections/${collectionId}/receipts/${receiptId}/pdf`, { responseType: 'blob' }),

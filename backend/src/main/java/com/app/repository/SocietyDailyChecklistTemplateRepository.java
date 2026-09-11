@@ -1,0 +1,2 @@
+package com.app.repository; import com.app.entity.SocietyDailyChecklistTemplate; import org.springframework.data.jpa.repository.JpaRepository; import java.util.*;
+public interface SocietyDailyChecklistTemplateRepository extends JpaRepository<SocietyDailyChecklistTemplate,Long>{List<SocietyDailyChecklistTemplate> findByAccountIdAndActiveTrueOrderBySortOrderAscTitleAsc(Long accountId);Optional<SocietyDailyChecklistTemplate> findByAccountIdAndId(Long accountId,Long id);}

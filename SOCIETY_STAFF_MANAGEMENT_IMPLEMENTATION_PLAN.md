@@ -743,13 +743,13 @@ Status legend: `[x]` complete, `[ ]` pending. A phase is checked only when every
 
 **Outcome:** Everyday society work has an owner, status, evidence, cost, and completion trail.
 
-### [ ] Phase 4: Daily operations (pending)
+### [x] Phase 4: Daily operations (complete)
 
-- [ ] Add configurable daily checklists.
-- [ ] Add incident and inspection registers.
-- [ ] Add shift handover.
-- [ ] Generate and submit daily reports.
-- [ ] Add admin dashboards and acknowledgements.
+- [x] Add configurable daily checklists.
+- [x] Add incident and inspection registers.
+- [x] Add shift handover.
+- [x] Generate and submit daily reports.
+- [x] Add admin dashboards and acknowledgements.
 
 **Outcome:** Admins can review a complete daily operational picture without relying on chat messages or paper registers.
 

@@ -1,0 +1,2 @@
+package com.app.repository; import com.app.entity.SocietyDailyReport; import org.springframework.data.jpa.repository.JpaRepository; import java.time.LocalDate; import java.util.*;
+public interface SocietyDailyReportRepository extends JpaRepository<SocietyDailyReport,Long>{List<SocietyDailyReport> findByAccountIdOrderByReportDateDescRevisionDesc(Long accountId);List<SocietyDailyReport> findByAccountIdAndReportDateOrderByRevisionDesc(Long accountId,LocalDate date);Optional<SocietyDailyReport> findByAccountIdAndId(Long accountId,Long id);}
