@@ -3096,6 +3096,8 @@ textarea:disabled {
 
 /* Single-line mobile attendance editor */
 .attendance-person-shift { display: block; margin-top: 3px; color: #64748b; font-weight: 400; line-height: 1.25; }
+.attendance-person-cell { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.attendance-row-toggle { display: none; }
 @media (max-width: 700px) {
   .attendance-table-wrap { overflow-x: auto; border: 1px solid #d9e2ec; background: #fff; }
   .attendance-table { display: table; width: 100%; min-width: 590px; table-layout: fixed; font-size: 11px; }
@@ -5869,4 +5871,35 @@ textarea:disabled {
   .attendance-page .attendance-table tr > :nth-child(4) { width: 135px; }
   .attendance-page .attendance-table tr > :nth-child(6), .attendance-page .attendance-table tr > :nth-child(7) { width: 105px; }
   .attendance-page .attendance-table input, .attendance-page .attendance-table select, .attendance-page .attendance-table button { min-height: 38px; padding: 5px; font-size: 13px; }
+}
+
+@media (max-width: 700px) {
+  .attendance-page .attendance-table-wrap { overflow: visible; border: 0; background: transparent; }
+  .attendance-page .attendance-table, .attendance-page .attendance-table tbody { display: block; width: 100%; min-width: 0; }
+  .attendance-page .attendance-table thead { display: none; }
+  .attendance-page .attendance-table tr { display: grid; grid-template-columns: minmax(0, 1fr) minmax(125px, .55fr); margin-bottom: 8px; overflow: hidden; border: 1px solid #d9e2ec; border-radius: 9px; background: #fff; }
+  .attendance-page .attendance-table td { display: none; width: auto; padding: 8px; border: 0; border-bottom: 1px solid #edf1f5; }
+  .attendance-page .attendance-table td:nth-child(1), .attendance-page .attendance-table td:nth-child(4) { display: table-cell; }
+  .attendance-page .attendance-table tr:not(.attendance-row-expanded) td:nth-child(1),
+  .attendance-page .attendance-table tr:not(.attendance-row-expanded) td:nth-child(4) { grid-column: auto; width: auto; }
+  .attendance-page .attendance-table td:nth-child(1) { width: auto; min-width: 0; background: #f6faf9; }
+  .attendance-page .attendance-table td:nth-child(4) { width: auto; min-width: 0; }
+  .attendance-page .attendance-table tr:not(.attendance-row-expanded) .attendance-person-cell { flex-wrap: nowrap; min-width: 0; }
+  .attendance-page .attendance-table tr:not(.attendance-row-expanded) .attendance-person-cell > span { min-width: 0; overflow: hidden; }
+  .attendance-page .attendance-table tr:not(.attendance-row-expanded) .attendance-person-cell strong { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .attendance-page .attendance-table tr:not(.attendance-row-expanded) .attendance-person-shift { display: none; }
+  .attendance-page .attendance-row-toggle { display: grid; width: 34px; height: 34px; min-height: 34px; flex: 0 0 34px; padding: 0; place-items: center; border-radius: 50%; color: #0f766e; background: #fff; font-size: 18px; }
+  .attendance-page .attendance-row-expanded { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .attendance-page .attendance-row-expanded td { display: grid; width: auto; gap: 4px; }
+  .attendance-page .attendance-row-expanded td:first-child { grid-column: 1 / -1; }
+  .attendance-page .attendance-row-expanded td:nth-child(4), .attendance-page .attendance-row-expanded td:nth-child(5), .attendance-page .attendance-row-expanded td:nth-child(8), .attendance-page .attendance-row-expanded td:nth-child(9) { grid-column: 1 / -1; }
+  .attendance-page .attendance-row-expanded td::before { color: #64748b; font-size: 10px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; }
+  .attendance-page .attendance-row-expanded td:nth-child(2)::before { content: 'Agency' !important; }
+  .attendance-page .attendance-row-expanded td:nth-child(3)::before { content: 'Shift / Post' !important; }
+  .attendance-page .attendance-row-expanded td:nth-child(4)::before { content: 'Status' !important; }
+  .attendance-page .attendance-row-expanded td:nth-child(5)::before { content: 'Replacement' !important; }
+  .attendance-page .attendance-row-expanded td:nth-child(6)::before { content: 'Check in' !important; }
+  .attendance-page .attendance-row-expanded td:nth-child(7)::before { content: 'Check out' !important; }
+  .attendance-page .attendance-row-expanded td:nth-child(8)::before { content: 'Notes' !important; }
+  .attendance-page .attendance-row-expanded td:nth-child(9)::before { content: 'Correction' !important; }
 }

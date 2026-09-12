@@ -38,7 +38,8 @@ export const Attendance = () => {
     [loading, setLoading] = useState(true),
     [saving, setSaving] = useState(false),
     [importMethod, setImportMethod] = useState('QR'),
-    [agency, setAgency] = useState('all')
+    [agency, setAgency] = useState('all'),
+    [expandedRows, setExpandedRows] = useState(() => new Set())
   const load = () => {
     setLoading(true)
     Promise.all([
@@ -314,8 +315,8 @@ export const Attendance = () => {
             </thead>
             <tbody>
               {visibleRows.map((x) => (
-                <tr key={x.rosterAssignmentId}>
-                  <td><strong>{x.assigneeName}</strong><small className="attendance-person-shift">{x.shiftName} · {x.postName} · {x.scheduledStart || '--:--'}–{x.scheduledEnd || '--:--'}</small></td>
+                <tr key={x.rosterAssignmentId} className={expandedRows.has(x.rosterAssignmentId) ? 'attendance-row-expanded' : ''}>
+                  <td><div className="attendance-person-cell"><span><strong>{x.assigneeName}</strong><small className="attendance-person-shift">{x.shiftName} · {x.postName} · {x.scheduledStart || '--:--'}–{x.scheduledEnd || '--:--'}</small></span><button type="button" className="attendance-row-toggle" aria-expanded={expandedRows.has(x.rosterAssignmentId)} aria-label={`${expandedRows.has(x.rosterAssignmentId) ? 'Collapse' : 'Expand'} ${x.assigneeName}`} onClick={() => setExpandedRows((current) => { const next = new Set(current); if (next.has(x.rosterAssignmentId)) next.delete(x.rosterAssignmentId); else next.add(x.rosterAssignmentId); return next })}>{expandedRows.has(x.rosterAssignmentId) ? '−' : '+'}</button></div></td>
                   <td>{x.agencyName || 'Direct'}</td>
                   <td>
                     {x.shiftName}
