@@ -269,7 +269,7 @@ public class FestivalCollectionService {
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
-    private String buildReceiptNumber(FestivalCollection collection) {
+    String buildReceiptNumber(FestivalCollection collection) {
         long count = receiptRepository.findByFestivalCollectionId(collection.getId()).size() + 1L;
         Flat flat = collection.getFlat();
         return "FEST-" + collection.getFestivalEvent().getId()

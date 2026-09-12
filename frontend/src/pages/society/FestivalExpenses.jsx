@@ -7,6 +7,7 @@ import { Shell, SummaryGrid } from '../DashboardRouter'
 import { formatCurrency, formatDate } from '../../utils/format'
 import { ExpenseModal } from './annual-finance/ExpenseModal'
 import './FestivalPaymentModal.css'
+import './FestivalExpenses.css'
 
 export const FestivalExpenses = () => {
   const { festivalEventId } = useParams()
@@ -47,6 +48,7 @@ export const FestivalExpenses = () => {
     catch { toast.error('Unable to delete estimate') }
   }
   return <Shell title={festival ? `${festival.festivalName} · Expenses & estimates` : 'Festival expenses & estimates'} eyebrow="Society module" actions={<Link className="button-link" to={`/society/festival-collections/${festivalEventId}`}>Collections</Link>}>
+    <div className={`festival-expenses-page festival-expenses-${tab}`}>
     <Link to="/society/festivals">← All festivals</Link>
     {loading ? <p role="status">Loading festival expenses…</p> : error ? <p role="alert">{error} <button onClick={refresh}>Retry</button></p> : <>
       <SummaryGrid items={[
@@ -61,6 +63,7 @@ export const FestivalExpenses = () => {
       {canWrite && modal?.type === 'actual' && <ExpenseModal open financialYear={`${festival.year}-${festival.year + 1}`} festival={festival} expense={modal.item} onClose={() => setModal(null)} onSaved={refresh} />}
       {canWrite && modal?.type === 'estimated' && <EstimateModal festivalId={festivalEventId} item={modal.item} onClose={() => setModal(null)} onSaved={refresh} />}
     </>}
+    </div>
   </Shell>
 }
 

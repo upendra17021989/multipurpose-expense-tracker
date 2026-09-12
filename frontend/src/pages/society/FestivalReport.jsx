@@ -62,7 +62,7 @@ export const FestivalReport = () => {
   const [revision, setRevision] = useState(0)
   const [otherForm, setOtherForm] = useState(blankOtherContribution)
   const [editingOtherId, setEditingOtherId] = useState(null)
-  const [view, setView] = useState(searchParams.get('view') === 'other' ? 'other' : 'collections')
+  const [view, setView] = useState(searchParams.get('view') === 'other' ? 'other' : 'summary')
   const [search, setSearch] = useState('')
   const [selectedBlock, setSelectedBlock] = useState('')
   const [blockPdfMode, setBlockPdfMode] = useState(false)
@@ -73,6 +73,7 @@ export const FestivalReport = () => {
   const [expenseStatuses, setExpenseStatuses] = useState(null)
   const [includeIncome, setIncludeIncome] = useState(true)
   const [includeExpenses, setIncludeExpenses] = useState(true)
+  const [reportOptionsTab, setReportOptionsTab] = useState('income')
   const [incomeColumns, setIncomeColumns] = useState(
     incomeColumnOptions.map(([key]) => key)
   )
@@ -345,13 +346,25 @@ export const FestivalReport = () => {
     )
   const changeIncomeSection = (checked) => {
     setIncludeIncome(checked)
-    if (!checked && includeExpenses) setView('expenses')
-    if (checked && !includeExpenses) setView('collections')
+    if (!checked && includeExpenses) {
+      setView('expenses')
+      setReportOptionsTab('expenses')
+    }
+    if (checked && !includeExpenses) {
+      setView('collections')
+      setReportOptionsTab('income')
+    }
   }
   const changeExpenseSection = (checked) => {
     setIncludeExpenses(checked)
-    if (checked) setView('expenses')
-    else if (includeIncome) setView('collections')
+    if (checked) {
+      setView('expenses')
+      if (!includeIncome) setReportOptionsTab('expenses')
+    }
+    else if (includeIncome) {
+      setView('collections')
+      setReportOptionsTab('income')
+    }
   }
   return (
     <Shell
@@ -427,8 +440,28 @@ export const FestivalReport = () => {
                 Expense details
               </label>
             </div>
-            {includeIncome && (
-              <>
+            <div className="festival-customizer-tabs" role="tablist" aria-label="Report customization options">
+              <button
+                type="button"
+                role="tab"
+                aria-selected={reportOptionsTab === 'income'}
+                disabled={!includeIncome}
+                onClick={() => setReportOptionsTab('income')}
+              >
+                Income options
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={reportOptionsTab === 'expenses'}
+                disabled={!includeExpenses}
+                onClick={() => setReportOptionsTab('expenses')}
+              >
+                Expense options
+              </button>
+            </div>
+            {includeIncome && reportOptionsTab === 'income' && (
+              <div className="festival-customizer-panel festival-customizer-income-panel" role="tabpanel">
                 <fieldset>
                   <legend>Income status</legend>
                   {availableIncomeStatuses.map((status) => (
@@ -485,10 +518,10 @@ export const FestivalReport = () => {
                     </label>
                   ))}
                 </fieldset>
-              </>
+              </div>
             )}
-            {includeExpenses && (
-              <>
+            {includeExpenses && reportOptionsTab === 'expenses' && (
+              <div className="festival-customizer-panel" role="tabpanel">
                 <fieldset>
                   <legend>Expense status</legend>
                   {availableExpenseStatuses.map((status) => (
@@ -528,32 +561,33 @@ export const FestivalReport = () => {
                     </label>
                   ))}
                 </fieldset>
-              </>
+              </div>
             )}
             <p className="muted">
               Summary totals, detail rows, and the downloaded PDF use these
               selections.
             </p>
           </section>
-          <SummaryGrid
-            items={[
-              [
-                'Expected contributions',
-                formatCurrency(sum(selectedCollections, 'expectedAmount'))
-              ],
-              ['Collected', formatCurrency(collected)],
-              [
-                'Pending contributions',
-                formatCurrency(sum(selectedCollections, 'pendingAmount'))
-              ],
-              ['Paid expenses', formatCurrency(paid)],
-              ['Refunded contributions', formatCurrency(refunded)],
-              [
-                'Net after paid expenses',
-                formatCurrency(collected - refunded - paid)
-              ]
-            ]}
-          />
+          <div className={`festival-summary-view ${view !== 'summary' ? 'report-hidden' : ''}`}>
+            <SummaryGrid
+              items={[
+                [
+                  'Expected contributions',
+                  formatCurrency(sum(selectedCollections, 'expectedAmount'))
+                ],
+                ['Collected', formatCurrency(collected)],
+                [
+                  'Pending contributions',
+                  formatCurrency(sum(selectedCollections, 'pendingAmount'))
+                ],
+                ['Paid expenses', formatCurrency(paid)],
+                ['Refunded contributions', formatCurrency(refunded)],
+                [
+                  'Net after paid expenses',
+                  formatCurrency(collected - refunded - paid)
+                ]
+              ]}
+            />
           <section className="festival-report-reconciliation">
             <div>
               <span>Event budget</span>
@@ -590,8 +624,18 @@ export const FestivalReport = () => {
               reconciliation.
             </p>
           </section>
+          </div>
           <div className="festival-report-controls">
             <div role="group" aria-label="Report details">
+              <button
+                aria-pressed={view === 'summary'}
+                onClick={() => {
+                  setView('summary')
+                  setSearch('')
+                }}
+              >
+                Summary
+              </button>
               <button
                 aria-pressed={view === 'collections'}
                 onClick={() => {
@@ -629,7 +673,7 @@ export const FestivalReport = () => {
                 Expense details ({expenses.length})
               </button>
             </div>
-            {view === 'blocks' ? (
+            {view === 'summary' ? null : view === 'blocks' ? (
               <div className="festival-block-pdf-controls">
                 <select
                   aria-label="Select block for report"
@@ -671,17 +715,26 @@ export const FestivalReport = () => {
             className={`festival-report-detail festival-income-detail ${view !== 'collections' ? 'report-hidden' : ''} ${!includeIncome ? 'report-excluded' : ''}`}
           >
             <h3>Flat-wise collections</h3>
-            <div className="table-wrap">
+            <div className="table-wrap festival-mobile-table">
+              <table>
+                <thead><tr><th>Flat</th><th>Collected</th><th>Status</th></tr></thead>
+                <tbody>
+                  {visibleCollections.map((row) => <tr key={row.id}><td><strong>{row.blockName}-{row.flatNumber}</strong><small>{row.ownerName || '-'}</small></td><td>{formatCurrency(row.collectedAmount)}</td><td>{row.paymentStatus}</td></tr>)}
+                  {!visibleCollections.length && <tr><td colSpan={3} className="empty-state">No matching collections.</td></tr>}
+                </tbody>
+              </table>
+            </div>
+            <div className="table-wrap festival-desktop-table">
               <table>
                 <thead>
                   <tr>
                     {incomeColumns.includes('flat') && <th>Flat</th>}
-                    {incomeColumns.includes('owner') && <th>Owner</th>}
-                    {incomeColumns.includes('expected') && <th>Expected</th>}
+                    {incomeColumns.includes('owner') && <th className="mobile-report-hide">Owner</th>}
+                    {incomeColumns.includes('expected') && <th className="mobile-report-hide">Expected</th>}
                     {incomeColumns.includes('collected') && <th>Collected</th>}
-                    {incomeColumns.includes('pending') && <th>Pending</th>}
-                    {incomeColumns.includes('excess') && <th>Excess</th>}
-                    {incomeColumns.includes('refunded') && <th>Refunded</th>}
+                    {incomeColumns.includes('pending') && <th className="mobile-report-hide">Pending</th>}
+                    {incomeColumns.includes('excess') && <th className="mobile-report-hide">Excess</th>}
+                    {incomeColumns.includes('refunded') && <th className="mobile-report-hide">Refunded</th>}
                     {incomeColumns.includes('status') && <th>Status</th>}
                   </tr>
                 </thead>
@@ -702,22 +755,22 @@ export const FestivalReport = () => {
                         </td>
                       )}
                       {incomeColumns.includes('owner') && (
-                        <td>{row.ownerName}</td>
+                        <td className="mobile-report-hide">{row.ownerName}</td>
                       )}
                       {incomeColumns.includes('expected') && (
-                        <td>{formatCurrency(row.expectedAmount)}</td>
+                        <td className="mobile-report-hide">{formatCurrency(row.expectedAmount)}</td>
                       )}
                       {incomeColumns.includes('collected') && (
                         <td>{formatCurrency(row.collectedAmount)}</td>
                       )}
                       {incomeColumns.includes('pending') && (
-                        <td>{formatCurrency(row.pendingAmount)}</td>
+                        <td className="mobile-report-hide">{formatCurrency(row.pendingAmount)}</td>
                       )}
                       {incomeColumns.includes('excess') && (
-                        <td>{formatCurrency(row.excessAmount)}</td>
+                        <td className="mobile-report-hide">{formatCurrency(row.excessAmount)}</td>
                       )}
                       {incomeColumns.includes('refunded') && (
-                        <td>{formatCurrency(row.refundedAmount)}</td>
+                        <td className="mobile-report-hide">{formatCurrency(row.refundedAmount)}</td>
                       )}
                       {incomeColumns.includes('status') && (
                         <td>{row.paymentStatus}</td>
@@ -745,7 +798,7 @@ export const FestivalReport = () => {
                 </p>
               )}
           </section>
-          <section className={`festival-report-detail festival-income-detail ${view !== 'other' ? 'report-hidden' : ''} ${!includeIncome ? 'report-excluded' : ''}`}>
+          <section className={`festival-report-detail festival-other-detail festival-income-detail ${view !== 'other' ? 'report-hidden' : ''} ${!includeIncome ? 'report-excluded' : ''}`}>
             <div className="section-heading-row"><div><h3>Contributions & special mentions</h3><p>Record money, donated items, sponsored materials, and volunteered services separately from flat collections.</p></div><strong>Cash received: {formatCurrency(otherCollected)}</strong></div>
             {canManageOther && <form className="form-panel festival-contribution-form" onSubmit={saveOtherCollection}>
               <h3>{editingOtherId ? 'Edit contribution' : 'Add contribution'}</h3>
@@ -760,8 +813,8 @@ export const FestivalReport = () => {
                 <label>Received / recorded by<input value={otherForm.collectedBy} onChange={e=>setOtherForm({...otherForm,collectedBy:e.target.value})} required/></label>
                 <label>Contact details<input value={otherForm.contactDetails} onChange={e=>setOtherForm({...otherForm,contactDetails:e.target.value})}/></label>
                 <label className="document-wide">Description / acknowledgement<textarea value={otherForm.description} onChange={e=>setOtherForm({...otherForm,description:e.target.value})} placeholder="Details to include in the festival report or donor acknowledgement"/></label>
-                <label><input type="checkbox" checked={otherForm.specialMention} onChange={e=>setOtherForm({...otherForm,specialMention:e.target.checked})}/> Show as special contribution mention</label>
-                <label><input type="checkbox" checked={otherForm.anonymous} onChange={e=>setOtherForm({...otherForm,anonymous:e.target.checked,contributorName:e.target.checked?'':otherForm.contributorName})}/> Anonymous contribution</label>
+                <label className="festival-contribution-check"><input type="checkbox" checked={otherForm.specialMention} onChange={e=>setOtherForm({...otherForm,specialMention:e.target.checked})}/><span>Show as special contribution mention</span></label>
+                <label className="festival-contribution-check"><input type="checkbox" checked={otherForm.anonymous} onChange={e=>setOtherForm({...otherForm,anonymous:e.target.checked,contributorName:e.target.checked?'':otherForm.contributorName})}/><span>Anonymous contribution</span></label>
               </div>
               <div className="form-actions">{editingOtherId&&<button type="button" onClick={resetOtherForm}>Cancel edit</button>}<button className="primary">{editingOtherId?'Update contribution':'Add contribution'}</button></div>
             </form>}
@@ -775,7 +828,16 @@ export const FestivalReport = () => {
                 ? `${selectedBlock} collection report`
                 : 'Block-wise collection report'}
             </h3>
-            <div className="table-wrap">
+            <div className="table-wrap festival-mobile-table">
+              <table>
+                <thead><tr><th>Block</th><th>Collected</th><th>Pending</th></tr></thead>
+                <tbody>
+                  {visibleBlockCollections.map((row) => <tr key={row.block}><td><strong>{row.block}</strong><small>{row.flats} flats</small></td><td>{formatCurrency(row.collected)}</td><td>{formatCurrency(row.pending)}</td></tr>)}
+                  {!visibleBlockCollections.length && <tr><td colSpan={3} className="empty-state">No block data available.</td></tr>}
+                </tbody>
+              </table>
+            </div>
+            <div className="table-wrap festival-desktop-table">
               <table>
                 <thead>
                   <tr>

@@ -1,0 +1,34 @@
+.festival-expenses-page > a:first-child { display: inline-flex; align-items: center; min-height: 40px; margin-bottom: 14px; }
+.festival-expenses-page .toolbar-panel { display: grid; grid-template-columns: auto auto minmax(240px, 1fr) auto; align-items: center; gap: 8px; }
+.festival-expenses-page .toolbar-panel > button[aria-pressed] { min-height: 42px; font-weight: 700; }
+.festival-expenses-page .toolbar-panel > button[aria-pressed='true'] { border-color: #0f766e; color: #fff; background: #0f766e; }
+.festival-expenses-page .toolbar-panel input { min-width: 0; }
+.festival-expenses-page .summary-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.festival-expenses-page .alert-panel { line-height: 1.6; }
+
+@media (max-width: 1050px) {
+  .festival-expenses-page .toolbar-panel { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .festival-expenses-page .toolbar-panel input { grid-column: 1 / -1; }
+  .festival-expenses-page .summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 700px) {
+  .festival-expenses-page .toolbar-panel { position: sticky; top: 64px; z-index: 15; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; padding: 6px; border-radius: 10px; background: #eaf2f1; }
+  .festival-expenses-page .toolbar-panel > button[aria-pressed] { min-width: 0; padding: 7px 6px; white-space: normal; font-size: 11px; line-height: 1.25; }
+  .festival-expenses-page .toolbar-panel input { grid-column: 1 / -1; background: #fff; }
+  .festival-expenses-page .toolbar-panel > .primary { grid-column: 1 / -1; width: 100%; }
+  .festival-expenses-page .summary-grid { gap: 8px; }
+  .festival-expenses-page .summary-card { min-width: 0; padding: 13px; }
+  .festival-expenses-page .summary-card span { font-size: 11px; }
+  .festival-expenses-page .summary-card strong { font-size: 15px; overflow-wrap: anywhere; }
+  .festival-expenses-page .alert-panel { padding: 14px; font-size: 12px; }
+  .festival-expenses-page > .table-wrap { overflow: visible; }
+  .festival-expenses-page > .table-wrap table { width: 100%; min-width: 0; table-layout: fixed; font-size: 11px; }
+  .festival-expenses-page > .table-wrap th, .festival-expenses-page > .table-wrap td { padding: 9px 6px; overflow-wrap: anywhere; vertical-align: top; }
+  .festival-expenses-actual > .table-wrap tr > :nth-child(3), .festival-expenses-actual > .table-wrap tr > :nth-child(4), .festival-expenses-actual > .table-wrap tr > :nth-child(5), .festival-expenses-actual > .table-wrap tr > :nth-child(6), .festival-expenses-actual > .table-wrap tr > :nth-child(8) { display: none; }
+  .festival-expenses-estimated > .table-wrap tr > :nth-child(2), .festival-expenses-estimated > .table-wrap tr > :nth-child(3), .festival-expenses-estimated > .table-wrap tr > :nth-child(5), .festival-expenses-estimated > .table-wrap tr > :nth-child(7) { display: none; }
+  .festival-expenses-page > .table-wrap .table-actions { display: grid; gap: 5px; }
+  .festival-expenses-page > .table-wrap .table-actions button { width: 100%; min-height: 32px; padding: 4px; font-size: 10px; }
+}
+
+@media (max-width: 420px) { .festival-expenses-page .summary-grid { grid-template-columns: 1fr; } }
