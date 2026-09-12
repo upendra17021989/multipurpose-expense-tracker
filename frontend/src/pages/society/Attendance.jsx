@@ -18,6 +18,15 @@ const today = new Date().toISOString().slice(0, 10),
     'HOLIDAY',
     'NOT_SCHEDULED'
   ]
+const attendanceForStatus = (row, status) => {
+  const working = ['PRESENT', 'LATE', 'HALF_DAY'].includes(status)
+  return {
+    ...row,
+    status,
+    checkIn: working ? row.checkIn || row.scheduledStart || '' : '',
+    checkOut: working ? row.checkOut || row.scheduledEnd || '' : ''
+  }
+}
 export const Attendance = () => {
   const isAdmin = useAuthStore((s) => s.currentAccount?.role === 'ADMIN')
   const [date, setDate] = useState(today),
@@ -60,6 +69,8 @@ export const Attendance = () => {
       setRows((v) =>
         v.map((x) => (x.rosterAssignmentId === id ? { ...x, [key]: value } : x))
       ),
+    updateStatus = (row, status) => setRows((current) => current.map((item) => item.rosterAssignmentId !== row.rosterAssignmentId ? item : attendanceForStatus(item, status))),
+    updateTime = (row, key, value) => setRows((current) => current.map((item) => item.rosterAssignmentId !== row.rosterAssignmentId ? item : { ...item, [key]: value, status: value && ['NOT_SCHEDULED','ABSENT','ON_LEAVE','WEEKLY_OFF','HOLIDAY'].includes(item.status) ? 'PRESENT' : item.status, checkIn: key === 'checkOut' && value && !item.checkIn ? item.scheduledStart || '' : (key === 'checkIn' ? value : item.checkIn), checkOut: key === 'checkIn' && value && !item.checkOut ? item.scheduledEnd || '' : (key === 'checkOut' ? value : item.checkOut) })),
     replacements = (row) =>
       (agencies.find((a) => a.id === row.agencyId)?.workers || []).filter(
         (w) => w.workerName !== row.assigneeName
@@ -160,7 +171,7 @@ export const Attendance = () => {
     setRows((current) =>
       current.map((row) =>
         activeAgency === 'all' || agencyKey(row) === activeAgency
-          ? { ...row, status }
+          ? attendanceForStatus(row, status)
           : row
       )
     )
@@ -304,7 +315,7 @@ export const Attendance = () => {
             <tbody>
               {visibleRows.map((x) => (
                 <tr key={x.rosterAssignmentId}>
-                  <td>{x.assigneeName}</td>
+                  <td><strong>{x.assigneeName}</strong><small className="attendance-person-shift">{x.shiftName} · {x.postName} · {x.scheduledStart || '--:--'}–{x.scheduledEnd || '--:--'}</small></td>
                   <td>{x.agencyName || 'Direct'}</td>
                   <td>
                     {x.shiftName}
@@ -317,7 +328,7 @@ export const Attendance = () => {
                       disabled={!draft}
                       value={x.status}
                       onChange={(e) =>
-                        update(x.rosterAssignmentId, 'status', e.target.value)
+                        updateStatus(x, e.target.value)
                       }
                     >
                       {statuses.map((s) => (
@@ -358,7 +369,7 @@ export const Attendance = () => {
                       value={x.checkIn || ''}
                       aria-label={`Check in for ${x.assigneeName}`}
                       onChange={(e) =>
-                        update(x.rosterAssignmentId, 'checkIn', e.target.value)
+                        updateTime(x, 'checkIn', e.target.value)
                       }
                     />
                   </td>
@@ -369,7 +380,7 @@ export const Attendance = () => {
                       value={x.checkOut || ''}
                       aria-label={`Check out for ${x.assigneeName}`}
                       onChange={(e) =>
-                        update(x.rosterAssignmentId, 'checkOut', e.target.value)
+                        updateTime(x, 'checkOut', e.target.value)
                       }
                     />
                   </td>

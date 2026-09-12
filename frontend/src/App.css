@@ -3093,6 +3093,25 @@ textarea:disabled {
   .office-hours-sample-grid { grid-template-columns: 1fr; }
   .office-hours-sample-grid img { height: auto; max-height: 320px; }
 }
+
+/* Single-line mobile attendance editor */
+.attendance-person-shift { display: block; margin-top: 3px; color: #64748b; font-weight: 400; line-height: 1.25; }
+@media (max-width: 700px) {
+  .attendance-table-wrap { overflow-x: auto; border: 1px solid #d9e2ec; background: #fff; }
+  .attendance-table { display: table; width: 100%; min-width: 590px; table-layout: fixed; font-size: 11px; }
+  .attendance-table thead { display: table-header-group; }
+  .attendance-table tbody { display: table-row-group; width: auto; }
+  .attendance-table tr { display: table-row; margin: 0; border: 0; background: #fff; }
+  .attendance-table td { display: table-cell; padding: 7px 6px; border-bottom: 1px solid #edf1f5; vertical-align: middle; white-space: normal; }
+  .attendance-table td::before { content: none !important; }
+  .attendance-table tr > :nth-child(2), .attendance-table tr > :nth-child(3), .attendance-table tr > :nth-child(5), .attendance-table tr > :nth-child(8) { display: none; }
+  .attendance-table tr > :nth-child(1) { width: 180px; }
+  .attendance-table tr > :nth-child(4) { width: 135px; }
+  .attendance-table tr > :nth-child(6), .attendance-table tr > :nth-child(7) { width: 105px; }
+  .attendance-table input, .attendance-table select, .attendance-table button { width: 100%; min-width: 0; min-height: 38px; margin: 0; padding: 5px; font-size: 13px; }
+  .attendance-table tr:has(.empty-state) { display: table-row; }
+  .attendance-table .empty-state { display: table-cell; }
+}
 .personal-todo-item { display: grid; grid-template-columns: 34px minmax(0, 1fr) auto; gap: 0.8rem; align-items: center; padding: 0.9rem; border: 1px solid #d9e2ec; border-radius: 9px; background: #fff; }
 .personal-todo-check { width: 30px; height: 30px; padding: 0; border: 2px solid #94a3b8; border-radius: 50%; color: #fff; background: #fff; font-weight: 900; }
 .personal-todo-item.completed .personal-todo-check { border-color: #0f766e; background: #0f766e; }
@@ -5835,4 +5854,19 @@ textarea:disabled {
   .attendance-page .attendance-table td:nth-child(3) { grid-column: auto; }
   .attendance-page .attendance-table td:nth-child(3) br { display: none; }
   .attendance-page .attendance-table input, .attendance-page .attendance-table select { min-height: 44px; font-size: 16px; }
+}
+
+@media (max-width: 700px) {
+  .attendance-page .attendance-table-wrap { overflow-x: auto; border: 1px solid #d9e2ec; background: #fff; }
+  .attendance-page .attendance-table { display: table; width: 100%; min-width: 590px; table-layout: fixed; font-size: 11px; }
+  .attendance-page .attendance-table thead { display: table-header-group; }
+  .attendance-page .attendance-table tbody { display: table-row-group; width: auto; }
+  .attendance-page .attendance-table tr { display: table-row; margin: 0; border: 0; background: #fff; }
+  .attendance-page .attendance-table td { display: table-cell; padding: 7px 6px; border-bottom: 1px solid #edf1f5; vertical-align: middle; }
+  .attendance-page .attendance-table td::before { content: none !important; }
+  .attendance-page .attendance-table tr > :nth-child(2), .attendance-page .attendance-table tr > :nth-child(3), .attendance-page .attendance-table tr > :nth-child(5), .attendance-page .attendance-table tr > :nth-child(8) { display: none; }
+  .attendance-page .attendance-table tr > :nth-child(1) { width: 180px; }
+  .attendance-page .attendance-table tr > :nth-child(4) { width: 135px; }
+  .attendance-page .attendance-table tr > :nth-child(6), .attendance-page .attendance-table tr > :nth-child(7) { width: 105px; }
+  .attendance-page .attendance-table input, .attendance-page .attendance-table select, .attendance-page .attendance-table button { min-height: 38px; padding: 5px; font-size: 13px; }
 }

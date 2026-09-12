@@ -15,7 +15,7 @@ const blankHandover = () => ({ shiftDate: today, shiftName: '', openItems: '', i
 export const DailyOperations = () => {
   const { tx } = useI18n()
   const { currentAccount } = useAuthStore(), admin = currentAccount?.role === 'ADMIN'
-  const [date, setDate] = useState(today), [tab, setTab] = useState('checklist'), [dashboard, setDashboard] = useState(null)
+  const [date, setDate] = useState(today), [tab, setTab] = useState('report'), [dashboard, setDashboard] = useState(null)
   const [checklist, setChecklist] = useState([]), [incidents, setIncidents] = useState([]), [inspections, setInspections] = useState([]), [handovers, setHandovers] = useState([]), [reports, setReports] = useState([])
   const [incident, setIncident] = useState(blankIncident()), [inspection, setInspection] = useState(blankInspection()), [handover, setHandover] = useState(blankHandover()), [report, setReport] = useState({ summary: '', nextDayPriorities: '' })
   const load = async () => { try { const [d,c,i,n,h,r] = await Promise.all([api.dashboard(date),api.checklist(date),api.incidents(),api.inspections(),api.handovers(),api.reports()]); const reportRows=r.data||[], savedReport=reportRows.find(item=>item.reportDate===date); setDashboard(d.data);setChecklist(c.data||[]);setIncidents(i.data||[]);setInspections(n.data||[]);setHandovers(h.data||[]);setReports(reportRows);setReport(savedReport?{summary:savedReport.summary||'',nextDayPriorities:savedReport.nextDayPriorities||''}:{summary:'',nextDayPriorities:''}) } catch(e){ toast.error(e.response?.data?.message || tx('Unable to load daily operations')) } }
@@ -31,12 +31,12 @@ export const DailyOperations = () => {
   const saveReport = submit => run(() => submit ? api.submitReport({reportDate:date,...report}) : api.saveReport({reportDate:date,...report}), tx(submit?'Daily report submitted':'Draft saved'))
   const acknowledgeReport = item => { const comment=window.prompt(tx('Admin acknowledgement comment'),''); if(comment!==null) run(() => api.acknowledgeReport(item.id,comment), tx('Report acknowledged')) }
   const field = setter => e => setter(v => ({...v,[e.target.name]:e.target.type==='checkbox'?e.target.checked:e.target.value}))
-  const tabs = [['checklist','Checklist'],['incidents','Incidents'],['inspections','Inspections'],['handover','Handover'],['report','Daily Report']]
+  const tabs = [['report','Daily Report'],['overview','Overview'],['checklist','Checklist'],['incidents','Incidents'],['inspections','Inspections'],['handover','Handover']]
   return <Shell title="Daily Operations" eyebrow="Society operations" actions={<label>{tx('Operating date')} <input type="date" value={date} onChange={e=>setDate(e.target.value)}/></label>}>
-    <SummaryGrid items={[[tx('Checklist'),`${dashboard?.checklistCompleted||0}/${dashboard?.checklistTotal||0}`],[tx('Present'),dashboard?.present||0],[tx('Open work'),dashboard?.openWorkOrders||0],[tx('Overdue'),dashboard?.overdueWorkOrders||0],[tx('Complaints'),dashboard?.openComplaints||0],[tx('Incidents'),dashboard?.openIncidents||0],[tx('Inspections due'),dashboard?.inspectionsDue||0],[tx('Report'),tx(dashboard?.reportStatus||'NOT_STARTED')]]} />
     <div className="table-actions daily-operations-tabs" role="tablist" aria-label={tx('Daily Operations')}>
       {tabs.map(([id,label])=><button type="button" role="tab" aria-selected={tab===id} key={id} className={tab===id?'primary':''} onClick={()=>setTab(id)}>{tx(label)}</button>)}
     </div>
+    {tab==='overview'&&<section className="daily-operations-overview"><SummaryGrid items={[[tx('Checklist'),`${dashboard?.checklistCompleted||0}/${dashboard?.checklistTotal||0}`],[tx('Present'),dashboard?.present||0],[tx('Open work'),dashboard?.openWorkOrders||0],[tx('Overdue'),dashboard?.overdueWorkOrders||0],[tx('Complaints'),dashboard?.openComplaints||0],[tx('Incidents'),dashboard?.openIncidents||0],[tx('Inspections due'),dashboard?.inspectionsDue||0],[tx('Report'),tx(dashboard?.reportStatus||'NOT_STARTED')]]} /></section>}
     {tab==='checklist'&&<section className="report-panel daily-checklist-panel">
       <div className="section-heading-row daily-checklist-heading">
         <div><h2>{tx('Daily checklist')}</h2><p className="muted">{tx('Completion is recorded with the operator and time.')}</p></div>
