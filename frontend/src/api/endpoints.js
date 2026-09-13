@@ -378,7 +378,8 @@ export const societyDailyOperationsAPI = {
   reports: () => axiosInstance.get('/society/daily-operations/reports'),
   saveReport: (data) => axiosInstance.post('/society/daily-operations/reports/draft', data),
   submitReport: (data) => axiosInstance.post('/society/daily-operations/reports/submit', data),
-  acknowledgeReport: (id, comment) => axiosInstance.post(`/society/daily-operations/reports/${id}/acknowledge`, { comment })
+  acknowledgeReport: (id, comment) => axiosInstance.post(`/society/daily-operations/reports/${id}/acknowledge`, { comment }),
+  reopenReport: (id) => axiosInstance.post(`/society/daily-operations/reports/${id}/reopen`),
 }
 export const societyOperationsReportAPI = {
   agencyCompliance: (year, month) => axiosInstance.get('/society/operations-reports/agency-compliance', { params: { year, month } }),

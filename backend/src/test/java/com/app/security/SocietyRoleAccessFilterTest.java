@@ -22,13 +22,13 @@ class SocietyRoleAccessFilterTest {
         var accounts = mock(AccountRepository.class);
         var memberships = mock(AccountUserMembershipRepository.class);
         var staffAccess = mock(SocietyStaffAccessRepository.class);
-        boolean staffUser = role == UserRole.STAFF_SUPERVISOR;
+        boolean staffUser = role == UserRole.STAFF_SUPERVISOR || role == UserRole.STAFF;
         long userId = staffUser ? 9L : 1L;
         var account = Account.builder().id(2L).accountType(AccountType.SOCIETY).role(staffUser ? UserRole.ADMIN : role).user(User.builder().id(1L).build()).build();
         when(accounts.findById(2L)).thenReturn(Optional.of(account));
         if (staffUser) {
             when(staffAccess.findByAccountIdAndUserIdAndStatus(2L, 9L, StaffAccessStatus.ACTIVE))
-                    .thenReturn(Optional.of(SocietyStaffAccess.builder().role(UserRole.STAFF_SUPERVISOR).build()));
+                    .thenReturn(Optional.of(SocietyStaffAccess.builder().role(role).build()));
         }
         var principal = UserPrincipal.builder().userId(userId).accountId(2L).build();
         SecurityContextHolder.getContext().setAuthentication(new UsernamePasswordAuthenticationToken(principal, null, principal.getAuthorities()));
@@ -102,6 +102,20 @@ class SocietyRoleAccessFilterTest {
         check(UserRole.BLOCK_REPRESENTATIVE, "POST", "/society/festival-collections/5/payments", "/api", true);
         check(UserRole.BLOCK_REPRESENTATIVE, "POST", "/society/festival-collections/generate-demand", "/api", false);
         check(UserRole.BLOCK_REPRESENTATIVE, "PUT", "/society/festival-collections/5/demand", "/api", false);
+    }
+
+    @Test void dailyReportWritesAreLimitedToAdminsAndSupervisors() throws Exception {
+        for (var role : new UserRole[]{UserRole.ADMIN, UserRole.SUPERVISOR, UserRole.STAFF_SUPERVISOR}) {
+            check(role, "POST", "/society/daily-operations/reports/draft", "/api", true);
+            check(role, "POST", "/society/daily-operations/reports/submit", "/api", true);
+        }
+        for (var role : new UserRole[]{UserRole.TREASURER, UserRole.MEMBER, UserRole.BLOCK_REPRESENTATIVE, UserRole.STAFF}) {
+            check(role, "GET", "/society/daily-operations/reports", "/api", true);
+            check(role, "POST", "/society/daily-operations/reports/submit", "/api", false);
+        }
+        check(UserRole.ADMIN, "POST", "/society/daily-operations/reports/7/reopen", "/api", true);
+        check(UserRole.SUPERVISOR, "POST", "/society/daily-operations/reports/7/reopen", "/api", false);
+        check(UserRole.STAFF_SUPERVISOR, "POST", "/society/daily-operations/reports/7/reopen", "/api", false);
     }
 
     @Test void onlyAdminCanApproveSocietyExpenses() throws Exception {

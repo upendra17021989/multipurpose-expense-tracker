@@ -62,6 +62,20 @@ public class SocietyRoleAccessFilter extends OncePerRequestFilter {
             deny(response, "Your society access is no longer active");
             return;
         }
+        boolean writingDailyReport = !isReadRequest(request.getMethod())
+                && (path.equals("/society/daily-operations/reports/draft")
+                || path.equals("/society/daily-operations/reports/submit"));
+        if (writingDailyReport && role != UserRole.ADMIN && role != UserRole.SUPERVISOR
+                && role != UserRole.STAFF_SUPERVISOR) {
+            deny(response, "Only a society admin or supervisor can write a daily report");
+            return;
+        }
+        if (!isReadRequest(request.getMethod())
+                && path.matches("/society/daily-operations/reports/\\d+/(?:acknowledge|reopen)")
+                && role != UserRole.ADMIN) {
+            deny(response, "Only a society admin can acknowledge or reopen a daily report");
+            return;
+        }
         if (role == UserRole.STAFF_SUPERVISOR) {
             if (!staffSupervisorPermitted(request.getMethod(), path)) {
                 deny(response, "Your staff supervisor role does not allow this action");
@@ -71,16 +85,13 @@ public class SocietyRoleAccessFilter extends OncePerRequestFilter {
             return;
         }
         if (role == UserRole.STAFF) {
-            if (path.equals("/society/attendance/self") && (isReadRequest(request.getMethod()) || "POST".equals(request.getMethod()))) {
+            if (isReadRequest(request.getMethod()) && path.equals("/society/daily-operations/reports")) {
+                chain.doFilter(request, response);
+            } else if (path.equals("/society/attendance/self") && (isReadRequest(request.getMethod()) || "POST".equals(request.getMethod()))) {
                 chain.doFilter(request, response);
             } else {
                 deny(response, "Worker self-service access is limited to the worker's own attendance");
             }
-            return;
-        }
-        if (!isReadRequest(request.getMethod()) && path.matches("/society/daily-operations/reports/\\d+/acknowledge")
-                && role != UserRole.ADMIN) {
-            deny(response, "Only a society admin can acknowledge a daily report");
             return;
         }
         if (!isReadRequest(request.getMethod()) && path.startsWith("/society/daily-operations/checklist/templates")

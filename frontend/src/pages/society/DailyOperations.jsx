@@ -14,11 +14,11 @@ const blankHandover = () => ({ shiftDate: today, shiftName: '', openItems: '', i
 
 export const DailyOperations = () => {
   const { tx } = useI18n()
-  const { currentAccount } = useAuthStore(), admin = currentAccount?.role === 'ADMIN'
+  const { currentAccount } = useAuthStore(), admin = currentAccount?.role === 'ADMIN', canWriteReport = ['ADMIN','SUPERVISOR','STAFF_SUPERVISOR'].includes(currentAccount?.role)
   const [date, setDate] = useState(today), [tab, setTab] = useState('report'), [dashboard, setDashboard] = useState(null)
   const [checklist, setChecklist] = useState([]), [incidents, setIncidents] = useState([]), [inspections, setInspections] = useState([]), [handovers, setHandovers] = useState([]), [reports, setReports] = useState([])
   const [incident, setIncident] = useState(blankIncident()), [inspection, setInspection] = useState(blankInspection()), [handover, setHandover] = useState(blankHandover()), [report, setReport] = useState({ summary: '', nextDayPriorities: '' })
-  const load = async () => { try { const [d,c,i,n,h,r] = await Promise.all([api.dashboard(date),api.checklist(date),api.incidents(),api.inspections(),api.handovers(),api.reports()]); const reportRows=r.data||[], savedReport=reportRows.find(item=>item.reportDate===date); setDashboard(d.data);setChecklist(c.data||[]);setIncidents(i.data||[]);setInspections(n.data||[]);setHandovers(h.data||[]);setReports(reportRows);setReport(savedReport?{summary:savedReport.summary||'',nextDayPriorities:savedReport.nextDayPriorities||''}:{summary:'',nextDayPriorities:''}) } catch(e){ toast.error(e.response?.data?.message || tx('Unable to load daily operations')) } }
+  const load = async () => { try { if(!canWriteReport){const r=await api.reports(),reportRows=r.data||[],savedReport=reportRows.find(item=>item.reportDate===date);setReports(reportRows);setReport(savedReport?{summary:savedReport.summary||'',nextDayPriorities:savedReport.nextDayPriorities||''}:{summary:'',nextDayPriorities:''});return} const [d,c,i,n,h,r] = await Promise.all([api.dashboard(date),api.checklist(date),api.incidents(),api.inspections(),api.handovers(),api.reports()]); const reportRows=r.data||[], savedReport=reportRows.find(item=>item.reportDate===date); setDashboard(d.data);setChecklist(c.data||[]);setIncidents(i.data||[]);setInspections(n.data||[]);setHandovers(h.data||[]);setReports(reportRows);setReport(savedReport?{summary:savedReport.summary||'',nextDayPriorities:savedReport.nextDayPriorities||''}:{summary:'',nextDayPriorities:''}) } catch(e){ toast.error(e.response?.data?.message || tx('Unable to load daily operations')) } }
   useEffect(() => { load() }, [date])
   const run = async (action, success) => { try { await action(); toast.success(success); await load() } catch(e){ toast.error(e.response?.data?.message || tx('Unable to save')) } }
   const addChecklist = () => { const title = window.prompt(tx('Checklist item')); if(title?.trim()) run(() => api.createChecklistTemplate({ title: title.trim(), sortOrder: checklist.length }), tx('Checklist item added')) }
@@ -28,10 +28,12 @@ export const DailyOperations = () => {
   const submitInspection = e => { e.preventDefault(); run(() => api.createInspection(inspection), tx('Inspection scheduled')).then(() => setInspection(blankInspection())) }
   const completeInspection = item => { const result=window.prompt(tx('Result: PASS, FAIL, or NOT_APPLICABLE'),'PASS')?.toUpperCase(); if(!result)return; const notes=window.prompt(tx('Inspection notes'),'')||''; const failureAction=result==='FAIL'?(window.prompt(tx('Required failure action'))||''):''; run(() => api.completeInspection(item.id,{result,notes,failureAction}), tx('Inspection completed')) }
   const submitHandover = e => { e.preventDefault(); run(() => api.createHandover(handover), tx('Handover recorded')).then(() => setHandover(blankHandover())) }
-  const saveReport = submit => run(() => submit ? api.submitReport({reportDate:date,...report}) : api.saveReport({reportDate:date,...report}), tx(submit?'Daily report submitted':'Draft saved'))
+  const saveReport = submit => { if(submit&&!window.confirm(tx('Submit this report? You will not be able to edit it unless an admin reopens it.')))return; return run(() => submit ? api.submitReport({reportDate:date,...report}) : api.saveReport({reportDate:date,...report}), tx(submit?'Daily report submitted':'Draft saved')) }
   const acknowledgeReport = item => { const comment=window.prompt(tx('Admin acknowledgement comment'),''); if(comment!==null) run(() => api.acknowledgeReport(item.id,comment), tx('Report acknowledged')) }
+  const reopenReport = item => { if(window.confirm(tx('Reopen this report for editing?'))) run(() => api.reopenReport(item.id), tx('Report reopened')) }
   const field = setter => e => setter(v => ({...v,[e.target.name]:e.target.type==='checkbox'?e.target.checked:e.target.value}))
-  const tabs = [['report','Daily Report'],['overview','Overview'],['checklist','Checklist'],['incidents','Incidents'],['inspections','Inspections'],['handover','Handover']]
+  const tabs = canWriteReport ? [['report','Daily Report'],['overview','Overview'],['checklist','Checklist'],['incidents','Incidents'],['inspections','Inspections'],['handover','Handover']] : [['report','Daily Report']]
+  const selectedReport = reports.find(item=>item.reportDate===date), reportLocked = selectedReport && selectedReport.status !== 'DRAFT'
   return <Shell title="Daily Operations" eyebrow="Society operations" actions={<label>{tx('Operating date')} <input type="date" value={date} onChange={e=>setDate(e.target.value)}/></label>}>
     <div className="table-actions daily-operations-tabs" role="tablist" aria-label={tx('Daily Operations')}>
       {tabs.map(([id,label])=><button type="button" role="tab" aria-selected={tab===id} key={id} className={tab===id?'primary':''} onClick={()=>setTab(id)}>{tx(label)}</button>)}
@@ -67,10 +69,12 @@ export const DailyOperations = () => {
           <p className="muted">{tx('Attendance, work, complaints, incidents, inspections, handovers, and checklist totals are captured automatically when saved.')}</p>
         </header>
         <div className="daily-report-fields">
-          <label>{tx('Summary')}<textarea rows="5" value={report.summary} onChange={e=>setReport({...report,summary:e.target.value})}/></label>
-          <label>{tx('Next-day priorities')}<textarea rows="5" value={report.nextDayPriorities} onChange={e=>setReport({...report,nextDayPriorities:e.target.value})}/></label>
+          <label>{tx('Summary')}<textarea rows="5" value={report.summary} disabled={!canWriteReport||reportLocked} onChange={e=>setReport({...report,summary:e.target.value})}/></label>
+          <label>{tx('Next-day priorities')}<textarea rows="5" value={report.nextDayPriorities} disabled={!canWriteReport||reportLocked} onChange={e=>setReport({...report,nextDayPriorities:e.target.value})}/></label>
         </div>
-        <div className="form-actions daily-report-actions"><button type="button" onClick={()=>saveReport(false)}>{tx('Save draft')}</button><button type="button" className="primary" onClick={()=>saveReport(true)}>{tx('Submit report')}</button></div>
+        {canWriteReport&&!reportLocked&&<div className="form-actions daily-report-actions"><button type="button" onClick={()=>saveReport(false)}>{tx('Save draft')}</button><button type="button" className="primary" onClick={()=>saveReport(true)}>{tx('Submit report')}</button></div>}
+        {reportLocked&&<p className="muted">{tx('This report has been submitted and is locked.')}</p>}
+        {!canWriteReport&&<p className="muted">{tx('You have read-only access to daily reports.')}</p>}
       </section>
       <section className="report-panel daily-report-history">
         <div className="daily-report-section-header"><h2>{tx('Report history')}</h2><p className="muted">{tx('Saved and submitted reports for this operating period.')}</p></div>
@@ -90,6 +94,7 @@ export const DailyOperations = () => {
             </dl>
             {x.adminComment&&<p className="daily-report-admin-comment"><strong>{tx('Admin')}</strong><span>{x.adminComment}</span></p>}
             {admin&&x.status==='SUBMITTED'&&<footer><button type="button" className="primary" onClick={()=>acknowledgeReport(x)}>{tx('Acknowledge')}</button></footer>}
+            {admin&&x.status!=='DRAFT'&&<footer><button type="button" onClick={()=>reopenReport(x)}>{tx('Reopen')}</button></footer>}
           </article>)}
         </div>
         {!reports.length&&<p className="empty-state">{tx('No daily reports saved yet.')}</p>}
