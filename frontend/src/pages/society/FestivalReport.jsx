@@ -8,6 +8,7 @@ import {
 } from '../../api/endpoints'
 import { useAuthStore } from '../../store/authStore'
 import { formatCurrency, formatDate } from '../../utils/format'
+import { exportWorkbook } from '../../utils/exportExcel'
 import { Shell, SummaryGrid } from '../DashboardRouter'
 import './FestivalReport.css'
 
@@ -322,6 +323,58 @@ export const FestivalReport = () => {
     if (!visibleBlockCollections.length) return
     setBlockPdfMode(true)
     window.setTimeout(() => window.print(), 0)
+  }
+  const downloadBlockExcel = async () => {
+    if (!visibleBlockCollections.length) return
+    const summaryRows = visibleBlockCollections.map((row) => {
+      const values = {}
+      if (blockColumns.includes('block')) values.Block = row.block
+      if (blockColumns.includes('flats')) values.Flats = row.flats
+      if (blockColumns.includes('paid')) values.Paid = row.paid
+      if (blockColumns.includes('partial')) values.Partial = row.partial
+      if (blockColumns.includes('expected')) values.Expected = row.expected
+      if (blockColumns.includes('collected')) values.Collected = row.collected
+      if (blockColumns.includes('pending')) values.Pending = row.pending
+      if (blockColumns.includes('excess')) values.Excess = row.excess
+      if (blockColumns.includes('refunded')) values.Refunded = row.refunded
+      return values
+    })
+    const usedSheetNames = new Set(['block summary'])
+    const sheetNameFor = (block) => {
+      const base = String(block || 'Block').replace(/[\\/*?:[\]]/g, '-').trim() || 'Block'
+      let name = base.slice(0, 31), suffix = 2
+      while (usedSheetNames.has(name.toLowerCase())) {
+        const marker = ` (${suffix++})`
+        name = `${base.slice(0, 31 - marker.length)}${marker}`
+      }
+      usedSheetNames.add(name.toLowerCase())
+      return name
+    }
+    const blockSheets = blockDetailGroups.map(({ summary, flats }) => ({
+      name: sheetNameFor(summary.block),
+      rows: flats.map((row) => {
+        const values = {}
+        if (blockColumns.includes('flats')) values.Flat = row.flatNumber
+        values.Owner = row.ownerName || ''
+        if (blockColumns.includes('expected')) values.Expected = Number(row.expectedAmount || 0)
+        if (blockColumns.includes('collected')) values.Collected = Number(row.collectedAmount || 0)
+        if (blockColumns.includes('pending')) values.Pending = Number(row.pendingAmount || 0)
+        if (blockColumns.includes('excess')) values.Excess = Number(row.excessAmount || 0)
+        if (blockColumns.includes('refunded')) values.Refunded = Number(row.refundedAmount || 0)
+        values.Status = row.paymentStatus || ''
+        return values
+      })
+    }))
+    const reportName = selectedBlock || 'all-blocks'
+    const safeFestivalName = String(data.festival.festivalName || 'festival').replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '').toLowerCase()
+    try {
+      await exportWorkbook(
+        [{ name: 'Block Summary', rows: summaryRows }, ...blockSheets],
+        `${safeFestivalName}-${reportName.toLowerCase().replace(/[^a-z0-9]+/gi, '-')}-collection-report`
+      )
+    } catch (error) {
+      toast.error(error?.message || 'Unable to download block Excel report')
+    }
   }
   useEffect(() => {
     const finishPrint = () => setBlockPdfMode(false)
@@ -718,6 +771,13 @@ export const FestivalReport = () => {
                   {blockReceiptsLoading
                     ? 'Loading payments…'
                     : selectedBlock ? 'Download Block PDF' : 'Download All Blocks PDF'}
+                </button>
+                <button
+                  type="button"
+                  disabled={!visibleBlockCollections.length}
+                  onClick={downloadBlockExcel}
+                >
+                  Download Excel
                 </button>
               </div>
             ) : (

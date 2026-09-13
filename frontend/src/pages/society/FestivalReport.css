@@ -92,10 +92,15 @@
 }
 .festival-block-pdf-controls {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
 }
 .festival-block-pdf-controls select {
+  flex: 1 0 100%;
   min-width: 180px;
+}
+.festival-block-pdf-controls button {
+  flex: 1 1 140px;
 }
 .festival-sort-button {
   display: inline-flex;
@@ -531,6 +536,19 @@
   }
   .festival-report .table-wrap {
     overflow: visible;
+    break-inside: auto !important;
+    page-break-inside: auto !important;
+  }
+  .festival-report table,
+  .festival-report tbody {
+    break-inside: auto;
+    page-break-inside: auto;
+  }
+  .festival-report thead {
+    display: table-header-group;
+  }
+  .festival-report tfoot {
+    display: table-row-group;
   }
   .festival-report table {
     width: 100%;
@@ -544,6 +562,12 @@
   }
   .festival-report tr {
     break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  .festival-report-detail h3,
+  .festival-report-detail h4 {
+    break-after: avoid;
+    page-break-after: avoid;
   }
   .festival-summary-view {
     break-inside: avoid;
