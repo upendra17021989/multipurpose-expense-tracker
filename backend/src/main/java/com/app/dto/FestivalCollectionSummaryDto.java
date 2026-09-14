@@ -25,4 +25,9 @@ public class FestivalCollectionSummaryDto {
     private long partialFlats;
     private long excessFlats;
     private long totalFlats;
+    private long totalBlocks;
+    private long otherCollectionsCount;
+    private long expenseCount;
+    private BigDecimal paidExpenses;
+    private BigDecimal recordedExpenses;
 }

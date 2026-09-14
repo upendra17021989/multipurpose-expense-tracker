@@ -25,7 +25,7 @@ class FestivalCollectionServiceTest {
         when(receipts.findByFestivalCollectionId(10L)).thenReturn(List.of());
 
         FestivalCollectionService service = new FestivalCollectionService(
-                null, receipts, null, null, null, null, null);
+                null, receipts, null, null, null, null, null, null);
 
         assertEquals("FEST-3-H-BLOCK-403-A-1", service.buildReceiptNumber(collection));
     }

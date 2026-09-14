@@ -54,17 +54,31 @@ const blankOtherContribution = () => ({
   specialMention: false, anonymous: false
 })
 
+const LoadingIndicator = ({ label = 'Loading data…', overlay = false }) => (
+  <div className={`festival-api-loader ${overlay ? 'festival-api-loader-overlay' : ''}`} role="status" aria-live="polite">
+    <span className="festival-api-loader-spinner" aria-hidden="true" />
+    <strong>{label}</strong>
+  </div>
+)
 export const FestivalReport = () => {
   const { festivalEventId } = useParams()
-  const [searchParams] = useSearchParams()
+  const [searchParams, setSearchParams] = useSearchParams()
   const account = useAuthStore((state) => state.currentAccount)
   const [data, setData] = useState(null)
   const [error, setError] = useState('')
   const [revision, setRevision] = useState(0)
   const [otherForm, setOtherForm] = useState(blankOtherContribution)
   const [editingOtherId, setEditingOtherId] = useState(null)
-  const [view, setView] = useState(searchParams.get('view') === 'other' ? 'other' : 'summary')
-  const [search, setSearch] = useState('')
+  const [otherModalOpen, setOtherModalOpen] = useState(false)
+
+  const [view, setView] = useState(['summary', 'collections', 'blocks', 'other', 'expenses'].includes(searchParams.get('view')) ? searchParams.get('view') : 'summary')
+  const [summary, setSummary] = useState(null)
+  const [detailLoading, setDetailLoading] = useState(false)
+  const [mutationLoading, setMutationLoading] = useState(false)
+  const [loadedViews, setLoadedViews] = useState({})
+  const [collectionPage, setCollectionPage] = useState(Math.max(0, Number(searchParams.get('page') || 1) - 1))
+  const [collectionPageInfo, setCollectionPageInfo] = useState({ totalElements: 0, totalPages: 0 })
+const [search, setSearch] = useState('')
   const [selectedBlock, setSelectedBlock] = useState('')
   const [blockPdfMode, setBlockPdfMode] = useState(false)
   const [blockReceipts, setBlockReceipts] = useState([])
@@ -85,57 +99,95 @@ export const FestivalReport = () => {
   const [expenseColumns, setExpenseColumns] = useState(
     expenseColumnOptions.map(([key]) => key)
   )
+  const selectView = (nextView) => {
+    setView(nextView)
+    setCollectionPage(0)
+    const params = new URLSearchParams(searchParams)
+    if (nextView === 'summary') params.delete('view')
+    else params.set('view', nextView)
+    params.delete('page')
+    setSearchParams(params)
+  }
+  const selectCollectionPage = (nextPage) => {
+    setCollectionPage(nextPage)
+    const params = new URLSearchParams(searchParams)
+    params.set('view', 'collections')
+    if (nextPage === 0) params.delete('page')
+    else params.set('page', String(nextPage + 1))
+    setSearchParams(params)
+  }
+  useEffect(() => {
+    if (!otherModalOpen) return undefined
+    const closeOnEscape = (event) => {
+      if (event.key === 'Escape' && !mutationLoading) closeOtherModal()
+    }
+    window.addEventListener('keydown', closeOnEscape)
+    return () => window.removeEventListener('keydown', closeOnEscape)
+  }, [otherModalOpen, mutationLoading])
   useEffect(() => {
     let active = true
     setData(null)
+    setSummary(null)
     setError('')
+    setLoadedViews({})
     setIncomeStatuses(null)
     setExpenseStatuses(null)
-    const loadReport = async () => {
+    Promise.all([
+      festivalEventAPI.getFestival(festivalEventId),
+      festivalCollectionAPI.getSummary(festivalEventId)
+    ])
+      .then(([festival, summaryResponse]) => {
+        if (!active) return
+        setData({ festival: festival.data, collections: [], otherCollections: [], expenses: [] })
+        setSummary(summaryResponse.data)
+      })
+      .catch(() => {
+        if (active) setError('Unable to load the festival report. Please retry.')
+      })
+    return () => { active = false }
+  }, [festivalEventId, account?.id, revision])
+
+  useEffect(() => {
+    if (!data || view === 'summary') return
+    let active = true
+    const loadDetails = async () => {
+      setDetailLoading(true)
       try {
-        const [festival, firstCollections, expenses, otherCollections] = await Promise.all([
-          festivalEventAPI.getFestival(festivalEventId),
-          festivalCollectionAPI.getCollections(festivalEventId, {
-            page: 0,
-            size: 100
-          }),
-          expenseAPI.getFestivalExpenses(festivalEventId),
-          festivalCollectionAPI.getOtherCollections(festivalEventId)
-        ])
-        const firstPage = firstCollections.data || {}
-        const remainingPages = Array.from(
-          { length: Math.max(0, Number(firstPage.totalPages || 0) - 1) },
-          (_, index) => index + 1
-        )
-        const remainingResponses = await Promise.all(
-          remainingPages.map((page) =>
-            festivalCollectionAPI.getCollections(festivalEventId, {
-              page,
-              size: 100
-            })
+
+        if (view === 'collections') {
+          const response = await festivalCollectionAPI.getCollections(festivalEventId, { page: collectionPage, size: 10 })
+          const page = response.data || {}
+          if (active) {
+            setData(current => ({ ...current, collections: page.content || [] }))
+            setCollectionPageInfo({ totalElements: page.totalElements || 0, totalPages: page.totalPages || 0 })
+          }
+        } else if (view === 'blocks') {
+          const firstResponse = await festivalCollectionAPI.getCollections(festivalEventId, { page: 0, size: 100 })
+          const firstPage = firstResponse.data || {}
+          const remainingResponses = await Promise.all(
+            Array.from({ length: Math.max(0, Number(firstPage.totalPages || 0) - 1) }, (_, index) =>
+              festivalCollectionAPI.getCollections(festivalEventId, { page: index + 1, size: 100 })
+            )
           )
-        )
-        const allCollections = [
-          firstPage,
-          ...remainingResponses.map((response) => response.data || {})
-        ].flatMap((page) => page.content || [])
-        if (active)
-          setData({
-            festival: festival.data,
-            collections: allCollections,
-            otherCollections: otherCollections.data || [],
-            expenses: expenses.data || []
-          })
-      } catch {
-        if (active)
-          setError('Unable to load the festival report. Please retry.')
+          const rows = [firstPage, ...remainingResponses.map(response => response.data || {})].flatMap(page => page.content || [])
+          if (active) setData(current => ({ ...current, collections: rows }))
+        } else if (view === 'other' && !loadedViews.other) {
+          const response = await festivalCollectionAPI.getOtherCollections(festivalEventId)
+          if (active) setData(current => ({ ...current, otherCollections: response.data || [] }))
+        } else if (view === 'expenses' && !loadedViews.expenses) {
+          const response = await expenseAPI.getExpenses()
+          if (active) setData(current => ({ ...current, expenses: (response.data || []).filter(row => String(row.festivalEventId) === String(festivalEventId) && row.expenseType === 'FESTIVAL') }))
+        }
+        if (active) setLoadedViews(current => ({ ...current, [view]: true }))
+    } catch {
+        if (active) toast.error('Unable to load report details')
+      } finally {
+        if (active) setDetailLoading(false)
       }
     }
-    loadReport()
-    return () => {
-      active = false
-    }
-  }, [festivalEventId, account?.id, revision])
+    loadDetails()
+    return () => { active = false }
+  }, [data?.festival?.id, view, collectionPage, festivalEventId, loadedViews.other, loadedViews.expenses])
 
   const sum = (rows, key) =>
     rows.reduce((total, row) => total + Number(row[key] || 0), 0)
@@ -146,9 +198,39 @@ export const FestivalReport = () => {
   const otherCollected = sum(monetaryContributions, 'amount')
   const canManageOther = ['ADMIN', 'SUPERVISOR', 'TREASURER'].includes(account?.role)
   const resetOtherForm = () => { setEditingOtherId(null); setOtherForm(blankOtherContribution()) }
-  const saveOtherCollection = async (event) => { event.preventDefault(); try { const payload={...otherForm,amount:otherForm.amount?Number(otherForm.amount):null,paymentMode:otherForm.contributionKind==='MONETARY'?otherForm.paymentMode:null,transactionReference:otherForm.contributionKind==='MONETARY'?otherForm.transactionReference:''}; if(editingOtherId) await festivalCollectionAPI.updateOtherCollection(festivalEventId,editingOtherId,payload); else await festivalCollectionAPI.addOtherCollection(festivalEventId,payload); toast.success(editingOtherId?'Contribution updated':'Contribution added'); resetOtherForm(); setRevision(value=>value+1) } catch(error){ toast.error(error.response?.data?.message||'Unable to save contribution') } }
-  const editOtherCollection = row => { setEditingOtherId(row.id); setOtherForm({ sourceType:row.sourceType,contributionKind:row.contributionKind||'MONETARY',contributorName:row.anonymous?'':row.contributorName||'',contactDetails:row.contactDetails||'',itemName:row.itemName||'',quantity:row.quantity||'',amount:row.amount??'',paymentDate:row.paymentDate,paymentMode:row.paymentMode||'CASH',transactionReference:row.transactionReference||'',collectedBy:row.collectedBy||'',description:row.description||'',specialMention:Boolean(row.specialMention),anonymous:Boolean(row.anonymous) }); setView('other') }
-  const deleteOtherCollection = async id => { if(!window.confirm('Delete this other collection?'))return; try{await festivalCollectionAPI.deleteOtherCollection(festivalEventId,id);toast.success('Other collection deleted');setRevision(value=>value+1)}catch(error){toast.error(error.response?.data?.message||'Unable to delete other collection')} }
+  const closeOtherModal = () => { if (!mutationLoading) { setOtherModalOpen(false); resetOtherForm() } }
+  const openOtherModal = () => { resetOtherForm(); setOtherModalOpen(true) }
+  const saveOtherCollection = async (event) => {
+    event.preventDefault()
+    setMutationLoading(true)
+    try {
+      const payload = { ...otherForm, amount: otherForm.amount ? Number(otherForm.amount) : null, paymentMode: otherForm.contributionKind === 'MONETARY' ? otherForm.paymentMode : null, transactionReference: otherForm.contributionKind === 'MONETARY' ? otherForm.transactionReference : '' }
+      if (editingOtherId) await festivalCollectionAPI.updateOtherCollection(festivalEventId, editingOtherId, payload)
+      else await festivalCollectionAPI.addOtherCollection(festivalEventId, payload)
+      toast.success(editingOtherId ? 'Contribution updated' : 'Contribution added')
+      resetOtherForm()
+      setOtherModalOpen(false)
+      setRevision(value => value + 1)
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Unable to save contribution')
+    } finally {
+      setMutationLoading(false)
+    }
+  }
+  const editOtherCollection = row => { setEditingOtherId(row.id); setOtherForm({ sourceType:row.sourceType,contributionKind:row.contributionKind||'MONETARY',contributorName:row.anonymous?'':row.contributorName||'',contactDetails:row.contactDetails||'',itemName:row.itemName||'',quantity:row.quantity||'',amount:row.amount??'',paymentDate:row.paymentDate,paymentMode:row.paymentMode||'CASH',transactionReference:row.transactionReference||'',collectedBy:row.collectedBy||'',description:row.description||'',specialMention:Boolean(row.specialMention),anonymous:Boolean(row.anonymous) }); selectView('other'); setOtherModalOpen(true) }
+  const deleteOtherCollection = async (id) => {
+    if (!window.confirm('Delete this other collection?')) return
+    setMutationLoading(true)
+    try {
+      await festivalCollectionAPI.deleteOtherCollection(festivalEventId, id)
+      toast.success('Other collection deleted')
+      setRevision(value => value + 1)
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Unable to delete other collection')
+    } finally {
+      setMutationLoading(false)
+    }
+  }
   const availableIncomeStatuses = [
     ...new Set(collections.map((row) => row.paymentStatus).filter(Boolean))
   ].sort()
@@ -176,13 +258,13 @@ export const FestivalReport = () => {
         : [],
     [expenses, includeExpenses, expenseStatuses]
   )
-  const collected = sum(selectedCollections, 'collectedAmount') + (includeIncome ? otherCollected : 0)
-  const refunded = sum(selectedCollections, 'refundedAmount')
-  const paid = sum(
+  const collected = view === 'summary' ? Number(summary?.totalCollected || 0) : sum(selectedCollections, 'collectedAmount') + (includeIncome ? otherCollected : 0)
+  const refunded = view === 'summary' ? Number(summary?.totalRefunded || 0) : sum(selectedCollections, 'refundedAmount')
+  const paid = view === 'summary' ? Number(summary?.paidExpenses || 0) : sum(
     selectedExpenses.filter((row) => row.status === 'PAID'),
     'amount'
   )
-  const recorded = sum(selectedExpenses, 'amount')
+  const recorded = view === 'summary' ? Number(summary?.recordedExpenses || 0) : sum(selectedExpenses, 'amount')
   const matches = (values) =>
     values.some((value) =>
       String(value || '')
@@ -418,25 +500,23 @@ export const FestivalReport = () => {
   const changeIncomeSection = (checked) => {
     setIncludeIncome(checked)
     if (!checked && includeExpenses) {
-      setView('expenses')
+      selectView('expenses')
       setReportOptionsTab('expenses')
     }
     if (checked && !includeExpenses) {
-      setView('collections')
+      selectView('collections')
       setReportOptionsTab('income')
     }
   }
   const changeExpenseSection = (checked) => {
     setIncludeExpenses(checked)
     if (checked) {
-      setView('expenses')
+      selectView('expenses')
       if (!includeIncome) setReportOptionsTab('expenses')
-    }
-    else if (includeIncome) {
-      setView('collections')
+    } else if (includeIncome) {
+      selectView('collections')
       setReportOptionsTab('income')
-    }
-  }
+    }}
   return (
     <Shell
       title="Festival collection & expense report"
@@ -471,11 +551,14 @@ export const FestivalReport = () => {
           </button>
         </p>
       ) : !data ? (
-        <p role="status">Loading festival report…</p>
+        <LoadingIndicator label="Loading festival summary…" />
       ) : (
         <article
           className={`festival-report ${blockPdfMode ? 'block-pdf-mode' : ''}`}
         >
+          {(detailLoading || blockReceiptsLoading || mutationLoading) && (
+            <LoadingIndicator overlay label={mutationLoading ? 'Saving changes…' : blockReceiptsLoading ? 'Loading payment details…' : 'Loading report data…'} />
+          )}
           <header className="festival-report-header">
             <p>{account?.societyName || account?.accountName}</p>
             <h2>
@@ -487,8 +570,8 @@ export const FestivalReport = () => {
             </p>
             <small>Entire event · all dates · amounts in INR</small>
           </header>
-          <section className="festival-report-customizer">
-            <h3>Customize downloaded report</h3>
+          <details className="festival-report-customizer">
+            <summary>Customize downloaded report</summary>
             <div className="festival-report-section-options">
               <label>
                 <input
@@ -638,32 +721,19 @@ export const FestivalReport = () => {
               Summary totals, detail rows, and the downloaded PDF use these
               selections.
             </p>
-          </section>
+          </details>
           <div className={`festival-summary-view ${view !== 'summary' ? 'report-hidden' : ''}`}>
             <SummaryGrid
               items={[
-                [
-                  'Expected contributions',
-                  formatCurrency(sum(selectedCollections, 'expectedAmount'))
-                ],
-                ['Collected', formatCurrency(collected)],
-                [
-                  'Other monetary collections',
-                  formatCurrency(includeIncome ? otherCollected : 0)
-                ],
-                [
-                  'Pending contributions',
-                  formatCurrency(sum(selectedCollections, 'pendingAmount'))
-                ],
-                ['Paid expenses', formatCurrency(paid)],
-                ['Refunded contributions', formatCurrency(refunded)],
-                [
-                  'Net after paid expenses',
-                  formatCurrency(collected - refunded - paid)
-                ]
+                ['Expected contributions', formatCurrency(summary?.totalExpected)],
+                ['Collected', formatCurrency(summary?.totalCollected)],
+                ['Other monetary collections', formatCurrency(summary?.otherCollected)],
+                ['Pending contributions', formatCurrency(summary?.totalPending)],
+                ['Paid expenses', formatCurrency(summary?.paidExpenses)],
+                ['Refunded contributions', formatCurrency(summary?.totalRefunded)],
+                ['Net after paid expenses', formatCurrency(Number(summary?.totalCollected || 0) - Number(summary?.totalRefunded || 0) - Number(summary?.paidExpenses || 0))]
               ]}
-            />
-          <section className="festival-report-reconciliation">
+            />        <section className="festival-report-reconciliation">
             <div>
               <span>Event budget</span>
               <strong>
@@ -679,7 +749,7 @@ export const FestivalReport = () => {
             <div>
               <span>Selected excess contributions</span>
               <strong>
-                {formatCurrency(sum(selectedCollections, 'excessAmount'))}
+                {formatCurrency(view === 'summary' ? summary?.totalExcess : sum(selectedCollections, 'excessAmount'))}
               </strong>
             </div>
             <div>
@@ -702,50 +772,44 @@ export const FestivalReport = () => {
           </div>
           <div className="festival-report-controls">
             <div role="group" aria-label="Report details">
-              <button
-                aria-pressed={view === 'summary'}
-                onClick={() => {
-                  setView('summary')
-                  setSearch('')
-                }}
-              >
-                Summary
-              </button>
+              <button aria-pressed={view === 'summary'} onClick={() => { selectView('summary'); setSearch('') }}>Summary</button>
+
               <button
                 aria-pressed={view === 'collections'}
                 onClick={() => {
-                  setView('collections')
+                  setCollectionPage(0)
+                  selectView('collections')
                   setSearch('')
                 }}
               >
-                Flat-wise collections ({collections.length})
+                Flat-wise collections ({summary?.totalFlats ?? collectionPageInfo.totalElements})
               </button>
               <button
                 aria-pressed={view === 'blocks'}
                 onClick={() => {
-                  setView('blocks')
+                  selectView('blocks')
                   setSearch('')
                 }}
               >
-                Block-wise report ({blockCollections.length})
+                Block-wise report ({summary?.totalBlocks ?? blockCollections.length})
               </button>
               <button
                 aria-pressed={view === 'other'}
                 onClick={() => {
-                  setView('other')
+                  selectView('other')
                   setSearch('')
                 }}
               >
-                Other collections ({otherCollections.length})
+                Other collections ({summary?.otherCollectionsCount ?? otherCollections.length})
               </button>
               <button
                 aria-pressed={view === 'expenses'}
                 onClick={() => {
-                  setView('expenses')
+                  selectView('expenses')
                   setSearch('')
                 }}
               >
-                Expense details ({expenses.length})
+                Expense details ({summary?.expenseCount ?? expenses.length})
               </button>
             </div>
             {view === 'summary' ? null : view === 'blocks' ? (
@@ -879,12 +943,24 @@ export const FestivalReport = () => {
                   No collections match your search.
                 </p>
               )}
+            {view === 'collections' && collectionPageInfo.totalElements > 0 && (
+              <div className="pagination">
+                <span>Showing {collectionPage * 10 + 1}–{Math.min((collectionPage + 1) * 10, collectionPageInfo.totalElements)} of {collectionPageInfo.totalElements}</span>
+                <button disabled={collectionPage === 0 || detailLoading} onClick={() => selectCollectionPage(collectionPage - 1)}>Previous</button>
+                <button disabled={collectionPage + 1 >= collectionPageInfo.totalPages || detailLoading} onClick={() => selectCollectionPage(collectionPage + 1)}>Next</button>
+              </div>
+            )}
           </section>
           <section className={`festival-report-detail festival-other-detail festival-income-detail ${view !== 'other' ? 'report-hidden' : ''} ${!includeIncome ? 'report-excluded' : ''}`}>
-            <div className="section-heading-row"><div><h3>Contributions & special mentions</h3><p>Record money, donated items, sponsored materials, and volunteered services separately from flat collections.</p></div><strong>Cash received: {formatCurrency(otherCollected)}</strong></div>
-            {canManageOther && <form className="form-panel festival-contribution-form" onSubmit={saveOtherCollection}>
-              <h3>{editingOtherId ? 'Edit contribution' : 'Add contribution'}</h3>
-              <div className="form-grid two">
+            <div className="section-heading-row"><div><h3>Contributions & special mentions</h3><p>Record money, donated items, sponsored materials, and volunteered services separately from flat collections.</p></div><div className="festival-other-heading-actions"><strong>Cash received: {formatCurrency(otherCollected)}</strong>{canManageOther && <button type="button" className="primary" onClick={openOtherModal}>Add contribution</button>}</div></div>
+            {canManageOther && otherModalOpen && (
+              <div className="modal-backdrop" role="presentation" onMouseDown={closeOtherModal}>
+                <form className="expense-modal festival-contribution-modal festival-contribution-form" role="dialog" aria-modal="true" aria-labelledby="festival-contribution-title" onMouseDown={(event) => event.stopPropagation()} onSubmit={saveOtherCollection}>
+                  {mutationLoading && <LoadingIndicator overlay label="Saving contribution…" />}
+                  <div className="expense-modal-header">
+                    <h2 id="festival-contribution-title">{editingOtherId ? 'Edit contribution' : 'Add contribution'}</h2>
+                    <button type="button" className="modal-close" aria-label="Close contribution form" disabled={mutationLoading} onClick={closeOtherModal}>×</button>
+                  </div>              <div className="form-grid two">
                 <label>Contribution kind<select value={otherForm.contributionKind} onChange={e=>setOtherForm({...otherForm,contributionKind:e.target.value})}><option value="MONETARY">Money</option><option value="IN_KIND">Item / material</option><option value="SERVICE">Volunteered service</option></select></label>
                 <label>Source type<select value={otherForm.sourceType} onChange={e=>setOtherForm({...otherForm,sourceType:e.target.value})}>{['DONATION','SPONSORSHIP','STALL_FEE','ADVERTISEMENT','VENDOR_CONTRIBUTION','COMMITTEE_CONTRIBUTION','INTEREST','OTHER'].map(value=><option key={value} value={value}>{value.replaceAll('_',' ')}</option>)}</select></label>
                 <label>Contributor / source name<input disabled={otherForm.anonymous} value={otherForm.contributorName} onChange={e=>setOtherForm({...otherForm,contributorName:e.target.value})} required={!otherForm.anonymous}/></label>
@@ -898,8 +974,13 @@ export const FestivalReport = () => {
                 <label className="festival-contribution-check"><input type="checkbox" checked={otherForm.specialMention} onChange={e=>setOtherForm({...otherForm,specialMention:e.target.checked})}/><span>Show as special contribution mention</span></label>
                 <label className="festival-contribution-check"><input type="checkbox" checked={otherForm.anonymous} onChange={e=>setOtherForm({...otherForm,anonymous:e.target.checked,contributorName:e.target.checked?'':otherForm.contributorName})}/><span>Anonymous contribution</span></label>
               </div>
-              <div className="form-actions">{editingOtherId&&<button type="button" onClick={resetOtherForm}>Cancel edit</button>}<button className="primary">{editingOtherId?'Update contribution':'Add contribution'}</button></div>
-            </form>}
+                  <div className="expense-modal-actions">
+                    <button type="button" disabled={mutationLoading} onClick={closeOtherModal}>Cancel</button>
+                    <button className="primary" disabled={mutationLoading}>{mutationLoading ? 'Saving…' : editingOtherId ? 'Update contribution' : 'Add contribution'}</button>
+                  </div>
+                </form>
+              </div>
+            )}
             <div className="table-wrap"><table><thead><tr><th>Date</th><th>Kind / source</th><th>Contributor</th><th>Contribution / special mention</th><th>Payment</th><th>Recorded by</th><th className="numeric">Amount / value</th>{canManageOther&&<th>Actions</th>}</tr></thead><tbody>{otherCollections.map(row=><tr key={row.id}><td>{formatDate(row.paymentDate)}</td><td><strong>{(row.contributionKind||'MONETARY').replaceAll('_',' ')}</strong><br/><small>{row.sourceType.replaceAll('_',' ')}</small></td><td><strong>{row.contributorName}</strong>{row.contactDetails&&<><br/><small>{row.contactDetails}</small></>}</td><td>{row.specialMention&&<span className="status-pill approved">Special mention</span>} {row.itemName&&<><strong>{row.itemName}</strong>{row.quantity&&<> · {row.quantity}</>}<br/></>}{row.description||(!row.itemName?'-':'')}</td><td>{row.paymentMode||'Not applicable'}{row.transactionReference&&<><br/><small>{row.transactionReference}</small></>}</td><td>{row.collectedBy}</td><td className="numeric">{row.amount!=null?formatCurrency(row.amount):'-'}{row.amount!=null&&(row.contributionKind||'MONETARY')!=='MONETARY'&&<><br/><small>Estimated value</small></>}</td>{canManageOther&&<td className="table-actions"><button onClick={()=>editOtherCollection(row)}>Edit</button><button className="danger" onClick={()=>deleteOtherCollection(row.id)}>Delete</button></td>}</tr>)}{!otherCollections.length&&<tr><td colSpan={canManageOther?8:7} className="empty-state">No contributions recorded for this festival.</td></tr>}</tbody></table></div>
           </section>
           <section

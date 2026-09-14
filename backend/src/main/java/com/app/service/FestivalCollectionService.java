@@ -21,6 +21,7 @@ import com.app.repository.FestivalCollectionRepository;
 import com.app.repository.FestivalOtherCollectionRepository;
 import com.app.repository.FestivalEventRepository;
 import com.app.repository.FlatRepository;
+import com.app.repository.ExpenseRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -43,6 +44,7 @@ public class FestivalCollectionService {
     private final FlatRepository flatRepository;
     private final AccountRepository accountRepository;
     private final AccountUserMembershipRepository membershipRepository;
+    private final ExpenseRepository expenseRepository;
 
     public FestivalCollectionService(
             FestivalCollectionRepository collectionRepository,
@@ -51,7 +53,8 @@ public class FestivalCollectionService {
             FestivalEventRepository festivalEventRepository,
             FlatRepository flatRepository,
             AccountRepository accountRepository,
-            AccountUserMembershipRepository membershipRepository) {
+            AccountUserMembershipRepository membershipRepository,
+            ExpenseRepository expenseRepository) {
         this.collectionRepository = collectionRepository;
         this.receiptRepository = receiptRepository;
         this.otherCollectionRepository = otherCollectionRepository;
@@ -59,6 +62,7 @@ public class FestivalCollectionService {
         this.flatRepository = flatRepository;
         this.accountRepository = accountRepository;
         this.membershipRepository = membershipRepository;
+        this.expenseRepository = expenseRepository;
     }
 
     @Transactional(readOnly = true)
@@ -174,6 +178,7 @@ public class FestivalCollectionService {
     @Transactional(readOnly = true)
     public FestivalCollectionSummaryDto getSummary(Long accountId, Long festivalEventId) {
         List<FestivalCollection> collections = collectionRepository.findByAccountIdAndFestivalEventId(accountId, festivalEventId);
+        var expenses = expenseRepository.findByAccountIdAndFestivalEventIdAndSoftDeletedFalse(accountId, festivalEventId);
         BigDecimal expected = BigDecimal.ZERO;
         BigDecimal collected = BigDecimal.ZERO;
         BigDecimal pending = BigDecimal.ZERO;
@@ -210,6 +215,11 @@ public class FestivalCollectionService {
                 .partialFlats(partial)
                 .excessFlats(excessFlats)
                 .totalFlats(collections.size())
+                .totalBlocks(collections.stream().map(item -> item.getFlat().getBlockName()).filter(java.util.Objects::nonNull).distinct().count())
+                .otherCollectionsCount(otherCollectionRepository.countByAccountIdAndFestivalEventId(accountId, festivalEventId))
+                .expenseCount(expenses.size())
+                .paidExpenses(expenses.stream().filter(item -> item.getStatus() == com.app.entity.ExpenseStatus.PAID).map(com.app.entity.Expense::getAmount).filter(java.util.Objects::nonNull).reduce(BigDecimal.ZERO, BigDecimal::add))
+                .recordedExpenses(expenses.stream().map(com.app.entity.Expense::getAmount).filter(java.util.Objects::nonNull).reduce(BigDecimal.ZERO, BigDecimal::add))
                 .build();
     }
 

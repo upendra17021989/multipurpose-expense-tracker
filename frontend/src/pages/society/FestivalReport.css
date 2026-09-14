@@ -1,3 +1,43 @@
+.festival-other-heading-actions { display: flex; align-items: center; justify-content: flex-end; gap: 14px; flex-wrap: wrap; }
+.festival-contribution-modal { position: relative; width: min(980px, calc(100vw - 32px)); max-height: calc(100dvh - 32px); overflow-y: auto; }
+.festival-contribution-modal .form-grid { margin-top: 18px; }
+@media (max-width: 700px) {
+  .festival-other-heading-actions { align-items: stretch; flex-direction: column; }
+  .festival-contribution-modal { width: calc(100vw - 20px); max-height: calc(100dvh - 20px); padding: 16px; }
+  .festival-contribution-modal .form-grid.two { grid-template-columns: 1fr; }
+}
+.festival-report {
+  position: relative;
+}
+.festival-api-loader {
+  display: flex;
+  min-height: 180px;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 14px;
+  color: #173c36;
+}
+.festival-api-loader-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 50;
+  min-height: 100%;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(2px);
+}
+.festival-api-loader-spinner {
+  width: 48px;
+  height: 48px;
+  border: 5px solid #cce4df;
+  border-top-color: #0f766e;
+  border-radius: 50%;
+  animation: festival-loader-spin 0.75s linear infinite;
+}
+@keyframes festival-loader-spin {
+  to { transform: rotate(360deg); }
+}
 .festival-report-actions {
   display: flex;
   flex-wrap: wrap;
@@ -143,8 +183,14 @@
   border-radius: 12px;
   background: #f8fbfc;
 }
-.festival-report-customizer h3 {
-  margin: 0 0 14px;
+.festival-report-customizer summary {
+  cursor: pointer;
+  font-size: 17px;
+  font-weight: 700;
+  color: #173c36;
+}
+.festival-report-customizer[open] summary {
+  margin-bottom: 14px;
 }
 .festival-report-customizer fieldset {
   display: flex;
@@ -499,6 +545,7 @@
 @media print {
   body:has(.festival-report) .app-layout > :not(main),
   body:has(.festival-report) .page-header,
+  .festival-api-loader,
   .festival-report-actions,
   .festival-report-customizer,
   .festival-report-controls,
