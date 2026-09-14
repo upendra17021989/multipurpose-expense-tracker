@@ -648,6 +648,10 @@ export const FestivalReport = () => {
                 ],
                 ['Collected', formatCurrency(collected)],
                 [
+                  'Other monetary collections',
+                  formatCurrency(includeIncome ? otherCollected : 0)
+                ],
+                [
                   'Pending contributions',
                   formatCurrency(sum(selectedCollections, 'pendingAmount'))
                 ],
