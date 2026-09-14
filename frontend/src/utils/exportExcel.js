@@ -1,9 +1,10 @@
-import * as XLSX from 'xlsx'
-import { Capacitor } from '@capacitor/core'
-import { Directory, Filesystem } from '@capacitor/filesystem'
-import { Share } from '@capacitor/share'
-
 export const exportWorkbook = async (sheets, fileName) => {
+  // Excel and native sharing libraries are large; only download them when the
+  // user actually exports instead of putting them on the report's critical path.
+  const [XLSX, { Capacitor }] = await Promise.all([
+    import('xlsx'),
+    import('@capacitor/core')
+  ])
   const workbook = XLSX.utils.book_new()
 
   sheets.forEach(({ name, rows }) => {
@@ -17,6 +18,11 @@ export const exportWorkbook = async (sheets, fileName) => {
     XLSX.writeFile(workbook, downloadName)
     return
   }
+
+  const [{ Directory, Filesystem }, { Share }] = await Promise.all([
+    import('@capacitor/filesystem'),
+    import('@capacitor/share')
+  ])
 
   const data = XLSX.write(workbook, { bookType: 'xlsx', type: 'base64' })
   const savedFile = await Filesystem.writeFile({

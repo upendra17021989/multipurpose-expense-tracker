@@ -333,6 +333,17 @@ public class ExpenseService {
                 .build();
     }
 
+    @Transactional(readOnly = true)
+    public List<ExpenseDto> getFestivalExpenses(Long accountId, Long festivalEventId) {
+        // Keep report reads tenant-scoped at the database. The report previously loaded
+        // every expense for the account and discarded unrelated rows in the browser.
+        return expenseRepository.findByAccountIdAndFestivalEventIdAndSoftDeletedFalse(accountId, festivalEventId)
+                .stream()
+                .filter(expense -> expense.getExpenseType() == ExpenseType.FESTIVAL)
+                .map(this::mapToDto)
+                .collect(Collectors.toList());
+    }
+
     private void saveItems(Expense expense, List<ExpenseCreateRequest.ItemRequest> items) {
         if (items == null) return;
         for (int index = 0; index < items.size(); index++) {

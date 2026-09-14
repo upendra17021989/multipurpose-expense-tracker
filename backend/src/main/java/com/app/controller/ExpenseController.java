@@ -70,6 +70,14 @@ public class ExpenseController {
         return ResponseEntity.ok(expenses);
     }
 
+    @GetMapping("/festival/{festivalEventId}")
+    public ResponseEntity<List<ExpenseDto>> getFestivalExpenses(
+            @AuthenticationPrincipal UserPrincipal userPrincipal,
+            @PathVariable Long festivalEventId) {
+        return ResponseEntity.ok(expenseService.getFestivalExpenses(
+                userPrincipal.getAccountId(), festivalEventId));
+    }
+
     @GetMapping("/{expenseId}")
     public ResponseEntity<ExpenseDto> getExpense(
             @AuthenticationPrincipal UserPrincipal userPrincipal,

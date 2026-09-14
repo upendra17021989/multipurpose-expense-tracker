@@ -79,6 +79,7 @@ export const expenseCategoryAPI = {
 
 export const expenseAPI = {
   getExpenses: () => axiosInstance.get('/expenses'),
+  getFestivalExpenses: (festivalEventId) => axiosInstance.get(`/expenses/festival/${festivalEventId}`),
   getTodaysExpenses: () => axiosInstance.get('/expenses/today'),
   getExpensesByDateRange: (startDate, endDate) => axiosInstance.get('/expenses/range', { params: { startDate, endDate } }),
   getExpense: (expenseId) => axiosInstance.get(`/expenses/${expenseId}`),

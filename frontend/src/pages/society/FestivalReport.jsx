@@ -99,7 +99,7 @@ export const FestivalReport = () => {
             page: 0,
             size: 100
           }),
-          expenseAPI.getExpenses(),
+          expenseAPI.getFestivalExpenses(festivalEventId),
           festivalCollectionAPI.getOtherCollections(festivalEventId)
         ])
         const firstPage = firstCollections.data || {}
@@ -124,11 +124,7 @@ export const FestivalReport = () => {
             festival: festival.data,
             collections: allCollections,
             otherCollections: otherCollections.data || [],
-            expenses: (expenses.data || []).filter(
-              (row) =>
-                String(row.festivalEventId) === String(festivalEventId) &&
-                row.expenseType === 'FESTIVAL'
-            )
+            expenses: expenses.data || []
           })
       } catch {
         if (active)
