@@ -21,6 +21,7 @@ export const FestivalCollectionList = () => {
   const [expectedAmount, setExpectedAmount] = useState('')
   const [remarks, setRemarks] = useState('')
   const [filters, setFilters] = useState({ search: '', status: '' })
+  const [searchInput, setSearchInput] = useState('')
   const [editingDemandId, setEditingDemandId] = useState(null)
   const [demandForm, setDemandForm] = useState({ expectedAmount: '', remarks: '' })
   const [loading, setLoading] = useState(true)
@@ -51,6 +52,18 @@ export const FestivalCollectionList = () => {
   }
 
   useEffect(loadData, [assignedBlock, festivalEventId, filters.search, filters.status, page])
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setPage(0)
+      setFilters((current) =>
+        current.search === searchInput
+          ? current
+          : { ...current, search: searchInput }
+      )
+    }, 400)
+    return () => window.clearTimeout(timer)
+  }, [searchInput])
 
   const visibleCollections = collections
 
@@ -160,7 +173,7 @@ export const FestivalCollectionList = () => {
       <section className={`collection-records-section ${mobileSection !== 'collections' ? 'mobile-section-hidden' : ''}`} aria-label="Flat-wise collections">
       <div className="collection-records-heading"><div><h2>Flat-wise collections</h2><p>Search a flat or open a row to record payments and view receipts.</p></div><strong>{totalElements} records</strong></div>
       <section className="toolbar-panel flat-toolbar">
-        <input placeholder="Search flat, owner, status" value={filters.search} onChange={(event) => { setPage(0); setFilters({ ...filters, search: event.target.value }) }} />
+        <input placeholder="Search flat, owner, status" value={searchInput} onChange={(event) => setSearchInput(event.target.value)} />
         <select value={filters.status} onChange={(event) => { setPage(0); setFilters({ ...filters, status: event.target.value }) }}>
           <option value="">All statuses</option>
           <option value="PENDING">Pending</option>
