@@ -79,7 +79,7 @@ public class FestivalCollectionService {
         PaymentStatus paymentStatus = valueOrEmpty(status).isEmpty() ? null : PaymentStatus.valueOf(valueOrEmpty(status).toUpperCase());
         return collectionRepository.searchPage(accountId, festivalEventId, valueOrEmpty(blockName),
                 paymentStatus, valueOrEmpty(search),
-                PageRequest.of(Math.max(0, page), Math.min(Math.max(1, size), 100))).map(this::mapToDto);
+                PageRequest.of(Math.max(0, page), Math.min(Math.max(1, size), 1000))).map(this::mapToDto);
     }
 
     @Transactional(readOnly = true)

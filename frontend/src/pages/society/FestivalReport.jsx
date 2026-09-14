@@ -88,7 +88,6 @@ const [search, setSearch] = useState('')
   const [expenseStatuses, setExpenseStatuses] = useState(null)
   const [includeIncome, setIncludeIncome] = useState(true)
   const [includeExpenses, setIncludeExpenses] = useState(true)
-  const [reportOptionsTab, setReportOptionsTab] = useState('income')
   const [incomeColumns, setIncomeColumns] = useState(
     incomeColumnOptions.map(([key]) => key)
   )
@@ -155,7 +154,7 @@ const [search, setSearch] = useState('')
       try {
 
         if (view === 'collections') {
-          const response = await festivalCollectionAPI.getCollections(festivalEventId, { page: collectionPage, size: 10 })
+          const response = await festivalCollectionAPI.getCollections(festivalEventId, { page: 0, size: 1000 })
           const page = response.data || {}
           if (active) {
             setData(current => ({ ...current, collections: page.content || [] }))
@@ -501,22 +500,16 @@ const [search, setSearch] = useState('')
     setIncludeIncome(checked)
     if (!checked && includeExpenses) {
       selectView('expenses')
-      setReportOptionsTab('expenses')
     }
     if (checked && !includeExpenses) {
       selectView('collections')
-      setReportOptionsTab('income')
     }
   }
   const changeExpenseSection = (checked) => {
     setIncludeExpenses(checked)
-    if (checked) {
-      selectView('expenses')
-      if (!includeIncome) setReportOptionsTab('expenses')
-    } else if (includeIncome) {
-      selectView('collections')
-      setReportOptionsTab('income')
-    }}
+    if (checked) selectView('expenses')
+    else if (includeIncome) selectView('collections')
+  }
   return (
     <Shell
       title="Festival collection & expense report"
@@ -570,157 +563,100 @@ const [search, setSearch] = useState('')
             </p>
             <small>Entire event · all dates · amounts in INR</small>
           </header>
+          <nav className="festival-report-tabs" aria-label="Report sections">
+              <button aria-pressed={view === 'summary'} onClick={() => { selectView('summary'); setSearch('') }}>Summary</button>
+
+              <button
+                aria-pressed={view === 'collections'}
+                onClick={() => {
+                  setCollectionPage(0)
+                  selectView('collections')
+                  setSearch('')
+                }}
+              >
+                Flat-wise collections ({summary?.totalFlats ?? collectionPageInfo.totalElements})
+              </button>
+              <button
+                aria-pressed={view === 'blocks'}
+                onClick={() => {
+                  selectView('blocks')
+                  setSearch('')
+                }}
+              >
+                Block-wise report ({summary?.totalBlocks ?? blockCollections.length})
+              </button>
+              <button
+                aria-pressed={view === 'other'}
+                onClick={() => {
+                  selectView('other')
+                  setSearch('')
+                }}
+              >
+                Other collections ({summary?.otherCollectionsCount ?? otherCollections.length})
+              </button>
+              <button
+                aria-pressed={view === 'expenses'}
+                onClick={() => {
+                  selectView('expenses')
+                  setSearch('')
+                }}
+              >
+                Expense details ({summary?.expenseCount ?? expenses.length})
+              </button>
+          </nav>
           <details className="festival-report-customizer">
-            <summary>Customize downloaded report</summary>
-            <div className="festival-report-section-options">
-              <label>
-                <input
-                  type="checkbox"
-                  checked={includeIncome}
-                  onChange={(event) =>
-                    changeIncomeSection(event.target.checked)
-                  }
-                />{' '}
-                Income / collections
-              </label>
-              <label>
-                <input
-                  type="checkbox"
-                  checked={includeExpenses}
-                  onChange={(event) =>
-                    changeExpenseSection(event.target.checked)
-                  }
-                />{' '}
-                Expense details
-              </label>
-            </div>
-            <div className="festival-customizer-tabs" role="tablist" aria-label="Report customization options">
-              <button
-                type="button"
-                role="tab"
-                aria-selected={reportOptionsTab === 'income'}
-                disabled={!includeIncome}
-                onClick={() => setReportOptionsTab('income')}
-              >
-                Income options
-              </button>
-              <button
-                type="button"
-                role="tab"
-                aria-selected={reportOptionsTab === 'expenses'}
-                disabled={!includeExpenses}
-                onClick={() => setReportOptionsTab('expenses')}
-              >
-                Expense options
-              </button>
-            </div>
-            {includeIncome && reportOptionsTab === 'income' && (
-              <div className="festival-customizer-panel festival-customizer-income-panel" role="tabpanel">
+            <summary>Customize {view === 'summary' ? 'summary report' : view === 'collections' ? 'flat-wise collections' : view === 'blocks' ? 'block-wise report' : view === 'other' ? 'other collections' : 'expense details'}</summary>
+            {view === 'summary' && (
+              <div className="festival-customizer-panel" role="group" aria-label="Summary report sections">
+                <p className="muted">Choose which sections are included in the downloaded summary report.</p>
+                <div className="festival-report-section-options">
+                  <label><input type="checkbox" checked={includeIncome} onChange={(event) => changeIncomeSection(event.target.checked)} /> Income / collections</label>
+                  <label><input type="checkbox" checked={includeExpenses} onChange={(event) => changeExpenseSection(event.target.checked)} /> Expense details</label>
+                </div>
+              </div>
+            )}
+            {(view === 'collections' || view === 'blocks') && (
+              <div className="festival-customizer-panel" role="group" aria-label={`${view === 'blocks' ? 'Block-wise' : 'Flat-wise'} report options`}>
                 <fieldset>
                   <legend>Income status</legend>
                   {availableIncomeStatuses.map((status) => (
-                    <label key={status}>
-                      <input
-                        type="checkbox"
-                        checked={statusSelected(incomeStatuses, status)}
-                        onChange={() =>
-                          toggleStatus(
-                            setIncomeStatuses,
-                            availableIncomeStatuses,
-                            status
-                          )
-                        }
-                      />
-                      {status}
-                    </label>
+                    <label key={status}><input type="checkbox" checked={statusSelected(incomeStatuses, status)} onChange={() => toggleStatus(setIncomeStatuses, availableIncomeStatuses, status)} />{status}</label>
                   ))}
-                  {!availableIncomeStatuses.length && (
-                    <span>No income statuses</span>
-                  )}
+                  {!availableIncomeStatuses.length && <span>No income statuses loaded</span>}
                 </fieldset>
                 <fieldset>
-                  <legend>Flat-wise income columns</legend>
-                  {incomeColumnOptions.map(([key, label]) => (
-                    <label key={key}>
-                      <input
-                        type="checkbox"
-                        checked={incomeColumns.includes(key)}
-                        disabled={
-                          incomeColumns.length === 1 &&
-                          incomeColumns.includes(key)
-                        }
-                        onChange={() => toggleColumn(setIncomeColumns, key)}
-                      />
-                      {label}
-                    </label>
-                  ))}
-                </fieldset>
-                <fieldset>
-                  <legend>Block-wise income columns</legend>
-                  {blockColumnOptions.map(([key, label]) => (
-                    <label key={key}>
-                      <input
-                        type="checkbox"
-                        checked={blockColumns.includes(key)}
-                        disabled={
-                          blockColumns.length === 1 &&
-                          blockColumns.includes(key)
-                        }
-                        onChange={() => toggleColumn(setBlockColumns, key)}
-                      />
-                      {label}
-                    </label>
-                  ))}
+                  <legend>{view === 'blocks' ? 'Block-wise' : 'Flat-wise'} columns</legend>
+                  {(view === 'blocks' ? blockColumnOptions : incomeColumnOptions).map(([key, label]) => {
+                    const selected = view === 'blocks' ? blockColumns : incomeColumns
+                    const setter = view === 'blocks' ? setBlockColumns : setIncomeColumns
+                    return <label key={key}><input type="checkbox" checked={selected.includes(key)} disabled={selected.length === 1 && selected.includes(key)} onChange={() => toggleColumn(setter, key)} />{label}</label>
+                  })}
                 </fieldset>
               </div>
             )}
-            {includeExpenses && reportOptionsTab === 'expenses' && (
-              <div className="festival-customizer-panel" role="tabpanel">
+            {view === 'expenses' && (
+              <div className="festival-customizer-panel" role="group" aria-label="Expense report options">
                 <fieldset>
                   <legend>Expense status</legend>
                   {availableExpenseStatuses.map((status) => (
-                    <label key={status}>
-                      <input
-                        type="checkbox"
-                        checked={statusSelected(expenseStatuses, status)}
-                        onChange={() =>
-                          toggleStatus(
-                            setExpenseStatuses,
-                            availableExpenseStatuses,
-                            status
-                          )
-                        }
-                      />
-                      {status}
-                    </label>
+                    <label key={status}><input type="checkbox" checked={statusSelected(expenseStatuses, status)} onChange={() => toggleStatus(setExpenseStatuses, availableExpenseStatuses, status)} />{status}</label>
                   ))}
-                  {!availableExpenseStatuses.length && (
-                    <span>No expense statuses</span>
-                  )}
+                  {!availableExpenseStatuses.length && <span>No expense statuses loaded</span>}
                 </fieldset>
                 <fieldset>
                   <legend>Expense columns</legend>
                   {expenseColumnOptions.map(([key, label]) => (
-                    <label key={key}>
-                      <input
-                        type="checkbox"
-                        checked={expenseColumns.includes(key)}
-                        disabled={
-                          expenseColumns.length === 1 &&
-                          expenseColumns.includes(key)
-                        }
-                        onChange={() => toggleColumn(setExpenseColumns, key)}
-                      />
-                      {label}
-                    </label>
+                    <label key={key}><input type="checkbox" checked={expenseColumns.includes(key)} disabled={expenseColumns.length === 1 && expenseColumns.includes(key)} onChange={() => toggleColumn(setExpenseColumns, key)} />{label}</label>
                   ))}
                 </fieldset>
               </div>
             )}
-            <p className="muted">
-              Summary totals, detail rows, and the downloaded PDF use these
-              selections.
-            </p>
+            {view === 'other' && (
+              <div className="festival-customizer-panel">
+                <p className="muted">Other contributions and special mentions are included as displayed. Use the Add contribution action to manage these records.</p>
+              </div>
+            )}
+            <p className="muted">These options apply to the current tab and its downloaded report.</p>
           </details>
           <div className={`festival-summary-view ${view !== 'summary' ? 'report-hidden' : ''}`}>
             <SummaryGrid
@@ -771,47 +707,7 @@ const [search, setSearch] = useState('')
           </section>
           </div>
           <div className="festival-report-controls">
-            <div role="group" aria-label="Report details">
-              <button aria-pressed={view === 'summary'} onClick={() => { selectView('summary'); setSearch('') }}>Summary</button>
 
-              <button
-                aria-pressed={view === 'collections'}
-                onClick={() => {
-                  setCollectionPage(0)
-                  selectView('collections')
-                  setSearch('')
-                }}
-              >
-                Flat-wise collections ({summary?.totalFlats ?? collectionPageInfo.totalElements})
-              </button>
-              <button
-                aria-pressed={view === 'blocks'}
-                onClick={() => {
-                  selectView('blocks')
-                  setSearch('')
-                }}
-              >
-                Block-wise report ({summary?.totalBlocks ?? blockCollections.length})
-              </button>
-              <button
-                aria-pressed={view === 'other'}
-                onClick={() => {
-                  selectView('other')
-                  setSearch('')
-                }}
-              >
-                Other collections ({summary?.otherCollectionsCount ?? otherCollections.length})
-              </button>
-              <button
-                aria-pressed={view === 'expenses'}
-                onClick={() => {
-                  selectView('expenses')
-                  setSearch('')
-                }}
-              >
-                Expense details ({summary?.expenseCount ?? expenses.length})
-              </button>
-            </div>
             {view === 'summary' ? null : view === 'blocks' ? (
               <div className="festival-block-pdf-controls">
                 <select
@@ -943,13 +839,7 @@ const [search, setSearch] = useState('')
                   No collections match your search.
                 </p>
               )}
-            {view === 'collections' && collectionPageInfo.totalElements > 0 && (
-              <div className="pagination">
-                <span>Showing {collectionPage * 10 + 1}–{Math.min((collectionPage + 1) * 10, collectionPageInfo.totalElements)} of {collectionPageInfo.totalElements}</span>
-                <button disabled={collectionPage === 0 || detailLoading} onClick={() => selectCollectionPage(collectionPage - 1)}>Previous</button>
-                <button disabled={collectionPage + 1 >= collectionPageInfo.totalPages || detailLoading} onClick={() => selectCollectionPage(collectionPage + 1)}>Next</button>
-              </div>
-            )}
+
           </section>
           <section className={`festival-report-detail festival-other-detail festival-income-detail ${view !== 'other' ? 'report-hidden' : ''} ${!includeIncome ? 'report-excluded' : ''}`}>
             <div className="section-heading-row"><div><h3>Contributions & special mentions</h3><p>Record money, donated items, sponsored materials, and volunteered services separately from flat collections.</p></div><div className="festival-other-heading-actions"><strong>Cash received: {formatCurrency(otherCollected)}</strong>{canManageOther && <button type="button" className="primary" onClick={openOtherModal}>Add contribution</button>}</div></div>
