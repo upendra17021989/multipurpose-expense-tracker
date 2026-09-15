@@ -5,6 +5,10 @@
 .festival-expenses-page .toolbar-panel input { min-width: 0; }
 .festival-expenses-page .summary-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 .festival-expenses-page .alert-panel { line-height: 1.6; }
+.festival-expenses-page .expense-pagination-bar { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-top: 12px; }
+.festival-expenses-page .expense-pagination-bar label { display: flex; align-items: center; gap: 8px; font-weight: 600; }
+.festival-expenses-page .expense-pagination-bar select { width: auto; min-width: 70px; }
+.festival-expenses-page .expense-pagination-bar .table-pagination { margin: 0; }
 
 @media (max-width: 1050px) {
   .festival-expenses-page .toolbar-panel { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -22,6 +26,7 @@
   .festival-expenses-page .summary-card span { font-size: 11px; }
   .festival-expenses-page .summary-card strong { font-size: 15px; overflow-wrap: anywhere; }
   .festival-expenses-page .alert-panel { padding: 14px; font-size: 12px; }
+  .festival-expenses-page .expense-pagination-bar { align-items: stretch; flex-direction: column; }
   .festival-expenses-page > .table-wrap { overflow: visible; }
   .festival-expenses-page > .table-wrap table { width: 100%; min-width: 0; table-layout: fixed; font-size: 11px; }
   .festival-expenses-page > .table-wrap th, .festival-expenses-page > .table-wrap td { padding: 9px 6px; overflow-wrap: anywhere; vertical-align: top; }

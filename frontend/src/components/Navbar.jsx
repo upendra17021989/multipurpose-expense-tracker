@@ -22,6 +22,9 @@ const glyphs = {
   'Financial Ledger': 'L',
   'Journal Book': 'J',
   Festivals: 'F',
+  'Festival collections': 'C',
+  'Expense details & estimates': 'E',
+  'Collection & expense report': 'R',
   Collections: 'C',
   Flats: 'F',
   'Member Directory': 'M',
@@ -54,11 +57,27 @@ export const Navbar = () => {
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [accountOpen, setAccountOpen] = useState(false)
 
-  const groups = getNavigationGroups(
+  const baseGroups = getNavigationGroups(
     currentAccount?.accountType,
     user?.systemAdmin,
     currentAccount?.role
   )
+  const festivalRoute = location.pathname.match(/^\/society\/festival-collections\/([^/]+)/)
+    || location.pathname.match(/^\/society\/festivals\/([^/]+)\/(?:expenses|report)/)
+  const festivalEventId = festivalRoute?.[1]
+  const groups = festivalEventId
+    ? baseGroups.map((group) => ({
+        ...group,
+        items: group.items.flatMap((item) => item.label === 'Festivals'
+          ? [
+              { ...item, exact: true },
+              { label: 'Festival collections', to: `/society/festival-collections/${festivalEventId}`, nested: true },
+              { label: 'Expense details & estimates', to: `/society/festivals/${festivalEventId}/expenses`, exact: true, nested: true },
+              { label: 'Collection & expense report', to: `/society/festivals/${festivalEventId}/report`, exact: true, nested: true }
+            ]
+          : [item])
+      }))
+    : baseGroups
   const closeDrawer = (restoreFocus = false) => {
     setDrawerOpen(false)
     setAccountOpen(false)
@@ -145,7 +164,7 @@ export const Navbar = () => {
       <Link
         key={item.to}
         to={item.to}
-        className={`sidebar-nav-link${active ? ' active' : ''}`}
+        className={`sidebar-nav-link${item.nested ? ' sidebar-nav-link-child' : ''}${active ? ' active' : ''}`}
         aria-current={active ? 'page' : undefined}
         onClick={() => closeDrawer()}
       >

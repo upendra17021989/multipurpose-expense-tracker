@@ -1,7 +1,7 @@
 import { Link, useParams } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import { toast } from 'react-toastify'
-import { festivalCollectionAPI, festivalEventAPI } from '../../api/endpoints'
+import { festivalCollectionAPI, festivalEventAPI, societyFlatAPI } from '../../api/endpoints'
 import { useAuthStore } from '../../store/authStore'
 import { formatCurrency } from '../../utils/format'
 import { Shell, SummaryGrid } from '../DashboardRouter'
@@ -20,12 +20,14 @@ export const FestivalCollectionList = () => {
   const [summary, setSummary] = useState(null)
   const [expectedAmount, setExpectedAmount] = useState('')
   const [remarks, setRemarks] = useState('')
-  const [filters, setFilters] = useState({ search: '', status: '' })
+  const [filters, setFilters] = useState({ search: '', status: '', blockName: '' })
+  const [blocks, setBlocks] = useState([])
   const [searchInput, setSearchInput] = useState('')
   const [editingDemandId, setEditingDemandId] = useState(null)
   const [demandForm, setDemandForm] = useState({ expectedAmount: '', remarks: '' })
   const [loading, setLoading] = useState(true)
   const [page, setPage] = useState(0)
+  const [pageSize, setPageSize] = useState(10)
   const [totalPages, setTotalPages] = useState(0)
   const [totalElements, setTotalElements] = useState(0)
   const [generating, setGenerating] = useState(false)
@@ -37,7 +39,7 @@ export const FestivalCollectionList = () => {
     setLoading(true)
     Promise.all([
       festivalEventAPI.getFestival(festivalEventId),
-      festivalCollectionAPI.getCollections(festivalEventId, { page, size: 10, search: filters.search, status: filters.status, blockName: assignedBlock }),
+      festivalCollectionAPI.getCollections(festivalEventId, { page, size: pageSize, search: filters.search, status: filters.status, blockName: assignedBlock || filters.blockName }),
       festivalCollectionAPI.getSummary(festivalEventId)
     ])
       .then(([festivalResponse, collectionResponse, summaryResponse]) => {
@@ -51,7 +53,17 @@ export const FestivalCollectionList = () => {
       .finally(() => setLoading(false))
   }
 
-  useEffect(loadData, [assignedBlock, festivalEventId, filters.search, filters.status, page])
+  useEffect(loadData, [assignedBlock, festivalEventId, filters.search, filters.status, filters.blockName, page, pageSize])
+
+  useEffect(() => {
+    if (assignedBlock) {
+      setBlocks([assignedBlock])
+      return
+    }
+    societyFlatAPI.getFlats()
+      .then(({ data }) => setBlocks([...new Set((data || []).map((flat) => flat.blockName).filter(Boolean))].sort((a, b) => a.localeCompare(b, undefined, { numeric: true }))))
+      .catch(() => setBlocks([]))
+  }, [assignedBlock, currentAccount?.id])
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -66,6 +78,10 @@ export const FestivalCollectionList = () => {
   }, [searchInput])
 
   const visibleCollections = collections
+  const visibleCollectedTotal = visibleCollections.reduce(
+    (total, collection) => total + Number(collection.collectedAmount || 0),
+    0
+  )
 
   const generateDemand = async (event) => {
     event.preventDefault()
@@ -155,7 +171,6 @@ export const FestivalCollectionList = () => {
         ['Pending Flats', summary?.pendingFlats || 0],
         ['Excess Flats', summary?.excessFlats || 0]
       ]} />
-      <div className="form-actions"><Link className="button-link secondary" to={`/society/festivals/${festivalEventId}/expenses`}>Expense details & estimates</Link><Link className="button-link secondary" to={`/society/festivals/${festivalEventId}/report`}>Collection & expense report</Link></div>
       </section>
 
       {canManageDemand && <form className={`inline-form collection-demand-form collection-demand-section ${mobileSection !== 'demand' ? 'mobile-section-hidden' : ''}`} onSubmit={generateDemand}>
@@ -174,6 +189,10 @@ export const FestivalCollectionList = () => {
       <div className="collection-records-heading"><div><h2>Flat-wise collections</h2><p>Search a flat or open a row to record payments and view receipts.</p></div><strong>{totalElements} records</strong></div>
       <section className="toolbar-panel flat-toolbar">
         <input placeholder="Search flat, owner, status" value={searchInput} onChange={(event) => setSearchInput(event.target.value)} />
+        <select aria-label="Filter collections by block" value={assignedBlock || filters.blockName} disabled={!!assignedBlock} onChange={(event) => { setPage(0); setFilters({ ...filters, blockName: event.target.value }) }}>
+          <option value="">All blocks</option>
+          {blocks.map((block) => <option key={block} value={block}>{block}</option>)}
+        </select>
         <select value={filters.status} onChange={(event) => { setPage(0); setFilters({ ...filters, status: event.target.value }) }}>
           <option value="">All statuses</option>
           <option value="PENDING">Pending</option>
@@ -182,7 +201,10 @@ export const FestivalCollectionList = () => {
           <option value="EXCESS">Excess</option>
           <option value="REFUNDED">Refunded</option>
         </select>
-        <strong>{assignedBlock ? `${assignedBlock} · ` : ''}{totalElements} found</strong>
+        <strong>
+          {assignedBlock ? `${assignedBlock} · ` : ''}{totalElements} found · Total collected: {formatCurrency(visibleCollectedTotal)}
+          {totalPages > 1 ? ` (page ${page + 1})` : ''}
+        </strong>
       </section>
 
       <div className="table-wrap">
@@ -231,6 +253,15 @@ export const FestivalCollectionList = () => {
             ))}
             {!loading && visibleCollections.length === 0 && <tr><td colSpan="8" className="empty-state">Generate demand to create flat-wise collection rows.</td></tr>}
           </tbody>
+          {visibleCollections.length > 0 && (
+            <tfoot>
+              <tr>
+                <th colSpan="3">{totalPages > 1 ? 'Page total collected' : 'Total collected'}</th>
+                <th className="numeric">{formatCurrency(visibleCollectedTotal)}</th>
+                <th colSpan="4" />
+              </tr>
+            </tfoot>
+          )}
         </table>
       </div>
       <div className="festival-collection-mobile-list" aria-busy={loading}>
@@ -278,7 +309,10 @@ export const FestivalCollectionList = () => {
         ))}
         {!loading && visibleCollections.length === 0 && <p className="festival-collection-mobile-empty">Generate demand to create flat-wise collection rows.</p>}
       </div>
-      {totalPages > 1 && <nav className="table-pagination" aria-label="Collection pages"><button type="button" disabled={page === 0 || loading} onClick={() => setPage(0)}>«</button><button type="button" disabled={page === 0 || loading} onClick={() => setPage((value) => Math.max(0, value - 1))}>‹</button><span>Page {page + 1} of {totalPages}</span><button type="button" disabled={page + 1 >= totalPages || loading} onClick={() => setPage((value) => Math.min(totalPages - 1, value + 1))}>›</button><button type="button" disabled={page + 1 >= totalPages || loading} onClick={() => setPage(totalPages - 1)}>»</button></nav>}
+      <div className="collection-pagination-bar">
+        <label>Rows per page <select aria-label="Rows per page" value={pageSize} onChange={(event) => { setPageSize(Number(event.target.value)); setPage(0) }}>{[10, 20, 50, 100].map((size) => <option key={size} value={size}>{size}</option>)}</select></label>
+        {totalPages > 1 && <nav className="table-pagination" aria-label="Collection pages"><button type="button" disabled={page === 0 || loading} onClick={() => setPage(0)}>«</button><button type="button" disabled={page === 0 || loading} onClick={() => setPage((value) => Math.max(0, value - 1))}>‹</button><span>Page {page + 1} of {totalPages}</span><button type="button" disabled={page + 1 >= totalPages || loading} onClick={() => setPage((value) => Math.min(totalPages - 1, value + 1))}>›</button><button type="button" disabled={page + 1 >= totalPages || loading} onClick={() => setPage(totalPages - 1)}>»</button></nav>}
+      </div>
       {loading && <p className="muted">Loading collections...</p>}
       </section>
       {canAddPayment && paymentCollection && <FestivalPaymentModal collection={paymentCollection} onClose={() => setPaymentCollection(null)} onSaved={(receipt) => { setReceiptCollection({ id: paymentCollection.id, receiptId: receipt.id }); setPaymentCollection(null); loadData() }} />}

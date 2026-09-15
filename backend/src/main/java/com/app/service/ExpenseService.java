@@ -344,6 +344,19 @@ public class ExpenseService {
                 .collect(Collectors.toList());
     }
 
+    @Transactional(readOnly = true)
+    public org.springframework.data.domain.Page<ExpenseDto> getFestivalExpensesPage(
+            Long accountId, Long festivalEventId, String search, int page, int size) {
+        var pageable = org.springframework.data.domain.PageRequest.of(
+                Math.max(page, 0), Math.min(Math.max(size, 1), 50),
+                org.springframework.data.domain.Sort.by(
+                        org.springframework.data.domain.Sort.Order.desc("expenseDate"),
+                        org.springframework.data.domain.Sort.Order.desc("id")));
+        var expenses = expenseRepository.searchFestivalExpenses(accountId, festivalEventId,
+                ExpenseType.FESTIVAL, search == null ? "" : search.trim(), pageable);
+        return expenses.map(this::mapToDto);
+    }
+
     private void saveItems(Expense expense, List<ExpenseCreateRequest.ItemRequest> items) {
         if (items == null) return;
         for (int index = 0; index < items.size(); index++) {

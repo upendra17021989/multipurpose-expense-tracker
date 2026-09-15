@@ -5749,6 +5749,8 @@ textarea:disabled {
 .sidebar-nav-link.active { color: #99f6e4; background: rgba(45,212,191,.14); box-shadow: inset 3px 0 0 #2dd4bf; }
 .sidebar-nav-glyph { width: 25px; height: 25px; display: inline-grid; flex: 0 0 25px; place-items: center; color: #cbd5e1; border: 1px solid rgba(255,255,255,.16); border-radius: 7px; font-size: .68rem; font-weight: 850; }
 .sidebar-nav-link.active .sidebar-nav-glyph { color: #99f6e4; border-color: rgba(45,212,191,.45); }
+.sidebar-nav-link-child { min-height: 36px; margin-left: 1rem; width: calc(100% - 1rem); padding-top: .4rem; padding-bottom: .4rem; font-size: .82rem; }
+.sidebar-nav-link-child .sidebar-nav-glyph { width: 21px; height: 21px; flex-basis: 21px; border-radius: 6px; font-size: .6rem; }
 
 .sidebar-account { position: relative; flex: 0 0 auto; padding: .8rem; border-top: 1px solid rgba(255,255,255,.1); background: #17202a; }
 .sidebar-account-trigger { width: 100%; min-width: 0; display: flex; align-items: center; gap: .6rem; padding: .55rem; color: #fff; border-color: rgba(255,255,255,.14); background: rgba(255,255,255,.06); text-align: left; }

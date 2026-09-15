@@ -4,6 +4,8 @@ import com.app.entity.Expense;
 import com.app.entity.ExpenseType;
 import com.app.entity.ExpenseStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -19,6 +21,14 @@ public interface ExpenseRepository extends JpaRepository<Expense, Long> {
     List<Expense> findByAccountIdAndExpenseTypeAndSoftDeletedFalse(Long accountId, ExpenseType expenseType);
     List<Expense> findByAccountIdAndStatusAndSoftDeletedFalse(Long accountId, ExpenseStatus status);
     List<Expense> findByAccountIdAndFestivalEventIdAndSoftDeletedFalse(Long accountId, Long festivalEventId);
+    @Query("SELECT e FROM Expense e LEFT JOIN e.category c WHERE e.account.id = :accountId " +
+            "AND e.festivalEvent.id = :festivalEventId AND e.expenseType = :expenseType AND e.softDeleted = false " +
+            "AND (:search = '' OR LOWER(COALESCE(e.description, '')) LIKE LOWER(CONCAT('%', :search, '%')) " +
+            "OR LOWER(COALESCE(e.vendorName, '')) LIKE LOWER(CONCAT('%', :search, '%')) " +
+            "OR LOWER(COALESCE(c.categoryName, '')) LIKE LOWER(CONCAT('%', :search, '%')))")
+    Page<Expense> searchFestivalExpenses(@Param("accountId") Long accountId,
+            @Param("festivalEventId") Long festivalEventId, @Param("expenseType") ExpenseType expenseType,
+            @Param("search") String search, Pageable pageable);
     Optional<Expense> findByAccountIdAndSourceReferenceAndSoftDeletedFalse(Long accountId, String sourceReference);
     List<Expense> findByAccountIdAndWorkOrderIdAndSoftDeletedFalseOrderByCreatedAtDesc(Long accountId, Long workOrderId);
     long countBySoftDeletedFalse();

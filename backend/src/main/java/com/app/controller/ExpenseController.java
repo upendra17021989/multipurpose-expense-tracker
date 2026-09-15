@@ -17,6 +17,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDate;
 import java.util.List;
+import org.springframework.data.domain.Page;
 
 @Slf4j
 @RestController
@@ -76,6 +77,17 @@ public class ExpenseController {
             @PathVariable Long festivalEventId) {
         return ResponseEntity.ok(expenseService.getFestivalExpenses(
                 userPrincipal.getAccountId(), festivalEventId));
+    }
+
+    @GetMapping("/festival/{festivalEventId}/page")
+    public ResponseEntity<Page<ExpenseDto>> getFestivalExpensesPage(
+            @AuthenticationPrincipal UserPrincipal userPrincipal,
+            @PathVariable Long festivalEventId,
+            @RequestParam(defaultValue = "") String search,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        return ResponseEntity.ok(expenseService.getFestivalExpensesPage(
+                userPrincipal.getAccountId(), festivalEventId, search, page, size));
     }
 
     @GetMapping("/{expenseId}")
