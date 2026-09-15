@@ -6,7 +6,7 @@ import { useAuthStore } from '../../store/authStore'
 import { formatCurrency } from '../../utils/format'
 import { Shell, SummaryGrid } from '../DashboardRouter'
 
-export const FestivalCollectionForm = ({ collectionId: selectedCollectionId, onClose, onSaved, onSavingChange }) => {
+export const FestivalCollectionForm = ({ collectionId: selectedCollectionId, payment, onClose, onSaved, onSavingChange }) => {
   const { festivalEventId, collectionId: routeCollectionId } = useParams()
   const collectionId = selectedCollectionId || routeCollectionId
   const navigate = useNavigate()
@@ -15,14 +15,14 @@ export const FestivalCollectionForm = ({ collectionId: selectedCollectionId, onC
   const [saving, setSaving] = useState(false)
   const [loadError, setLoadError] = useState('')
   const [form, setForm] = useState({
-    paymentDate: new Date().toISOString().slice(0, 10),
-    amountPaid: '',
-    paymentMode: 'CASH',
-    transactionId: '',
-    utr: '',
-    chequeNumber: '',
-    collectedBy: user?.name || '',
-    remarks: ''
+    paymentDate: payment?.paymentDate || new Date().toISOString().slice(0, 10),
+    amountPaid: payment?.amountPaid || '',
+    paymentMode: payment?.paymentMode || 'CASH',
+    transactionId: payment?.transactionId || '',
+    utr: payment?.utr || '',
+    chequeNumber: payment?.chequeNumber || '',
+    collectedBy: payment?.collectedBy || user?.name || '',
+    remarks: payment?.remarks || ''
   })
 
   useEffect(() => {
@@ -31,7 +31,7 @@ export const FestivalCollectionForm = ({ collectionId: selectedCollectionId, onC
       .then((response) => {
         if (!active) return
         setCollection(response.data)
-        setForm((current) => ({ ...current, amountPaid: response.data.pendingAmount || '' }))
+        if (!payment) setForm((current) => ({ ...current, amountPaid: response.data.pendingAmount || '' }))
       })
       .catch((error) => { if (active) setLoadError(error.response?.data?.message || 'Unable to load collection. Close and try again.') })
     return () => { active = false }
@@ -49,7 +49,7 @@ export const FestivalCollectionForm = ({ collectionId: selectedCollectionId, onC
     setSaving(true)
     onSavingChange?.(true)
     try {
-      const response = await festivalCollectionAPI.addPayment(collectionId, {
+      const payload = {
         paymentDate: form.paymentDate,
         amountPaid: Number(form.amountPaid),
         paymentMode: form.paymentMode,
@@ -58,12 +58,15 @@ export const FestivalCollectionForm = ({ collectionId: selectedCollectionId, onC
         chequeNumber: form.chequeNumber.trim() || null,
         collectedBy: form.collectedBy.trim(),
         remarks: form.remarks.trim() || null
-      })
-      toast.success('Payment added')
+      }
+      const response = payment
+        ? await festivalCollectionAPI.updatePayment(collectionId, payment.id, payload)
+        : await festivalCollectionAPI.addPayment(collectionId, payload)
+      toast.success(payment ? 'Payment updated' : 'Payment added')
       if (onSaved) onSaved(response.data)
       else navigate(`/society/festival-collections/${festivalEventId}/${collectionId}/receipts`)
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Unable to add payment')
+      toast.error(error.response?.data?.message || `Unable to ${payment ? 'update' : 'add'} payment`)
     } finally {
       setSaving(false)
       onSavingChange?.(false)
@@ -139,7 +142,7 @@ export const FestivalCollectionForm = ({ collectionId: selectedCollectionId, onC
         </div>
         <div className="form-actions">
           <button type="button" disabled={saving} onClick={() => onClose ? onClose() : navigate(`/society/festival-collections/${festivalEventId}`)}>Cancel</button>
-          <button type="submit" className="primary" disabled={saving || !collection || currentAccount?.role === 'MEMBER'}>{saving ? 'Saving...' : 'Save Payment'}</button>
+          <button type="submit" className="primary" disabled={saving || !collection || currentAccount?.role === 'MEMBER'}>{saving ? 'Saving...' : payment ? 'Update Payment' : 'Save Payment'}</button>
         </div>
       </form>
     </>

@@ -398,6 +398,7 @@ export const festivalCollectionAPI = {
   generateDemand: (data) => axiosInstance.post('/society/festival-collections/generate-demand', data),
   updateDemand: (collectionId, data) => axiosInstance.put(`/society/festival-collections/${collectionId}/demand`, data),
   addPayment: (collectionId, data) => axiosInstance.post(`/society/festival-collections/${collectionId}/payments`, data),
+  updatePayment: (collectionId, receiptId, data) => axiosInstance.put(`/society/festival-collections/${collectionId}/receipts/${receiptId}`, data),
   getReceipts: (collectionId) => axiosInstance.get(`/society/festival-collections/${collectionId}/receipts`),
   getOtherCollections: (festivalEventId) => axiosInstance.get(`/society/festivals/${festivalEventId}/other-collections`),
   addOtherCollection: (festivalEventId, data) => axiosInstance.post(`/society/festivals/${festivalEventId}/other-collections`, data),

@@ -7,7 +7,7 @@ import { formatCurrency, formatDate } from '../../utils/format'
 import { Shell } from '../DashboardRouter'
 import './FestivalReceiptView.css'
 
-export const FestivalCollectionReceipt = ({ collectionId: selectedId, initialReceiptId, onClose }) => {
+export const FestivalCollectionReceipt = ({ collectionId: selectedId, initialReceiptId, onClose, onEdit }) => {
   const params = useParams()
   const collectionId = selectedId || params.collectionId
   const { currentAccount } = useAuthStore()
@@ -58,7 +58,7 @@ export const FestivalCollectionReceipt = ({ collectionId: selectedId, initialRec
   const content = <>
     <header className="festival-receipt-heading"><div><h2 id="festival-receipt-title">Festival receipts</h2><p>Select a payment to view or download its receipt.</p></div>{onClose && <button aria-label="Close receipts" onClick={onClose}>×</button>}</header>
     {error ? <p role="alert">{error} <button onClick={() => setRetry((value) => value + 1)}>Retry</button></p> : !data ? <p role="status">Loading receipts…</p> : !receipt ? <p className="empty-state">No payments recorded yet. A receipt will be available after a payment is saved.</p> : <>
-      <div className="festival-receipt-toolbar"><label>Payment receipt<select value={selected} onChange={(event) => setSelected(event.target.value)}>{data.receipts.map((item) => <option key={item.id} value={item.id}>{item.receiptNumber} · {formatDate(item.paymentDate)} · {formatCurrency(item.amountPaid)}</option>)}</select></label><button className="primary" disabled={downloading} onClick={download}>{downloading ? 'Downloading…' : 'Download PDF'}</button></div>
+      <div className="festival-receipt-toolbar"><label>Payment receipt<select value={selected} onChange={(event) => setSelected(event.target.value)}>{data.receipts.map((item) => <option key={item.id} value={item.id}>{item.receiptNumber} · {formatDate(item.paymentDate)} · {formatCurrency(item.amountPaid)}</option>)}</select></label><div className="festival-receipt-actions">{onEdit && currentAccount?.role === 'ADMIN' && <button onClick={() => onEdit(receipt, data.collection)}>Edit payment</button>}<button className="primary" disabled={downloading} onClick={download}>{downloading ? 'Downloading…' : 'Download PDF'}</button></div></div>
       <article className="festival-receipt-paper" aria-label="Payment receipt">
         <header><h2>{currentAccount?.societyName || currentAccount?.accountName}</h2>{currentAccount?.address && <p>{currentAccount.address}</p>}<span>FESTIVAL CONTRIBUTION RECEIPT</span><h3>{data.festival.festivalName} · {data.festival.year}</h3></header>
         <div className="festival-receipt-meta"><div><small>Receipt number</small><strong>{receipt.receiptNumber}</strong></div><div><small>Payment date</small><strong>{formatDate(receipt.paymentDate)}</strong></div></div>

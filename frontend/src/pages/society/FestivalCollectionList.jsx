@@ -31,7 +31,7 @@ export const FestivalCollectionList = () => {
   const [totalPages, setTotalPages] = useState(0)
   const [totalElements, setTotalElements] = useState(0)
   const [generating, setGenerating] = useState(false)
-  const [paymentCollection, setPaymentCollection] = useState(null)
+  const [paymentModal, setPaymentModal] = useState(null)
   const [receiptCollection, setReceiptCollection] = useState(null)
   const [mobileSection, setMobileSection] = useState('collections')
 
@@ -244,7 +244,7 @@ export const FestivalCollectionList = () => {
                   ) : canAddPayment ? (
                     <>
                       {canManageDemand && <button onClick={() => startDemandEdit(collection)}>Demand</button>}
-                      <button onClick={() => setPaymentCollection(collection)}>Payment</button>
+                      <button onClick={() => setPaymentModal({ collection })}>Payment</button>
                       <button onClick={() => setReceiptCollection({ id: collection.id })}>Receipts</button>
                     </>
                   ) : <button onClick={() => setReceiptCollection({ id: collection.id })}>Receipts</button>}
@@ -299,7 +299,7 @@ export const FestivalCollectionList = () => {
               ) : canAddPayment ? (
                 <>
                   {canManageDemand && <button type="button" onClick={() => startDemandEdit(collection)}>Edit demand</button>}
-                  <button type="button" onClick={() => setPaymentCollection(collection)}>Add payment</button>
+                  <button type="button" onClick={() => setPaymentModal({ collection })}>Add payment</button>
                   <button type="button" onClick={() => setReceiptCollection({ id: collection.id })}>Receipts</button>
                 </>
               ) : <button type="button" onClick={() => setReceiptCollection({ id: collection.id })}>View receipts</button>}
@@ -315,8 +315,8 @@ export const FestivalCollectionList = () => {
       </div>
       {loading && <p className="muted">Loading collections...</p>}
       </section>
-      {canAddPayment && paymentCollection && <FestivalPaymentModal collection={paymentCollection} onClose={() => setPaymentCollection(null)} onSaved={(receipt) => { setReceiptCollection({ id: paymentCollection.id, receiptId: receipt.id }); setPaymentCollection(null); loadData() }} />}
-      {receiptCollection && <FestivalCollectionReceipt collectionId={receiptCollection.id} initialReceiptId={receiptCollection.receiptId} onClose={() => setReceiptCollection(null)} />}
+      {canAddPayment && paymentModal && <FestivalPaymentModal collection={paymentModal.collection} payment={paymentModal.payment} onClose={() => setPaymentModal(null)} onSaved={(receipt) => { setReceiptCollection({ id: paymentModal.collection.id, receiptId: receipt.id }); setPaymentModal(null); loadData() }} />}
+      {receiptCollection && <FestivalCollectionReceipt collectionId={receiptCollection.id} initialReceiptId={receiptCollection.receiptId} onClose={() => setReceiptCollection(null)} onEdit={(payment, collection) => { setReceiptCollection(null); setPaymentModal({ collection, payment }) }} />}
       </div>
     </Shell>
   )

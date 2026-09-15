@@ -138,12 +138,7 @@ public class FestivalCollectionService {
     public FestivalCollectionReceiptDto addPayment(Long accountId, Long userId, Long collectionId, FestivalCollectionPaymentRequest request) {
         validatePayment(request);
         FestivalCollection collection = findCollection(accountId, collectionId);
-        membershipRepository.findByAccountIdAndUserIdAndActiveTrue(accountId, userId).ifPresent(membership -> {
-            if (membership.getRole() == com.app.entity.UserRole.BLOCK_REPRESENTATIVE
-                    && !collection.getFlat().getBlockName().equalsIgnoreCase(membership.getRequestedBlockName())) {
-                throw new ValidationException("Block representatives can add payments only for flats in their assigned block");
-            }
-        });
+        validateCollectionPaymentAccess(accountId, userId, collection);
 
         FestivalCollectionReceipt receipt = FestivalCollectionReceipt.builder()
                 .festivalCollection(collection)
@@ -160,6 +155,33 @@ public class FestivalCollectionService {
 
         collection.setCollectedAmount(nonNull(collection.getCollectedAmount()).add(request.getAmountPaid()));
         recalculateCollection(collection);
+        collectionRepository.save(collection);
+        FestivalCollectionReceipt savedReceipt = receiptRepository.save(receipt);
+        refreshFestivalCollectedAmount(collection.getFestivalEvent());
+        return mapReceiptToDto(savedReceipt);
+    }
+
+    @Transactional
+    public FestivalCollectionReceiptDto updatePayment(Long accountId, Long userId, Long collectionId,
+            Long receiptId, FestivalCollectionPaymentRequest request) {
+        validatePayment(request);
+        FestivalCollection collection = findCollection(accountId, collectionId);
+        validatePaymentUpdateAccess(accountId, userId);
+        FestivalCollectionReceipt receipt = receiptRepository.findById(receiptId)
+                .filter(item -> item.getFestivalCollection().getId().equals(collectionId))
+                .orElseThrow(() -> new ResourceNotFoundException("Festival payment not found"));
+
+        collection.setCollectedAmount(nonNull(collection.getCollectedAmount())
+                .subtract(nonNull(receipt.getAmountPaid())).add(request.getAmountPaid()));
+        recalculateCollection(collection);
+        receipt.setPaymentDate(request.getPaymentDate());
+        receipt.setAmountPaid(request.getAmountPaid());
+        receipt.setPaymentMode(request.getPaymentMode());
+        receipt.setTransactionId(trimToNull(request.getTransactionId()));
+        receipt.setUtr(trimToNull(request.getUtr()));
+        receipt.setChequeNumber(trimToNull(request.getChequeNumber()));
+        receipt.setCollectedBy(request.getCollectedBy().trim());
+        receipt.setRemarks(trimToNull(request.getRemarks()));
         collectionRepository.save(collection);
         FestivalCollectionReceipt savedReceipt = receiptRepository.save(receipt);
         refreshFestivalCollectedAmount(collection.getFestivalEvent());
@@ -239,6 +261,23 @@ public class FestivalCollectionService {
         if (request.getPaymentMode() == PaymentMode.CHEQUE
                 && (request.getChequeNumber() == null || request.getChequeNumber().isBlank())) {
             throw new ValidationException("Cheque number is required for cheque payments");
+        }
+    }
+
+    private void validateCollectionPaymentAccess(Long accountId, Long userId, FestivalCollection collection) {
+        membershipRepository.findByAccountIdAndUserIdAndActiveTrue(accountId, userId).ifPresent(membership -> {
+            if (membership.getRole() == com.app.entity.UserRole.BLOCK_REPRESENTATIVE
+                    && !collection.getFlat().getBlockName().equalsIgnoreCase(membership.getRequestedBlockName())) {
+                throw new ValidationException("Block representatives can update payments only for flats in their assigned block");
+            }
+        });
+    }
+
+    private void validatePaymentUpdateAccess(Long accountId, Long userId) {
+        var membership = membershipRepository.findByAccountIdAndUserIdAndActiveTrue(accountId, userId)
+                .orElseThrow(() -> new ValidationException("An active society membership is required"));
+        if (membership.getRole() != com.app.entity.UserRole.ADMIN) {
+            throw new ValidationException("Only society admins can edit recorded payments");
         }
     }
 

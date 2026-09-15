@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { FestivalCollectionForm } from './FestivalCollectionForm'
 import './FestivalPaymentModal.css'
 
-export const FestivalPaymentModal = ({ collection, onClose, onSaved }) => {
+export const FestivalPaymentModal = ({ collection, payment, onClose, onSaved }) => {
   const dialog = useRef(null)
   const [saving, setSaving] = useState(false)
 
@@ -21,9 +21,9 @@ export const FestivalPaymentModal = ({ collection, onClose, onSaved }) => {
 
   return <dialog ref={dialog} className="festival-payment-modal" aria-labelledby="festival-payment-title" onCancel={(event) => { event.preventDefault(); if (!saving) onClose() }}>
     <header className="festival-payment-heading">
-      <div><h2 id="festival-payment-title">Add Collection Payment</h2><p>{collection.blockName}-{collection.flatNumber} · {collection.ownerName}</p></div>
+      <div><h2 id="festival-payment-title">{payment ? 'Edit Collection Payment' : 'Add Collection Payment'}</h2><p>{collection.blockName}-{collection.flatNumber} · {collection.ownerName}</p></div>
       <button type="button" aria-label="Close payment" disabled={saving} onClick={onClose}>×</button>
     </header>
-    <FestivalCollectionForm key={collection.id} collectionId={collection.id} onClose={onClose} onSaved={onSaved} onSavingChange={setSaving} />
+    <FestivalCollectionForm key={`${collection.id}-${payment?.id || 'new'}`} collectionId={collection.id} payment={payment} onClose={onClose} onSaved={onSaved} onSavingChange={setSaving} />
   </dialog>
 }

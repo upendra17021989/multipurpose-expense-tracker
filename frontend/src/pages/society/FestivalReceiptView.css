@@ -6,6 +6,7 @@
 .festival-receipt-heading button { background: #e3efed; color: #0f766e; font-size: 22px; padding: 4px 12px; }
 .festival-receipt-toolbar label { display: grid; gap: 6px; min-width: 0; flex: 1; font-size: 12px; }
 .festival-receipt-toolbar select { width: 100%; min-width: 0; padding: 10px; background: white; border: 1px solid #cddde0; border-radius: 8px; }
+.festival-receipt-actions { display: flex; align-items: center; gap: 8px; }
 .festival-receipt-paper { max-width: 720px; margin: 0 auto; padding: 40px; border: 1px solid #dce7ea; border-top: 5px solid #0f766e; background: white; overflow-wrap: anywhere; }
 .festival-receipt-paper header h2 { color: #0f766e; font-size: 26px; }
 .festival-receipt-paper header p { color: #617580; font-size: 12px; margin-top: 6px; }
@@ -23,4 +24,4 @@
 .festival-receipt-paper footer { margin-top: 32px; border-top: 1px solid #dce7ea; padding-top: 20px; }
 .festival-receipt-paper footer p { font-size: 13px; margin-bottom: 12px; }
 .festival-receipt-paper footer small { display: block; color: #617580; font-size: 10px; }
-@media (max-width: 600px) { .festival-receipt-modal { padding: 16px; } .festival-receipt-paper { padding: 20px; } .festival-receipt-toolbar, .festival-receipt-amount { align-items: stretch; flex-direction: column; } .festival-receipt-meta { flex-wrap: wrap; } }
+@media (max-width: 600px) { .festival-receipt-modal { padding: 16px; } .festival-receipt-paper { padding: 20px; } .festival-receipt-toolbar, .festival-receipt-amount { align-items: stretch; flex-direction: column; } .festival-receipt-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); } .festival-receipt-meta { flex-wrap: wrap; } }

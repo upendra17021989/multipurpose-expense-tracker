@@ -89,6 +89,16 @@ public class FestivalCollectionController {
                 .body(festivalCollectionService.addPayment(userPrincipal.getAccountId(), userPrincipal.getUserId(), collectionId, request));
     }
 
+    @PutMapping("/{collectionId}/receipts/{receiptId}")
+    public ResponseEntity<FestivalCollectionReceiptDto> updatePayment(
+            @AuthenticationPrincipal UserPrincipal userPrincipal,
+            @PathVariable Long collectionId,
+            @PathVariable Long receiptId,
+            @Valid @RequestBody FestivalCollectionPaymentRequest request) {
+        return ResponseEntity.ok(festivalCollectionService.updatePayment(
+                userPrincipal.getAccountId(), userPrincipal.getUserId(), collectionId, receiptId, request));
+    }
+
     @GetMapping("/{collectionId}/receipts")
     public ResponseEntity<List<FestivalCollectionReceiptDto>> getReceipts(
             @AuthenticationPrincipal UserPrincipal userPrincipal,
