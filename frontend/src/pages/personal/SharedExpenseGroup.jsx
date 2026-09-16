@@ -144,6 +144,17 @@ export const SharedExpenseGroup = () => {
   const allParticipantsSelected =
     active.length > 0 &&
     active.every((x) => expense.participantIds.includes(x.id))
+  const enteredPayerTotal = Object.values(expense.payers).reduce(
+    (total, amount) => total + Number(amount || 0),
+    0
+  )
+  const enteredShareTotal = expense.participantIds.reduce(
+    (total, memberId) => total + Number(expense.shares[memberId] || 0),
+    0
+  )
+  const expenseTotal = itemizedExpense
+    ? expense.items.reduce((total, item) => total + Number(item.amount || 0), 0)
+    : Number(expense.totalAmount || 0)
   const toggleAllParticipants = () =>
     setExpense((x) => ({
       ...x,
@@ -809,6 +820,10 @@ export const SharedExpenseGroup = () => {
                   </div>
                   <button type="button" className="modal-close" aria-label={tx('Close')} onClick={() => setShowPayerModal(false)}>×</button>
                 </div>
+                <div className="summary-modal-total">
+                  <span>{tx('Total paid')}</span>
+                  <strong>{formatCurrency(enteredPayerTotal)}</strong>
+                </div>
                 <div className="expense-modal-form">
                   {active.map((x) => (
                     <label key={x.id} className="summary-modal-field">
@@ -844,6 +859,10 @@ export const SharedExpenseGroup = () => {
                     <p className="muted">{tx('Review who is part of this expense split.')}</p>
                   </div>
                   <button type="button" className="modal-close" aria-label={tx('Close')} onClick={() => setShowParticipantModal(false)}>×</button>
+                </div>
+                <div className="summary-modal-total">
+                  <span>{tx('Total share amount')}</span>
+                  <strong>{formatCurrency(expense.splitType === 'EXACT' ? enteredShareTotal : expenseTotal)}</strong>
                 </div>
                 <div className="expense-modal-form">
                   <div className="section-heading-row">

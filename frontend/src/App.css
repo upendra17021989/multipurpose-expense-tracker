@@ -1344,6 +1344,22 @@ label {
   color: #64748b;
 }
 
+.summary-modal-total {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+  padding: 0.8rem 1rem;
+  border-radius: 8px;
+  background: #eff6ff;
+  color: #1e3a8a;
+}
+
+.summary-modal-total strong {
+  font-size: 1.1rem;
+}
+
 .summary-modal-field {
   display: grid;
   gap: 0.4rem;
