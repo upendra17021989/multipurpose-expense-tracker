@@ -9,8 +9,10 @@ import {
 import { useAuthStore } from '../../store/authStore'
 import { formatCurrency, formatDate } from '../../utils/format'
 import { exportWorkbook } from '../../utils/exportExcel'
+import { loadFestivalPaidReport } from '../../utils/festivalPaidReport'
 import { Shell, SummaryGrid } from '../DashboardRouter'
 import './FestivalReport.css'
+import { FestivalOtherCollectionTables } from './FestivalOtherCollectionTables'
 
 const statusSelected = (selected, status) =>
   selected === null || selected.includes(status)
@@ -70,6 +72,36 @@ export const FestivalReport = () => {
   const [otherForm, setOtherForm] = useState(blankOtherContribution)
   const [editingOtherId, setEditingOtherId] = useState(null)
   const [otherModalOpen, setOtherModalOpen] = useState(false)
+  const [paidExportLoading, setPaidExportLoading] = useState(false)
+  const [paidPrintReport, setPaidPrintReport] = useState(null)
+
+  useEffect(() => {
+    if (!paidPrintReport) return undefined
+    const finishPrint = () => setPaidPrintReport(null)
+    window.addEventListener('afterprint', finishPrint)
+    const timer = window.setTimeout(() => window.print(), 0)
+    return () => {
+      window.clearTimeout(timer)
+      window.removeEventListener('afterprint', finishPrint)
+    }
+  }, [paidPrintReport])
+
+  const downloadPaidReport = async (format) => {
+    setPaidExportLoading(true)
+    try {
+      const sections = await loadFestivalPaidReport(festivalEventId, festivalCollectionAPI, expenseAPI)
+      if (format === 'excel') {
+        const name = `${data.festival.festivalName}-${data.festival.year}-paid-income-expense`.replace(/[\\/:*?"<>|]/g, '-')
+        await exportWorkbook(sections, name)
+      } else {
+        setPaidPrintReport(sections)
+      }
+    } catch (error) {
+      toast.error(error?.message || 'Unable to export paid income and expenses. Please retry.')
+    } finally {
+      setPaidExportLoading(false)
+    }
+  }
 
   const [view, setView] = useState(['summary', 'collections', 'blocks', 'other', 'expenses'].includes(searchParams.get('view')) ? searchParams.get('view') : 'summary')
   const [summary, setSummary] = useState(null)
@@ -536,6 +568,35 @@ const [search, setSearch] = useState('')
           </button>
         )}
       </div>
+      {data && <div className="festival-paid-export festival-report-actions">
+        <strong>Paid income / expense report</strong>
+        <span>All blocks, including partial payments, other collections and special mentions; paid expenses only.</span>
+        <button disabled={paidExportLoading} onClick={() => downloadPaidReport('excel')}>
+          {paidExportLoading ? 'Preparing report…' : 'Download paid report Excel'}
+        </button>
+        <button disabled={paidExportLoading} onClick={() => downloadPaidReport('pdf')}>
+          Save paid report PDF
+        </button>
+        <small>For PDF, choose “Save as PDF” in the print dialog.</small>
+      </div>}
+      {paidPrintReport && <article className="festival-paid-print">
+        <header>
+          <p>{account?.societyName || account?.accountName}</p>
+          <h1>{data?.festival.festivalName} · {data?.festival.year}</h1>
+          <p>Paid income / expense report · Amounts in INR</p>
+        </header>
+        {paidPrintReport.map(section => <section key={section.name}>
+          <h2>{section.title}</h2>
+          <table>
+            <thead><tr>{Object.keys(section.rows[0]).map(key => <th key={key}>{key === 'Amount' ? 'Amount (INR)' : key}</th>)}</tr></thead>
+            <tbody>{section.rows.map((row, index) => <tr key={index}>
+              {Object.entries(row).map(([key, value]) => <td key={key} className={key === 'Amount' ? 'numeric' : ''}>
+                {(key === 'Amount' || key === 'Estimated value (INR)') && value !== '' ? Number(value).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : value}
+              </td>)}
+            </tr>)}</tbody>
+          </table>
+        </section>)}
+      </article>}
       {error ? (
         <p role="alert">
           {error}{' '}
@@ -842,7 +903,7 @@ const [search, setSearch] = useState('')
 
           </section>
           <section className={`festival-report-detail festival-other-detail festival-income-detail ${view !== 'other' ? 'report-hidden' : ''} ${!includeIncome ? 'report-excluded' : ''}`}>
-            <div className="section-heading-row"><div><h3>Contributions & special mentions</h3><p>Record money, donated items, sponsored materials, and volunteered services separately from flat collections.</p></div><div className="festival-other-heading-actions"><strong>Cash received: {formatCurrency(otherCollected)}</strong>{canManageOther && <button type="button" className="primary" onClick={openOtherModal}>Add contribution</button>}</div></div>
+            <div className="section-heading-row"><div><h3>Contributions & special mentions</h3><p>Record money, donated items, sponsored materials, and volunteered services separately from flat collections.</p></div><div className="festival-other-heading-actions">{canManageOther && <button type="button" className="primary" onClick={openOtherModal}>Add contribution</button>}</div></div>
             {canManageOther && otherModalOpen && (
               <div className="modal-backdrop" role="presentation" onMouseDown={closeOtherModal}>
                 <form className="expense-modal festival-contribution-modal festival-contribution-form" role="dialog" aria-modal="true" aria-labelledby="festival-contribution-title" onMouseDown={(event) => event.stopPropagation()} onSubmit={saveOtherCollection}>
@@ -871,7 +932,7 @@ const [search, setSearch] = useState('')
                 </form>
               </div>
             )}
-            <div className="table-wrap"><table><thead><tr><th>Date</th><th>Kind / source</th><th>Contributor</th><th>Contribution / special mention</th><th>Payment</th><th>Recorded by</th><th className="numeric">Amount / value</th>{canManageOther&&<th>Actions</th>}</tr></thead><tbody>{otherCollections.map(row=><tr key={row.id}><td>{formatDate(row.paymentDate)}</td><td><strong>{(row.contributionKind||'MONETARY').replaceAll('_',' ')}</strong><br/><small>{row.sourceType.replaceAll('_',' ')}</small></td><td><strong>{row.contributorName}</strong>{row.contactDetails&&<><br/><small>{row.contactDetails}</small></>}</td><td>{row.specialMention&&<span className="status-pill approved">Special mention</span>} {row.itemName&&<><strong>{row.itemName}</strong>{row.quantity&&<> · {row.quantity}</>}<br/></>}{row.description||(!row.itemName?'-':'')}</td><td>{row.paymentMode||'Not applicable'}{row.transactionReference&&<><br/><small>{row.transactionReference}</small></>}</td><td>{row.collectedBy}</td><td className="numeric">{row.amount!=null?formatCurrency(row.amount):'-'}{row.amount!=null&&(row.contributionKind||'MONETARY')!=='MONETARY'&&<><br/><small>Estimated value</small></>}</td>{canManageOther&&<td className="table-actions"><button onClick={()=>editOtherCollection(row)}>Edit</button><button className="danger" onClick={()=>deleteOtherCollection(row.id)}>Delete</button></td>}</tr>)}{!otherCollections.length&&<tr><td colSpan={canManageOther?8:7} className="empty-state">No contributions recorded for this festival.</td></tr>}</tbody></table></div>
+            <FestivalOtherCollectionTables rows={otherCollections} canManage={canManageOther} onEdit={editOtherCollection} onDelete={deleteOtherCollection} />
           </section>
           <section
             className={`festival-report-detail festival-block-report festival-income-detail ${view !== 'blocks' ? 'report-hidden' : ''} ${!includeIncome ? 'report-excluded' : ''}`}

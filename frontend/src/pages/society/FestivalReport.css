@@ -708,3 +708,32 @@
 .festival-block-detail-group h4 {
   margin: 12px 0 8px;
 }
+.festival-paid-print { display: none; }
+.festival-other-print-label { display: none; }
+.festival-other-filters { display: flex; flex-wrap: wrap; align-items: end; gap: 12px; margin: 16px 0; }
+.festival-other-filters label { display: grid; gap: 6px; flex: 1; min-width: 180px; }
+.festival-other-tables h4 { margin: 24px 0 12px; }
+.festival-other-tables td { vertical-align: top; }
+.festival-other-tables td .status-pill { display: block; width: fit-content; margin-top: 6px; }
+.festival-other-tables tbody tr:hover { background: #f0fdfa; }
+.festival-other-tables tfoot { font-weight: bold; }
+@media print {
+  .festival-other-print-label { display: inline; }
+}
+.festival-paid-export { flex-wrap: wrap; }
+
+@media print {
+  body:has(.festival-paid-print) .app-main-content > :not(.festival-paid-print),
+  body:has(.festival-paid-print) .festival-report,
+  body:has(.festival-paid-print) .Toastify { display: none !important; }
+  .festival-paid-print { display: block; color: #111; font-size: 10pt; }
+  .festival-paid-print h1 { font-size: 18pt; }
+  .festival-paid-print h2 { font-size: 13pt; break-after: avoid; }
+  .festival-paid-print section + section { break-before: page; }
+  .festival-paid-print table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+  .festival-paid-print th, .festival-paid-print td { border: 1px solid #aaa; padding: 6px; overflow-wrap: anywhere; text-align: left; }
+  .festival-paid-print .numeric { text-align: right; }
+  .festival-paid-print thead { display: table-header-group; }
+  .festival-paid-print tr { break-inside: avoid; }
+  .festival-paid-print tbody tr:last-child { font-weight: bold; }
+}
