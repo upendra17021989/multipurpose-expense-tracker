@@ -5,6 +5,7 @@ import jakarta.validation.constraints.*;
 import lombok.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.LocalDate;
 import java.util.List;
 
 public final class FestivalCouponDtos {
@@ -13,9 +14,11 @@ public final class FestivalCouponDtos {
     @Data public static class SettingsRequest {
         @NotBlank @Size(max = 120) private String couponName;
         @NotNull @Min(1) @Max(100) private Integer defaultCouponCount;
+        @NotNull private LocalDate validOn;
+        @NotNull @Min(1) @Max(28) private Integer couponsPerPage;
     }
     @Data @Builder public static class Settings {
-        private Long id; private Long festivalEventId; private String couponName; private Integer defaultCouponCount;
+        private Long id; private Long festivalEventId; private String couponName; private Integer defaultCouponCount; private LocalDate validOn; private Integer couponsPerPage;
         private FestivalCouponGenerationStatus generationStatus;
     }
     @Data public static class EntitlementRequest { @Min(0) @Max(100) private Integer couponCountOverride; }

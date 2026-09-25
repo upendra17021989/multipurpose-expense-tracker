@@ -3,12 +3,13 @@ import { toast } from 'react-toastify'
 import { festivalCouponAPI } from '../../api/endpoints'
 import { useAuthStore } from '../../store/authStore'
 import { formatCurrency } from '../../utils/format'
+import './FestivalCollectionList.css'
 
-export const FestivalCoupons = ({ festivalId }) => {
+export const FestivalCoupons = ({ festivalId, festival }) => {
   const admin = useAuthStore((s) => s.currentAccount?.role === 'ADMIN')
   const [data, setData] = useState({ flats: [] })
   const [coupons, setCoupons] = useState([])
-  const [form, setForm] = useState({ couponName: 'Festival Coupon', defaultCouponCount: 1 })
+  const [form, setForm] = useState({ couponName: 'Festival Coupon', defaultCouponCount: 1, validOn: '', couponsPerPage: 6 })
   const [filter, setFilter] = useState('ALL')
   const [tab, setTab] = useState('coupons')
   const [busy, setBusy] = useState(false)
@@ -18,14 +19,15 @@ export const FestivalCoupons = ({ festivalId }) => {
       const result = dashboard.data
       setData(result)
       setCoupons(issued.data || [])
-      if (result.settings) setForm({ couponName: result.settings.couponName, defaultCouponCount: result.settings.defaultCouponCount })
+      if (result.settings) setForm({ couponName: result.settings.couponName, defaultCouponCount: result.settings.defaultCouponCount, validOn: result.settings.validOn, couponsPerPage: result.settings.couponsPerPage || 6 })
+      else if (festival?.startDate) setForm((current) => ({ ...current, validOn: current.validOn || festival.startDate }))
     } catch (error) { toast.error(error.response?.data?.message || 'Unable to load coupons') }
   }
-  useEffect(() => { load() }, [festivalId])
+  useEffect(() => { load() }, [festivalId, festival?.startDate])
   const save = async (event) => {
     event.preventDefault(); setBusy(true)
     try {
-      await festivalCouponAPI.saveSettings(festivalId, { ...form, defaultCouponCount: Number(form.defaultCouponCount) })
+      await festivalCouponAPI.saveSettings(festivalId, { ...form, defaultCouponCount: Number(form.defaultCouponCount), couponsPerPage: Number(form.couponsPerPage) })
       toast.success('Coupon settings saved'); await load()
     } catch (error) { toast.error(error.response?.data?.message || 'Unable to save settings') } finally { setBusy(false) }
   }
@@ -66,6 +68,8 @@ export const FestivalCoupons = ({ festivalId }) => {
     {admin && <form className={'inline-form collection-demand-form'} onSubmit={save}>
       <label>Coupon name<input required value={form.couponName} onChange={(event) => setForm({ ...form, couponName: event.target.value })} /></label>
       <label>Default count<input type={'number'} min={1} max={100} required value={form.defaultCouponCount} onChange={(event) => setForm({ ...form, defaultCouponCount: event.target.value })} /></label>
+      <label>Valid on<input type={'date'} required value={form.validOn} onChange={(event) => setForm({ ...form, validOn: event.target.value })} /></label>
+      <label>Coupons per page<input type={'number'} min={1} max={28} required value={form.couponsPerPage} onChange={(event) => setForm({ ...form, couponsPerPage: event.target.value })} /></label>
       <button disabled={busy}>Save</button><button type={'button'} className={'primary'} disabled={busy || !data.settings || !data.eligibleFlats} onClick={generate}>Generate missing coupons</button>
     </form>}
     <div className={'coupon-summary-grid'}>{[['Eligible', data.eligibleFlats], ['Ineligible', data.ineligibleFlats], ['Configured', data.configuredCoupons], ['Generated', data.generatedCoupons], ['Needs review', data.discrepancyFlats]].map(([key, value]) => <div key={key}><span>{key}</span><strong>{value || 0}</strong></div>)}</div>

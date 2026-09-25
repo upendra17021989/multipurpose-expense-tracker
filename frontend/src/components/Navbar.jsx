@@ -22,6 +22,7 @@ const glyphs = {
   'Financial Ledger': 'L',
   'Journal Book': 'J',
   Festivals: 'F',
+  'Festival Coupons': 'C',
   'Festival collections': 'C',
   'Expense details & estimates': 'E',
   'Collection & expense report': 'R',

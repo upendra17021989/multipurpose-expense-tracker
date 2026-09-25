@@ -47,7 +47,7 @@ public class FestivalCouponService {
         requireAdmin(accountId, userId); FestivalEvent festival = festival(accountId, festivalId);
         FestivalCouponSetting item = settings.findByAccountIdAndFestivalEventId(accountId, festivalId).orElseGet(() -> FestivalCouponSetting.builder()
                 .account(account(accountId)).festivalEvent(festival).createdBy(user(userId)).build());
-        item.setCouponName(request.getCouponName().trim()); item.setDefaultCouponCount(request.getDefaultCouponCount());
+        item.setCouponName(request.getCouponName().trim()); item.setDefaultCouponCount(request.getDefaultCouponCount()); item.setValidOn(request.getValidOn()); item.setCouponsPerPage(request.getCouponsPerPage());
         return map(settings.save(item), festivalId);
     }
 
@@ -125,7 +125,7 @@ public class FestivalCouponService {
     }
     private boolean eligible(FestivalCollection c) { return c.getCollectedAmount() != null && c.getExpectedAmount() != null && c.getCollectedAmount().compareTo(c.getExpectedAmount()) >= 0; }
     private String number(Long accountId, Long festivalId, Long flatId, int sequence) { return "FC-" + accountId + "-" + festivalId + "-" + flatId + "-" + String.format("%03d", sequence); }
-    private Settings map(FestivalCouponSetting s, Long festivalId) { return s == null ? null : Settings.builder().id(s.getId()).festivalEventId(festivalId).couponName(s.getCouponName()).defaultCouponCount(s.getDefaultCouponCount()).generationStatus(s.getGenerationStatus()).build(); }
+    private Settings map(FestivalCouponSetting s, Long festivalId) { return s == null ? null : Settings.builder().id(s.getId()).festivalEventId(festivalId).couponName(s.getCouponName()).defaultCouponCount(s.getDefaultCouponCount()).validOn(s.getValidOn()).couponsPerPage(s.getCouponsPerPage()).generationStatus(s.getGenerationStatus()).build(); }
     private Coupon map(FestivalCoupon c) { return Coupon.builder().id(c.getId()).collectionId(c.getFestivalCollection().getId()).flatId(c.getFlat().getId()).blockName(c.getFlat().getBlockName()).flatNumber(c.getFlat().getFlatNumber()).ownerName(c.getFlat().getOwnerName()).couponName(c.getFestivalEvent().getFestivalName()).couponNumber(c.getCouponNumber()).sequenceNumber(c.getSequenceNumber()).status(c.getStatus()).generatedAt(c.getGeneratedAt()).usedAt(c.getUsedAt()).cancelledAt(c.getCancelledAt()).build(); }
     private FestivalEvent festival(Long a, Long f) { return festivals.findByAccountIdAndIdAndDeletedAtIsNull(a, f).orElseThrow(() -> new ResourceNotFoundException("Festival event not found")); }
     private Account account(Long id) { return accounts.findById(id).orElseThrow(() -> new ResourceNotFoundException("Account not found")); }

@@ -3,6 +3,7 @@ package com.app.entity;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
+import java.time.LocalDate;
 
 @Entity @Table(name = "festival_coupon_settings")
 @Data @NoArgsConstructor @AllArgsConstructor @Builder
@@ -12,6 +13,8 @@ public class FestivalCouponSetting {
     @OneToOne(fetch = FetchType.LAZY) @JoinColumn(name = "festival_event_id", nullable = false) private FestivalEvent festivalEvent;
     @Column(nullable = false, length = 120) private String couponName;
     @Column(nullable = false) private Integer defaultCouponCount;
+    @Column(nullable = false) private LocalDate validOn;
+    @Column(nullable = false) @Builder.Default private Integer couponsPerPage = 6;
     @Enumerated(EnumType.STRING) @Column(nullable = false) @Builder.Default private FestivalCouponGenerationStatus generationStatus = FestivalCouponGenerationStatus.DRAFT;
     @ManyToOne(fetch = FetchType.LAZY) @JoinColumn(name = "created_by", nullable = false) private User createdBy;
     @Column(nullable = false, updatable = false) @Builder.Default private LocalDateTime createdAt = LocalDateTime.now();
