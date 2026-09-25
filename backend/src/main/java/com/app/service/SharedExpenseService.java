@@ -48,10 +48,7 @@ public class SharedExpenseService {
       List<SharedGroupMember> groupMembers = members.findByGroupIdOrderByMemberName(g.getId());
       if (groupMembers.stream()
           .noneMatch(m -> m.getUser() != null && m.getUser().getId().equals(userId))) continue;
-      GroupDto detail = map(g, true);
-      Map<Long, BigDecimal> balances =
-          detail.getBalances().stream()
-              .collect(toMap(BalanceDto::getMemberId, BalanceDto::getBalance));
+      Map<Long, BigDecimal> balances = calculateBalances(g.getId(), groupMembers);
       for (SharedGroupMember m : groupMembers) {
         if (m.getUser() == null || m.getUser().getId().equals(userId) || !m.getActive()) continue;
         FriendAccumulator a =
@@ -387,23 +384,17 @@ public class SharedExpenseService {
 
   private GroupDto map(SharedExpenseGroup g, boolean detail) {
     List<SharedGroupMember> ms = members.findByGroupIdOrderByMemberName(g.getId());
-    Map<Long, BigDecimal> b =
-        ms.stream().collect(toMap(SharedGroupMember::getId, x -> BigDecimal.ZERO));
-    if (detail) {
-      payers
-          .findByExpenseGroupIdAndExpenseReversedFalse(g.getId())
-          .forEach(x -> b.compute(x.getMember().getId(), (k, v) -> v.add(x.getPaidAmount())));
-      shares
-          .findByExpenseGroupIdAndExpenseReversedFalse(g.getId())
-          .forEach(x -> b.compute(x.getMember().getId(), (k, v) -> v.subtract(x.getOwedAmount())));
-      settlements
-          .findByGroupIdAndReversedFalse(g.getId())
-          .forEach(
-              x -> {
-                b.compute(x.getPaidBy().getId(), (k, v) -> v.add(x.getAmount()));
-                b.compute(x.getPaidTo().getId(), (k, v) -> v.subtract(x.getAmount()));
-              });
-    }
+    List<SharedExpensePayer> groupPayers =
+        detail ? payers.findByExpenseGroupIdAndExpenseReversedFalse(g.getId()) : List.of();
+    Map<Long, BigDecimal> b = detail ? calculateBalances(g.getId(), ms, groupPayers) : Map.of();
+    Map<Long, List<SharedExpensePayer>> payersByExpense =
+        groupPayers.stream().collect(groupingBy(x -> x.getExpense().getId()));
+    Map<Long, List<SharedExpenseItem>> itemsByExpense =
+        detail
+            ? items.findByExpenseGroupIdOrderByExpenseExpenseDateDescExpenseIdDescDisplayOrderAscIdAsc(g.getId())
+                .stream()
+                .collect(groupingBy(x -> x.getExpense().getId(), LinkedHashMap::new, toList()))
+            : Map.of();
     List<MemberDto> md =
         ms.stream()
             .map(
@@ -443,25 +434,19 @@ public class SharedExpenseService {
                             .splitType(x.getSplitType())
                             .reversed(x.getReversed())
                             .paidBy(
-                                payers
-                                    .findByExpenseGroupIdAndExpenseReversedFalse(g.getId())
-                                    .stream()
-                                    .filter(p -> p.getExpense().getId().equals(x.getId()))
+                                payersByExpense.getOrDefault(x.getId(), List.of()).stream()
                                     .map(p -> p.getMember().getMemberName())
                                     .distinct()
                                     .collect(joining(", ")))
                             .payers(
-                                payers
-                                    .findByExpenseGroupIdAndExpenseReversedFalse(g.getId())
-                                    .stream()
-                                    .filter(p -> p.getExpense().getId().equals(x.getId()))
+                                payersByExpense.getOrDefault(x.getId(), List.of()).stream()
                                     .map(p -> ExpensePayerDto.builder()
                                         .memberId(p.getMember().getId())
                                         .memberName(p.getMember().getMemberName())
                                         .amount(p.getPaidAmount())
                                         .build())
                                     .toList())
-                            .items(items.findByExpenseIdOrderByDisplayOrderAscIdAsc(x.getId()).stream()
+                            .items(itemsByExpense.getOrDefault(x.getId(), List.of()).stream()
                                 .map(item -> ItemDto.builder().id(item.getId()).itemName(item.getItemName()).quantity(item.getQuantity()).unitPrice(item.getUnitPrice()).amount(item.getAmount()).build())
                                 .toList())
                             .build())
@@ -490,5 +475,32 @@ public class SharedExpenseService {
         .balances(bd)
         .activities(ad)
         .build();
+  }
+
+  private Map<Long, BigDecimal> calculateBalances(
+      Long groupId, List<SharedGroupMember> groupMembers) {
+    return calculateBalances(
+        groupId, groupMembers, payers.findByExpenseGroupIdAndExpenseReversedFalse(groupId));
+  }
+
+  private Map<Long, BigDecimal> calculateBalances(
+      Long groupId,
+      List<SharedGroupMember> groupMembers,
+      List<SharedExpensePayer> groupPayers) {
+    Map<Long, BigDecimal> balances =
+        groupMembers.stream()
+            .collect(toMap(SharedGroupMember::getId, x -> BigDecimal.ZERO));
+    groupPayers.forEach(
+        x -> balances.computeIfPresent(
+            x.getMember().getId(), (k, v) -> v.add(x.getPaidAmount())));
+    shares.findByExpenseGroupIdAndExpenseReversedFalse(groupId).forEach(
+        x -> balances.computeIfPresent(
+            x.getMember().getId(), (k, v) -> v.subtract(x.getOwedAmount())));
+    settlements.findByGroupIdAndReversedFalse(groupId).forEach(
+        x -> {
+          balances.computeIfPresent(x.getPaidBy().getId(), (k, v) -> v.add(x.getAmount()));
+          balances.computeIfPresent(x.getPaidTo().getId(), (k, v) -> v.subtract(x.getAmount()));
+        });
+    return balances;
   }
 }
