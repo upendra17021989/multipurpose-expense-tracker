@@ -199,49 +199,28 @@ public class FestivalCollectionService {
 
     @Transactional(readOnly = true)
     public FestivalCollectionSummaryDto getSummary(Long accountId, Long festivalEventId) {
-        List<FestivalCollection> collections = collectionRepository.findByAccountIdAndFestivalEventId(accountId, festivalEventId);
-        var expenses = expenseRepository.findByAccountIdAndFestivalEventIdAndSoftDeletedFalse(accountId, festivalEventId);
-        BigDecimal expected = BigDecimal.ZERO;
-        BigDecimal collected = BigDecimal.ZERO;
-        BigDecimal pending = BigDecimal.ZERO;
-        BigDecimal excess = BigDecimal.ZERO;
-        BigDecimal refunded = BigDecimal.ZERO;
-        long paid = 0;
-        long pendingFlats = 0;
-        long partial = 0;
-        long excessFlats = 0;
-
-        for (FestivalCollection collection : collections) {
-            expected = expected.add(nonNull(collection.getExpectedAmount()));
-            collected = collected.add(nonNull(collection.getCollectedAmount()));
-            pending = pending.add(nonNull(collection.getPendingAmount()));
-            excess = excess.add(nonNull(collection.getExcessAmount()));
-            refunded = refunded.add(nonNull(collection.getRefundedAmount()));
-            if (collection.getPaymentStatus() == PaymentStatus.PAID) paid++;
-            if (collection.getPaymentStatus() == PaymentStatus.PENDING) pendingFlats++;
-            if (collection.getPaymentStatus() == PaymentStatus.PARTIAL) partial++;
-            if (collection.getPaymentStatus() == PaymentStatus.EXCESS) excessFlats++;
-        }
+        // Aggregate in the database to avoid loading entities and one lazy flat per collection.
+        var collections = collectionRepository.summarize(accountId, festivalEventId);
 
         return FestivalCollectionSummaryDto.builder()
                 .festivalEventId(festivalEventId)
-                .totalExpected(expected)
-                .flatCollected(collected)
-                .otherCollected(otherTotal(accountId, festivalEventId))
-                .totalCollected(collected.add(otherTotal(accountId, festivalEventId)))
-                .totalPending(pending)
-                .totalExcess(excess)
-                .totalRefunded(refunded)
-                .paidFlats(paid)
-                .pendingFlats(pendingFlats)
-                .partialFlats(partial)
-                .excessFlats(excessFlats)
-                .totalFlats(collections.size())
-                .totalBlocks(collections.stream().map(item -> item.getFlat().getBlockName()).filter(java.util.Objects::nonNull).distinct().count())
-                .otherCollectionsCount(otherCollectionRepository.countByAccountIdAndFestivalEventId(accountId, festivalEventId))
-                .expenseCount(expenses.size())
-                .paidExpenses(expenses.stream().filter(item -> item.getStatus() == com.app.entity.ExpenseStatus.PAID).map(com.app.entity.Expense::getAmount).filter(java.util.Objects::nonNull).reduce(BigDecimal.ZERO, BigDecimal::add))
-                .recordedExpenses(expenses.stream().map(com.app.entity.Expense::getAmount).filter(java.util.Objects::nonNull).reduce(BigDecimal.ZERO, BigDecimal::add))
+                .totalExpected(collections.getTotalExpected())
+                .flatCollected(collections.getFlatCollected())
+                .otherCollected(collections.getOtherCollected())
+                .totalCollected(collections.getFlatCollected().add(collections.getOtherCollected()))
+                .totalPending(collections.getTotalPending())
+                .totalExcess(collections.getTotalExcess())
+                .totalRefunded(collections.getTotalRefunded())
+                .paidFlats(collections.getPaidFlats())
+                .pendingFlats(collections.getPendingFlats())
+                .partialFlats(collections.getPartialFlats())
+                .excessFlats(collections.getExcessFlats())
+                .totalFlats(collections.getTotalFlats())
+                .totalBlocks(collections.getTotalBlocks())
+                .otherCollectionsCount(collections.getOtherCollectionsCount())
+                .expenseCount(collections.getExpenseCount())
+                .paidExpenses(collections.getPaidExpenses())
+                .recordedExpenses(collections.getRecordedExpenses())
                 .build();
     }
 
