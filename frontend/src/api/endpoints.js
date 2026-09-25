@@ -405,6 +405,15 @@ export const festivalCollectionAPI = {
   updateOtherCollection: (festivalEventId, id, data) => axiosInstance.put(`/society/festivals/${festivalEventId}/other-collections/${id}`, data),
   deleteOtherCollection: (festivalEventId, id) => axiosInstance.delete(`/society/festivals/${festivalEventId}/other-collections/${id}`)
 }
+export const festivalCouponAPI = {
+  dashboard: (festivalId) => axiosInstance.get(`/society/festivals/${festivalId}/coupons/dashboard`),
+  list: (festivalId) => axiosInstance.get(`/society/festivals/${festivalId}/coupons`),
+  saveSettings: (festivalId, data) => axiosInstance.put(`/society/festivals/${festivalId}/coupons/settings`, data),
+  saveOverride: (festivalId, collectionId, couponCountOverride) => axiosInstance.put(`/society/festivals/${festivalId}/coupons/entitlements/${collectionId}`, { couponCountOverride }),
+  generate: (festivalId) => axiosInstance.post(`/society/festivals/${festivalId}/coupons/generate`),
+  cancel: (festivalId, couponId) => axiosInstance.post(`/society/festivals/${festivalId}/coupons/${couponId}/cancel`),
+  downloadPdf: (festivalId) => axiosInstance.get(`/society/festivals/${festivalId}/coupons/pdf`, { responseType: 'blob' })
+}
 export const attachmentAPI = {
   getAttachments: (referenceType, referenceId) => axiosInstance.get('/attachments', { params: { referenceType, referenceId } }),
   uploadAttachment: (referenceType, referenceId, file) => {
@@ -445,8 +454,6 @@ export const sportsAPI = {
   getReceipts: (collectionId) => axiosInstance.get(`/sports/collections/${collectionId}/receipts`),
   voidReceipt: (receiptId, data) => axiosInstance.post(`/sports/receipts/${receiptId}/void`, data)
 }
-
-
 
 
 

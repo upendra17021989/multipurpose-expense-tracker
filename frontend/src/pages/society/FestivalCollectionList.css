@@ -383,3 +383,17 @@
     text-align: center;
   }
 }
+.festival-coupons-section { margin-top: 2rem; display: grid; gap: 1rem; }
+.coupon-tabs { display: flex; gap: .5rem; border-bottom: 1px solid var(--border-color, #dbe4e7); }
+.coupon-tabs button { border: 0; border-bottom: 3px solid transparent; border-radius: 0; background: transparent; padding: .8rem 1rem; }
+.coupon-tabs button[aria-pressed='true'] { color: #0f766e; border-bottom-color: #0f766e; font-weight: 700; }
+.coupon-tabs span { margin-left: .35rem; padding: .1rem .45rem; border-radius: 999px; background: #e2e8f0; font-size: .75rem; }
+.issued-coupons { display: grid; gap: 1rem; }
+.coupon-summary-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: .75rem; }
+.coupon-summary-grid > div { padding: 1rem; border: 1px solid var(--border-color, #dbe4e7); border-radius: 12px; background: var(--card-bg, #fff); }
+.coupon-summary-grid span { display: block; color: var(--muted-color, #64748b); font-size: .82rem; }
+.coupon-summary-grid strong { display: block; margin-top: .25rem; font-size: 1.35rem; }
+.festival-coupons-table input { width: 5rem; }
+.coupon-discrepancy { background: #fff7ed; }
+.coupon-warning { display: block; color: #b45309; font-weight: 700; }
+@media (max-width: 760px) { .coupon-summary-grid { grid-template-columns: repeat(2, 1fr); } .festival-coupons-section .table-wrap { overflow-x: auto; } }
