@@ -1,6 +1,7 @@
 package com.app.repository;
 
 import com.app.entity.FestivalCollection;
+import com.app.dto.FestivalCollectionDto;
 import com.app.entity.PaymentStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -76,13 +77,16 @@ public interface FestivalCollectionRepository extends JpaRepository<FestivalColl
     Optional<FestivalCollection> findByAccountIdAndFestivalEventIdAndFlatId(Long accountId, Long festivalEventId, Long flatId);
     List<FestivalCollection> findByAccountIdAndFlatId(Long accountId, Long flatId);
 
-    @Query("SELECT c FROM FestivalCollection c JOIN c.flat f WHERE c.account.id = :accountId " +
+    @Query("SELECT new com.app.dto.FestivalCollectionDto(c.id, c.account.id, e.id, e.festivalName, " +
+            "f.id, f.blockName, f.flatNumber, f.ownerName, c.expectedAmount, c.collectedAmount, " +
+            "c.pendingAmount, c.excessAmount, c.refundedAmount, c.paymentStatus, c.remarks, c.createdAt, c.updatedAt) " +
+            "FROM FestivalCollection c JOIN c.flat f JOIN c.festivalEvent e WHERE c.account.id = :accountId " +
             "AND c.festivalEvent.id = :festivalEventId " +
             "AND (:blockName = '' OR LOWER(f.blockName) = LOWER(:blockName)) " +
             "AND (:status IS NULL OR c.paymentStatus = :status) " +
             "AND (:search = '' OR LOWER(CONCAT(COALESCE(f.blockName, ''), ' ', COALESCE(f.flatNumber, ''), ' ', COALESCE(f.ownerName, ''))) LIKE LOWER(CONCAT('%', :search, '%'))) " +
-            "ORDER BY f.blockName, f.flatNumber")
-    Page<FestivalCollection> searchPage(@Param("accountId") Long accountId,
+            "ORDER BY f.blockName, f.flatNumber, c.id")
+    Page<FestivalCollectionDto> searchPage(@Param("accountId") Long accountId,
             @Param("festivalEventId") Long festivalEventId, @Param("blockName") String blockName,
             @Param("status") PaymentStatus status, @Param("search") String search, Pageable pageable);
 }
