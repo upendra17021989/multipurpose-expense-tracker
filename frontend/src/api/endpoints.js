@@ -324,6 +324,7 @@ export const societyAttendanceAPI = {
   getShortages: (date) => axiosInstance.get('/society/attendance/shortages', { params: { date } }),
   getDailyReport: (date) => axiosInstance.get('/society/attendance/reports/daily', { params: { date } }),
   getMonthlyReport: (year, month) => axiosInstance.get('/society/attendance/reports/monthly', { params: { year, month } }),
+  downloadMonthlyPdf: (year, month) => axiosInstance.get('/society/attendance/reports/monthly/pdf', { params: { year, month }, responseType: 'blob' }),
   saveBulk: (attendanceDate, entries) => axiosInstance.post('/society/attendance/bulk', { attendanceDate, entries }),
   importEvidence: (method, file) => { const data=new FormData();data.append('file',file);return axiosInstance.post('/society/attendance/imports',data,{params:{method},headers:{'Content-Type':'multipart/form-data'}}) },
   getSelf: () => axiosInstance.get('/society/attendance/self'),

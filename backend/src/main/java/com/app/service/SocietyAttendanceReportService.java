@@ -59,7 +59,7 @@ public class SocietyAttendanceReportService {
 
     private DailyRow dailyRow(SocietyAttendance value) {
         SocietyRosterAssignment roster = value.getRosterAssignment();
-        return DailyRow.builder().attendanceId(value.getId()).workerKey(workerKey(value)).workerName(workerName(roster))
+        return DailyRow.builder().attendanceId(value.getId()).attendanceDate(value.getAttendanceDate()).workerKey(workerKey(value)).workerName(workerName(roster))
                 .workerType(roster.getStaff() == null ? "AGENCY" : "DIRECT").agencyName(agencyName(roster))
                 .shiftName(roster.getShift().getName()).postName(roster.getPostName()).status(value.getStatus())
                 .checkIn(value.getCheckIn()).checkOut(value.getCheckOut())
@@ -79,7 +79,8 @@ public class SocietyAttendanceReportService {
                 .holidayDays(count(records, "HOLIDAY"))
                 .replacementDays(records.stream().filter(a -> a.getReplacementAgencyWorker() != null).count())
                 .lateMinutes(records.stream().mapToLong(this::lateMinutes).sum())
-                .overtimeMinutes(records.stream().mapToLong(this::overtimeMinutes).sum()).build();
+                .overtimeMinutes(records.stream().mapToLong(this::overtimeMinutes).sum())
+                .attendanceDays(records.stream().map(this::dailyRow).toList()).build();
     }
 
     private long count(List<SocietyAttendance> records, String status) {

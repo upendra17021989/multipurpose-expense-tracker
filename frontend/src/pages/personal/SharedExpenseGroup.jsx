@@ -65,6 +65,7 @@ export const SharedExpenseGroup = () => {
   const [itemizedExpense, setItemizedExpense] = useState(false)
   const [showPayerModal, setShowPayerModal] = useState(false)
   const [showParticipantModal, setShowParticipantModal] = useState(false)
+  const [memberDialog, setMemberDialog] = useState(null)
   const [settle, setSettle] = useState({
     paidByMemberId: '',
     paidToMemberId: '',
@@ -114,9 +115,12 @@ export const SharedExpenseGroup = () => {
   }
   const addMember = (e) => {
     e.preventDefault()
-    submit('member', sharedExpenseAPI.addMember, member, 'Member added').then(
-      (saved) => saved && setMember({ memberName: '', email: '', mobile: '' })
-    )
+    submit('member', sharedExpenseAPI.addMember, member, 'Member added').then((saved) => {
+      if (saved) {
+        setMember({ memberName: '', email: '', mobile: '' })
+        setMemberDialog(null)
+      }
+    })
   }
   const inviteUser = async (e) => {
     e.preventDefault()
@@ -126,6 +130,7 @@ export const SharedExpenseGroup = () => {
     try {
       await sharedExpenseAPI.inviteUser(groupId, invite)
       setInvite({ email: '', mobile: '' })
+      setMemberDialog(null)
       toast.success('Invitation sent')
     } catch (error) {
       toast.error(error.response?.data?.message || 'Unable to send invitation')
@@ -209,7 +214,12 @@ export const SharedExpenseGroup = () => {
         amount: Number(settle.amount)
       },
       'Settlement recorded'
-    ).then((saved) => saved && setSettle({ ...settle, amount: '', notes: '' }))
+    ).then((saved) => {
+      if (saved) {
+        setSettle({ ...settle, amount: '', notes: '' })
+        setMemberDialog(null)
+      }
+    })
   }
   const prepareSettlement = (balanceItem) => {
     const balance = Number(balanceItem.balance || 0)
@@ -227,8 +237,7 @@ export const SharedExpenseGroup = () => {
       paidToMemberId: String(balance > 0 ? balanceItem.memberId : counterpart.memberId),
       amount: Math.min(Math.abs(balance), Math.abs(Number(counterpart.balance || 0))).toFixed(2)
     }))
-    openSection('members')
-    toast.info('Settlement details are ready to review')
+    setMemberDialog('settlement')
   }
 
   const reverseSelectedExpenses = async () => {
@@ -583,123 +592,60 @@ export const SharedExpenseGroup = () => {
           </section>
         </div>
       </section>
-      <section className="form-panel" data-shared-section="invite">
-        <h2>{tx('Invite registered user')}</h2>
-        <form className="inline-form" onSubmit={inviteUser}>
-          <input
-            type="email"
-            placeholder={tx('Email')}
-            value={invite.email}
-            onChange={(e) => setInvite({ email: e.target.value, mobile: '' })}
-          />
-          <input
-            placeholder={tx('Or mobile')}
-            value={invite.mobile}
-            onChange={(e) => setInvite({ mobile: e.target.value, email: '' })}
-          />
-          <button className="primary" disabled={submitting !== null}>
-            {submitting === 'invite' ? tx('Sending...') : tx('Send invitation')}
-          </button>
-        </form>
-      </section>
-      <div className="two-column-grid" data-shared-section="members">
-        <section className="form-panel">
+      <div data-shared-section="invite" className="shared-member-actions">
+        <div>
           <h2>{tx('Members')}</h2>
-          <form onSubmit={addMember}>
-            <input
-              placeholder={tx('Name')}
-              required
-              value={member.memberName}
-              onChange={(e) =>
-                setMember({ ...member, memberName: e.target.value })
-              }
-            />
-            <input
-              placeholder={tx('Email (optional)')}
-              type="email"
-              value={member.email}
-              onChange={(e) => setMember({ ...member, email: e.target.value })}
-            />
-            <input
-              placeholder={tx('Mobile (optional)')}
-              value={member.mobile}
-              onChange={(e) => setMember({ ...member, mobile: e.target.value })}
-            />
-            <button className="primary" disabled={submitting !== null}>
-              {submitting === 'member' ? tx('Adding...') : tx('Add member')}
-            </button>
-          </form>
-          <div>
-            {active.map((x) => (
-              <p key={x.id}>
-                {x.memberName}{' '}
-                {!x.userId && (
-                  <button
-                    type="button"
-                    className="danger"
-                    onClick={() => deactivateMember(x)}
-                  >
-                    {tx('Deactivate')}
-                  </button>
-                )}
-              </p>
-            ))}
-          </div>
-        </section>
-        <section className="form-panel">
-          <h2>{tx('Settle up')}</h2>
-          <form onSubmit={addSettlement}>
-            <select
-              required
-              value={settle.paidByMemberId}
-              onChange={(e) =>
-                setSettle({ ...settle, paidByMemberId: e.target.value })
-              }
-            >
-              <option value="">{tx('Paid by')}</option>
-              {active.map((x) => (
-                <option key={x.id} value={x.id}>
-                  {x.memberName}
-                </option>
-              ))}
-            </select>
-            <select
-              required
-              value={settle.paidToMemberId}
-              onChange={(e) =>
-                setSettle({ ...settle, paidToMemberId: e.target.value })
-              }
-            >
-              <option value="">{tx('Paid to')}</option>
-              {active.map((x) => (
-                <option key={x.id} value={x.id}>
-                  {x.memberName}
-                </option>
-              ))}
-            </select>
-            <input
-              required
-              type="number"
-              min="0.01"
-              step="0.01"
-              placeholder={tx('Amount')}
-              value={settle.amount}
-              onChange={(e) => setSettle({ ...settle, amount: e.target.value })}
-            />
-            <input
-              type="date"
-              required
-              value={settle.settlementDate}
-              onChange={(e) =>
-                setSettle({ ...settle, settlementDate: e.target.value })
-              }
-            />
-            <button className="primary" disabled={submitting !== null}>
-              {submitting === 'settlement' ? tx('Recording...') : tx('Record settlement')}
-            </button>
-          </form>
-        </section>
+          <p className="muted">{tx('Manage people and payments for this group.')}</p>
+        </div>
+        <div className="shared-member-action-buttons">
+          <button type="button" className="secondary" onClick={() => setMemberDialog('invite')}>{tx('Invite user')}</button>
+          <button type="button" className="secondary" onClick={() => setMemberDialog('member')}>{tx('Add member')}</button>
+          <button type="button" className="primary" onClick={() => setMemberDialog('settlement')}>{tx('Settle up')}</button>
+        </div>
       </div>
+      <section className="shared-member-list report-panel" data-shared-section="members">
+        <div className="shared-member-list-heading"><h2>{tx('Group members')}</h2><span>{active.length} {tx('Members')}</span></div>
+        {active.map((x) => (
+          <div className="shared-member-row" key={x.id}>
+            <span className="shared-member-avatar">{x.memberName?.charAt(0)?.toUpperCase() || 'M'}</span>
+            <div><strong>{x.memberName}</strong><small>{x.email || x.mobile || tx('Group member')}</small></div>
+            {!x.userId && <button type="button" className="danger" onClick={() => deactivateMember(x)}>{tx('Deactivate')}</button>}
+          </div>
+        ))}
+        {!active.length && <p className="empty-state">{tx('Add members to get started.')}</p>}
+      </section>
+      {memberDialog && (
+        <div className="modal-backdrop" role="presentation" onMouseDown={() => setMemberDialog(null)}>
+          <section className="expense-modal shared-member-dialog" role="dialog" aria-modal="true" aria-labelledby="member-dialog-title" onMouseDown={(event) => event.stopPropagation()}>
+            <div className="expense-modal-header">
+              <div>
+                <h2 id="member-dialog-title">{tx(memberDialog === 'invite' ? 'Invite registered user' : memberDialog === 'member' ? 'Add member' : 'Settle up')}</h2>
+                <p className="muted">{tx(memberDialog === 'invite' ? 'Send an invitation by email or mobile.' : memberDialog === 'member' ? 'Add someone to share expenses with.' : 'Record a payment between group members.')}</p>
+              </div>
+              <button type="button" className="modal-close" aria-label={tx('Close')} onClick={() => setMemberDialog(null)}>×</button>
+            </div>
+            {memberDialog === 'invite' && <form className="shared-member-dialog-form" onSubmit={inviteUser}>
+              <label>{tx('Email')}<input type="email" placeholder={tx('Email')} value={invite.email} onChange={(e) => setInvite({ email: e.target.value, mobile: '' })} /></label>
+              <span className="shared-dialog-or">{tx('or')}</span>
+              <label>{tx('Mobile')}<input placeholder={tx('Mobile')} value={invite.mobile} onChange={(e) => setInvite({ mobile: e.target.value, email: '' })} /></label>
+              <div className="expense-modal-actions"><button type="button" onClick={() => setMemberDialog(null)}>{tx('Cancel')}</button><button className="primary" disabled={submitting !== null || (!invite.email && !invite.mobile)}>{submitting === 'invite' ? tx('Sending...') : tx('Send invitation')}</button></div>
+            </form>}
+            {memberDialog === 'member' && <form className="shared-member-dialog-form" onSubmit={addMember}>
+              <label>{tx('Name')}<input required value={member.memberName} onChange={(e) => setMember({ ...member, memberName: e.target.value })} /></label>
+              <label>{tx('Email (optional)')}<input type="email" value={member.email} onChange={(e) => setMember({ ...member, email: e.target.value })} /></label>
+              <label>{tx('Mobile (optional)')}<input value={member.mobile} onChange={(e) => setMember({ ...member, mobile: e.target.value })} /></label>
+              <div className="expense-modal-actions"><button type="button" onClick={() => setMemberDialog(null)}>{tx('Cancel')}</button><button className="primary" disabled={submitting !== null}>{submitting === 'member' ? tx('Adding...') : tx('Add member')}</button></div>
+            </form>}
+            {memberDialog === 'settlement' && <form className="shared-member-dialog-form" onSubmit={addSettlement}>
+              <label>{tx('Paid by')}<select required value={settle.paidByMemberId} onChange={(e) => setSettle({ ...settle, paidByMemberId: e.target.value })}><option value="">{tx('Select member')}</option>{active.map((x) => <option key={x.id} value={x.id}>{x.memberName}</option>)}</select></label>
+              <label>{tx('Paid to')}<select required value={settle.paidToMemberId} onChange={(e) => setSettle({ ...settle, paidToMemberId: e.target.value })}><option value="">{tx('Select member')}</option>{active.map((x) => <option key={x.id} value={x.id}>{x.memberName}</option>)}</select></label>
+              <label>{tx('Amount')}<input required type="number" min="0.01" step="0.01" value={settle.amount} onChange={(e) => setSettle({ ...settle, amount: e.target.value })} /></label>
+              <label>{tx('Date')}<input type="date" required value={settle.settlementDate} onChange={(e) => setSettle({ ...settle, settlementDate: e.target.value })} /></label>
+              <div className="expense-modal-actions"><button type="button" onClick={() => setMemberDialog(null)}>{tx('Cancel')}</button><button className="primary" disabled={submitting !== null || settle.paidByMemberId === settle.paidToMemberId}>{submitting === 'settlement' ? tx('Recording...') : tx('Record settlement')}</button></div>
+            </form>}
+          </section>
+        </div>
+      )}
       <section className="form-panel" data-shared-section="expense">
         <h2>{tx('Add shared expense')}</h2>
         <form onSubmit={addExpense}>

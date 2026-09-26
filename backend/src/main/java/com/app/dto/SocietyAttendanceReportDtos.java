@@ -29,6 +29,7 @@ public final class SocietyAttendanceReportDtos {
     @Data @Builder
     public static class DailyRow {
         private Long attendanceId;
+        private LocalDate attendanceDate;
         private String workerKey;
         private String workerName;
         private String workerType;
@@ -76,5 +77,6 @@ public final class SocietyAttendanceReportDtos {
         private long replacementDays;
         private long lateMinutes;
         private long overtimeMinutes;
+        private List<DailyRow> attendanceDays;
     }
 }

@@ -186,17 +186,17 @@ export const Attendance = () => {
             <>
               <button
                 className="primary"
-                disabled={saving || !rows.length}
+                disabled={loading || saving || !rows.length}
                 onClick={save}
               >
                 {saving ? 'Saving...' : 'Save'}
               </button>
-              <button disabled={!rows.some((x) => x.id)} onClick={submit}>
+              <button disabled={loading || !rows.some((x) => x.id)} onClick={submit}>
                 Submit
               </button>
             </>
           ) : isAdmin && sheet.status === 'SUBMITTED' ? (
-            <button className="primary" onClick={lock}>
+            <button className="primary" disabled={loading} onClick={lock}>
               Lock sheet
             </button>
           ) : (
@@ -205,7 +205,9 @@ export const Attendance = () => {
         </div>
       }
     >
-      <div className="attendance-page">
+      <div className="attendance-page" aria-busy={loading}>
+        {loading && <p className="attendance-loading" role="status">Loading attendance...</p>}
+        <div className="attendance-content" inert={loading ? '' : undefined}>
         <section className="attendance-summary" aria-label="Whole day summary">
           {[
             ['Expected', rows.length],
@@ -414,7 +416,7 @@ export const Attendance = () => {
             </tbody>
           </table>
         </div>
-        {loading && <p role="status">Loading...</p>}
+        </div>
       </div>
     </Shell>
   )
