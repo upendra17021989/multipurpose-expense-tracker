@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 public interface SportsCollectionRepository extends JpaRepository<SportsCollection, Long> {
+    @org.springframework.data.jpa.repository.EntityGraph(attributePaths = {"sportsEvent", "sportsMember"})
     List<SportsCollection> findByAccountIdAndSportsEventId(Long accountId, Long sportsEventId);
     Optional<SportsCollection> findByAccountIdAndId(Long accountId, Long id);
     Optional<SportsCollection> findByAccountIdAndSportsEventIdAndSportsMemberId(Long accountId, Long sportsEventId, Long sportsMemberId);
@@ -17,4 +18,11 @@ public interface SportsCollectionRepository extends JpaRepository<SportsCollecti
             "order by c.sportsEvent.startDate desc, c.sportsEvent.id desc")
     List<SportsCollection> findPriorCollections(@Param("accountId") Long accountId, @Param("memberId") Long memberId,
                                                 @Param("startDate") java.time.LocalDate startDate, @Param("eventId") Long eventId);
+
+    @Query("select c from SportsCollection c where c.account.id = :accountId and c.sportsMember.id in :memberIds " +
+            "and (c.sportsEvent.startDate < :startDate or (c.sportsEvent.startDate = :startDate and c.sportsEvent.id < :eventId)) " +
+            "order by c.sportsEvent.startDate desc, c.sportsEvent.id desc")
+    List<SportsCollection> findPriorCollectionsForMembers(@Param("accountId") Long accountId,
+            @Param("memberIds") List<Long> memberIds, @Param("startDate") java.time.LocalDate startDate,
+            @Param("eventId") Long eventId);
 }

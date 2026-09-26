@@ -5,6 +5,8 @@ import com.app.entity.*;
 import com.app.exception.*;
 import com.app.repository.*;
 import java.util.Set;
+import java.util.Map;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.*;
 import org.springframework.data.jpa.domain.Specification;
@@ -43,7 +45,12 @@ public class SystemAdminManagementService {
         }
         if (type != null) spec = spec.and((r, q, cb) -> cb.equal(r.get("accountType"), type));
         if (active != null) spec = spec.and((r, q, cb) -> cb.equal(r.get("active"), active));
-        return accounts.findAll(spec, PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"))).map(this::accountRow);
+        Page<Account> result = accounts.findAll(spec, PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt")));
+        if (result.isEmpty()) return result.map(this::accountRow);
+        users.findAllById(result.getContent().stream().map(account -> account.getUser().getId()).distinct().toList());
+        Map<Long, Long> counts = memberships.countActiveByAccountIds(result.getContent().stream().map(Account::getId).toList())
+                .stream().collect(Collectors.toMap(row -> (Long) row[0], row -> (Long) row[1]));
+        return result.map(account -> accountRow(account, counts.getOrDefault(account.getId(), 0L)));
     }
 
     @Transactional
@@ -85,10 +92,13 @@ public class SystemAdminManagementService {
                 .active(u.getActive()).systemAdmin(u.getSystemAdmin()).createdAt(u.getCreatedAt()).build();
     }
     private AccountRow accountRow(Account a) {
+        return accountRow(a, memberships.countByAccountIdAndActiveTrue(a.getId()));
+    }
+    private AccountRow accountRow(Account a, long activeMembers) {
         User owner = a.getUser();
         return AccountRow.builder().id(a.getId()).accountName(a.getAccountName()).accountType(a.getAccountType())
                 .active(a.getActive()).ownerId(owner.getId()).ownerName(owner.getName()).ownerMobile(owner.getMobile())
-                .ownerRole(a.getRole()).activeMembers(memberships.countByAccountIdAndActiveTrue(a.getId()))
+                .ownerRole(a.getRole()).activeMembers(activeMembers)
                 .createdAt(a.getCreatedAt()).build();
     }
 }

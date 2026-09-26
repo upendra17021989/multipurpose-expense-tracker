@@ -25,6 +25,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 public class PurchaseService {
@@ -49,12 +51,12 @@ public class PurchaseService {
 
     @Transactional(readOnly = true)
     public List<PurchaseDto> getPurchases(Long accountId) {
-        return purchaseRepository.findByAccountId(accountId).stream().map(this::mapToDto).toList();
+        return mapPurchases(purchaseRepository.findByAccountId(accountId));
     }
 
     @Transactional(readOnly = true)
     public List<PurchaseDto> getPurchasesByDateRange(Long accountId, LocalDate startDate, LocalDate endDate) {
-        return purchaseRepository.findByAccountIdAndPurchaseDateBetween(accountId, startDate, endDate).stream().map(this::mapToDto).toList();
+        return mapPurchases(purchaseRepository.findByAccountIdAndPurchaseDateBetween(accountId, startDate, endDate));
     }
 
     @Transactional(readOnly = true)
@@ -179,8 +181,19 @@ public class PurchaseService {
                 .orElseThrow(() -> new ResourceNotFoundException("Purchase not found"));
     }
 
+    private List<PurchaseDto> mapPurchases(List<Purchase> purchases) {
+        if (purchases.isEmpty()) return List.of();
+        Map<Long, List<PurchaseItem>> itemsByPurchase = purchaseItemRepository.findByPurchaseIdIn(purchases.stream().map(Purchase::getId).toList())
+                .stream().collect(Collectors.groupingBy(item -> item.getPurchase().getId()));
+        return purchases.stream().map(purchase -> mapToDto(purchase, itemsByPurchase.getOrDefault(purchase.getId(), List.of()))).toList();
+    }
+
     private PurchaseDto mapToDto(Purchase purchase) {
-        List<PurchaseItemDto> items = purchaseItemRepository.findByPurchaseId(purchase.getId()).stream()
+        return mapToDto(purchase, purchaseItemRepository.findByPurchaseId(purchase.getId()));
+    }
+
+    private PurchaseDto mapToDto(Purchase purchase, List<PurchaseItem> purchaseItems) {
+        List<PurchaseItemDto> items = purchaseItems.stream()
                 .map(item -> PurchaseItemDto.builder()
                         .id(item.getId())
                         .productId(item.getProduct().getId())

@@ -4,6 +4,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.*;
 public interface SocietyAgencyWorkerRepository extends JpaRepository<SocietyAgencyWorker,Long>{
  List<SocietyAgencyWorker> findByAccountIdAndAgencyIdAndActiveTrueOrderByWorkerNameAsc(Long accountId,Long agencyId);
+ List<SocietyAgencyWorker> findByAccountIdAndAgencyIdInAndActiveTrueOrderByWorkerNameAsc(Long accountId,Collection<Long> agencyIds);
  Optional<SocietyAgencyWorker> findByAccountIdAndAgencyIdAndIdAndActiveTrue(Long accountId,Long agencyId,Long id);
  Optional<SocietyAgencyWorker> findByAccountIdAndIdAndActiveTrue(Long accountId,Long id);
 }

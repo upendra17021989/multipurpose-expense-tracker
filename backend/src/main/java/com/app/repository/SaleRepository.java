@@ -11,7 +11,9 @@ import java.util.List;
 
 @Repository
 public interface SaleRepository extends JpaRepository<Sale, Long> {
+    @org.springframework.data.jpa.repository.EntityGraph(attributePaths = {"customer"})
     List<Sale> findByAccountId(Long accountId);
+    @org.springframework.data.jpa.repository.EntityGraph(attributePaths = {"customer"})
     List<Sale> findByAccountIdAndSaleDateBetween(Long accountId, LocalDate startDate, LocalDate endDate);
     List<Sale> findByAccountIdAndCustomerId(Long accountId, Long customerId);
     

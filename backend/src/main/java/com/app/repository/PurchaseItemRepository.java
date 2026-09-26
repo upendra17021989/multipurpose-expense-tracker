@@ -9,4 +9,6 @@ import java.util.List;
 @Repository
 public interface PurchaseItemRepository extends JpaRepository<PurchaseItem, Long> {
     List<PurchaseItem> findByPurchaseId(Long purchaseId);
+    @org.springframework.data.jpa.repository.EntityGraph(attributePaths = {"product"})
+    List<PurchaseItem> findByPurchaseIdIn(List<Long> purchaseIds);
 }

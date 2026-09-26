@@ -72,11 +72,14 @@ public class FestivalCouponService {
         User generator = user(userId); Map<Long, FestivalCouponEntitlement> overrides = entitlements.findByAccountIdAndFestivalEventId(accountId, festivalId).stream()
                 .collect(Collectors.toMap(x -> x.getFestivalCollection().getId(), Function.identity()));
         int eligible = 0, created = 0, existing = 0, skipped = 0;
+        Map<Long, List<FestivalCoupon>> issuedByCollection = coupons
+                .findByAccountIdAndFestivalEventIdOrderByFlatBlockNameAscFlatFlatNumberAscSequenceNumberAsc(accountId, festivalId)
+                .stream().collect(Collectors.groupingBy(x -> x.getFestivalCollection().getId()));
         for (FestivalCollection collection : collections.findByAccountIdAndFestivalEventId(accountId, festivalId)) {
             if (!eligible(collection)) { skipped++; continue; }
             eligible++; FestivalCouponEntitlement override = overrides.get(collection.getId());
             int count = override != null && override.getCouponCountOverride() != null ? override.getCouponCountOverride() : setting.getDefaultCouponCount();
-            List<FestivalCoupon> issued = coupons.findByAccountIdAndFestivalCollectionIdOrderBySequenceNumberAsc(accountId, collection.getId());
+            List<FestivalCoupon> issued = issuedByCollection.getOrDefault(collection.getId(), List.of());
             int live = (int) issued.stream().filter(x -> x.getStatus() != FestivalCouponStatus.CANCELLED).count();
             existing += live;
             int nextSequence = issued.stream().mapToInt(FestivalCoupon::getSequenceNumber).max().orElse(0) + 1;

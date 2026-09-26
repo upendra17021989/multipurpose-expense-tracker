@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Optional;
 
 public interface SportsExpenseRepository extends JpaRepository<SportsExpense, Long> {
+    @org.springframework.data.jpa.repository.EntityGraph(attributePaths = {"sportsEvent"})
     List<SportsExpense> findByAccountIdAndSoftDeletedFalse(Long accountId);
     List<SportsExpense> findByAccountIdAndSportsEventIdAndSoftDeletedFalse(Long accountId, Long sportsEventId);
     List<SportsExpense> findByAccountIdAndExpenseDateBetweenAndSoftDeletedFalse(Long accountId, LocalDate startDate, LocalDate endDate);

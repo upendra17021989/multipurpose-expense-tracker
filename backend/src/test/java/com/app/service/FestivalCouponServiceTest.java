@@ -42,9 +42,10 @@ class FestivalCouponServiceTest {
 
     @Test void repeatedGenerationDoesNotCreateDuplicates() {
         when(collections.findByAccountIdAndFestivalEventId(1L, 2L)).thenReturn(List.of(collection(10L, 100, 100)));
-        when(coupons.findByAccountIdAndFestivalCollectionIdOrderBySequenceNumberAsc(1L, 10L)).thenReturn(List.of(
-                FestivalCoupon.builder().sequenceNumber(1).status(FestivalCouponStatus.ACTIVE).build(),
-                FestivalCoupon.builder().sequenceNumber(2).status(FestivalCouponStatus.ACTIVE).build()));
+        FestivalCollection existing = collection(10L, 100, 100);
+        when(coupons.findByAccountIdAndFestivalEventIdOrderByFlatBlockNameAscFlatFlatNumberAscSequenceNumberAsc(1L, 2L)).thenReturn(List.of(
+                FestivalCoupon.builder().festivalCollection(existing).sequenceNumber(1).status(FestivalCouponStatus.ACTIVE).build(),
+                FestivalCoupon.builder().festivalCollection(existing).sequenceNumber(2).status(FestivalCouponStatus.ACTIVE).build()));
         var result = service.generate(1L, 7L, 2L);
         assertThat(result.getCreatedCoupons()).isZero();
         assertThat(result.getExistingCoupons()).isEqualTo(2);

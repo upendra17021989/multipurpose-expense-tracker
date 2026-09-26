@@ -71,6 +71,7 @@ public interface FestivalCollectionRepository extends JpaRepository<FestivalColl
             """, nativeQuery = true)
     Summary summarize(@Param("accountId") Long accountId, @Param("festivalEventId") Long festivalEventId);
 
+    @org.springframework.data.jpa.repository.EntityGraph(attributePaths = {"flat", "festivalEvent"})
     List<FestivalCollection> findByAccountIdAndFestivalEventId(Long accountId, Long festivalEventId);
     Optional<FestivalCollection> findByAccountIdAndIdAndFestivalEventId(Long accountId, Long collectionId, Long festivalEventId);
     Optional<FestivalCollection> findByAccountIdAndId(Long accountId, Long collectionId);

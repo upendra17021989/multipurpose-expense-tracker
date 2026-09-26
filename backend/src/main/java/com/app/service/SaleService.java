@@ -25,6 +25,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 public class SaleService {
@@ -49,18 +51,12 @@ public class SaleService {
 
     @Transactional(readOnly = true)
     public List<SaleDto> getSales(Long accountId) {
-        return saleRepository.findByAccountId(accountId)
-                .stream()
-                .map(this::mapToDto)
-                .toList();
+        return mapSales(saleRepository.findByAccountId(accountId));
     }
 
     @Transactional(readOnly = true)
     public List<SaleDto> getSalesByDateRange(Long accountId, LocalDate startDate, LocalDate endDate) {
-        return saleRepository.findByAccountIdAndSaleDateBetween(accountId, startDate, endDate)
-                .stream()
-                .map(this::mapToDto)
-                .toList();
+        return mapSales(saleRepository.findByAccountIdAndSaleDateBetween(accountId, startDate, endDate));
     }
 
     @Transactional(readOnly = true)
@@ -200,8 +196,19 @@ public class SaleService {
                 .orElseThrow(() -> new ResourceNotFoundException("Customer not found"));
     }
 
+    private List<SaleDto> mapSales(List<Sale> sales) {
+        if (sales.isEmpty()) return List.of();
+        Map<Long, List<SaleItem>> itemsBySale = saleItemRepository.findBySaleIdIn(sales.stream().map(Sale::getId).toList())
+                .stream().collect(Collectors.groupingBy(item -> item.getSale().getId()));
+        return sales.stream().map(sale -> mapToDto(sale, itemsBySale.getOrDefault(sale.getId(), List.of()))).toList();
+    }
+
     private SaleDto mapToDto(Sale sale) {
-        List<SaleItemDto> items = saleItemRepository.findBySaleId(sale.getId())
+        return mapToDto(sale, saleItemRepository.findBySaleId(sale.getId()));
+    }
+
+    private SaleDto mapToDto(Sale sale, List<SaleItem> saleItems) {
+        List<SaleItemDto> items = saleItems
                 .stream()
                 .map(item -> SaleItemDto.builder()
                         .id(item.getId())

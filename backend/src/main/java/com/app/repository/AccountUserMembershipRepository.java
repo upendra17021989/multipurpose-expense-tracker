@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Collection;
 import java.util.Optional;
 
 @Repository
@@ -15,4 +16,6 @@ public interface AccountUserMembershipRepository extends JpaRepository<AccountUs
     List<AccountUserMembership> findByAccountIdAndActiveFalseOrderByCreatedAtAsc(Long accountId);
     List<AccountUserMembership> findByAccountIdAndActiveTrueOrderByCreatedAtAsc(Long accountId);
     long countByAccountIdAndActiveTrue(Long accountId);
+    @org.springframework.data.jpa.repository.Query("select m.account.id, count(m) from AccountUserMembership m where m.account.id in :accountIds and m.active = true group by m.account.id")
+    List<Object[]> countActiveByAccountIds(@org.springframework.data.repository.query.Param("accountIds") Collection<Long> accountIds);
 }

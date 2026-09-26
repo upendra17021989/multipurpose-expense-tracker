@@ -98,9 +98,11 @@ public class FestivalCollectionService {
             throw new ValidationException("Add active flats before generating collection demand");
         }
 
+        java.util.Map<Long, FestivalCollection> existingByFlat = collectionRepository
+                .findByAccountIdAndFestivalEventId(accountId, festivalEvent.getId()).stream()
+                .collect(java.util.stream.Collectors.toMap(row -> row.getFlat().getId(), row -> row));
         for (Flat flat : flats) {
-            FestivalCollection collection = collectionRepository
-                    .findByAccountIdAndFestivalEventIdAndFlatId(accountId, festivalEvent.getId(), flat.getId())
+            FestivalCollection collection = java.util.Optional.ofNullable(existingByFlat.get(flat.getId()))
                     .orElseGet(() -> FestivalCollection.builder()
                             .account(account)
                             .festivalEvent(festivalEvent)

@@ -29,8 +29,13 @@ public class SharedExpenseService {
   private final SharedInvitationService invitationService;
 
   public List<GroupDto> list(Long accountId, Long userId) {
-    return groups.findAccessibleIncludingArchived(accountId, userId).stream()
-        .map(g -> map(g, false))
+    List<SharedExpenseGroup> accessible = groups.findAccessibleIncludingArchived(accountId, userId);
+    if (accessible.isEmpty()) return List.of();
+    Map<Long, List<SharedGroupMember>> membersByGroup = members.findByGroupIdInOrderByMemberName(
+        accessible.stream().map(SharedExpenseGroup::getId).toList()).stream()
+        .collect(groupingBy(m -> m.getGroup().getId()));
+    return accessible.stream()
+        .map(g -> map(g, false, membersByGroup.getOrDefault(g.getId(), List.of())))
         .toList();
   }
 
@@ -44,11 +49,24 @@ public class SharedExpenseService {
 
   public List<FriendBalanceDto> friends(Long accountId, Long userId) {
     Map<Long, FriendAccumulator> result = new LinkedHashMap<>();
-    for (SharedExpenseGroup g : groups.findAccessible(accountId, userId)) {
-      List<SharedGroupMember> groupMembers = members.findByGroupIdOrderByMemberName(g.getId());
+    List<SharedExpenseGroup> accessible = groups.findAccessible(accountId, userId);
+    if (accessible.isEmpty()) return List.of();
+    List<Long> groupIds = accessible.stream().map(SharedExpenseGroup::getId).toList();
+    Map<Long, List<SharedGroupMember>> membersByGroup = members.findByGroupIdInOrderByMemberName(groupIds).stream()
+        .collect(groupingBy(m -> m.getGroup().getId()));
+    Map<Long, List<SharedExpensePayer>> payersByGroup = payers.findByExpenseGroupIdInAndExpenseReversedFalse(groupIds).stream()
+        .collect(groupingBy(p -> p.getExpense().getGroup().getId()));
+    Map<Long, List<SharedExpenseShare>> sharesByGroup = shares.findByExpenseGroupIdInAndExpenseReversedFalse(groupIds).stream()
+        .collect(groupingBy(s -> s.getExpense().getGroup().getId()));
+    Map<Long, List<SharedSettlement>> settlementsByGroup = settlements.findByGroupIdInAndReversedFalse(groupIds).stream()
+        .collect(groupingBy(s -> s.getGroup().getId()));
+    for (SharedExpenseGroup g : accessible) {
+      List<SharedGroupMember> groupMembers = membersByGroup.getOrDefault(g.getId(), List.of());
       if (groupMembers.stream()
           .noneMatch(m -> m.getUser() != null && m.getUser().getId().equals(userId))) continue;
-      Map<Long, BigDecimal> balances = calculateBalances(g.getId(), groupMembers);
+      Map<Long, BigDecimal> balances = calculateBalances(groupMembers,
+          payersByGroup.getOrDefault(g.getId(), List.of()), sharesByGroup.getOrDefault(g.getId(), List.of()),
+          settlementsByGroup.getOrDefault(g.getId(), List.of()));
       for (SharedGroupMember m : groupMembers) {
         if (m.getUser() == null || m.getUser().getId().equals(userId) || !m.getActive()) continue;
         FriendAccumulator a =
@@ -383,7 +401,10 @@ public class SharedExpenseService {
   }
 
   private GroupDto map(SharedExpenseGroup g, boolean detail) {
-    List<SharedGroupMember> ms = members.findByGroupIdOrderByMemberName(g.getId());
+    return map(g, detail, members.findByGroupIdOrderByMemberName(g.getId()));
+  }
+
+  private GroupDto map(SharedExpenseGroup g, boolean detail, List<SharedGroupMember> ms) {
     List<SharedExpensePayer> groupPayers =
         detail ? payers.findByExpenseGroupIdAndExpenseReversedFalse(g.getId()) : List.of();
     Map<Long, BigDecimal> b = detail ? calculateBalances(g.getId(), ms, groupPayers) : Map.of();
@@ -487,16 +508,24 @@ public class SharedExpenseService {
       Long groupId,
       List<SharedGroupMember> groupMembers,
       List<SharedExpensePayer> groupPayers) {
+    return calculateBalances(groupMembers, groupPayers,
+        shares.findByExpenseGroupIdAndExpenseReversedFalse(groupId),
+        settlements.findByGroupIdAndReversedFalse(groupId));
+  }
+
+  private Map<Long, BigDecimal> calculateBalances(
+      List<SharedGroupMember> groupMembers, List<SharedExpensePayer> groupPayers,
+      List<SharedExpenseShare> groupShares, List<SharedSettlement> groupSettlements) {
     Map<Long, BigDecimal> balances =
         groupMembers.stream()
             .collect(toMap(SharedGroupMember::getId, x -> BigDecimal.ZERO));
     groupPayers.forEach(
         x -> balances.computeIfPresent(
             x.getMember().getId(), (k, v) -> v.add(x.getPaidAmount())));
-    shares.findByExpenseGroupIdAndExpenseReversedFalse(groupId).forEach(
+    groupShares.forEach(
         x -> balances.computeIfPresent(
             x.getMember().getId(), (k, v) -> v.subtract(x.getOwedAmount())));
-    settlements.findByGroupIdAndReversedFalse(groupId).forEach(
+    groupSettlements.forEach(
         x -> {
           balances.computeIfPresent(x.getPaidBy().getId(), (k, v) -> v.add(x.getAmount()));
           balances.computeIfPresent(x.getPaidTo().getId(), (k, v) -> v.subtract(x.getAmount()));

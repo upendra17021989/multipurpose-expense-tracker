@@ -25,6 +25,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -51,24 +52,15 @@ public class ExpenseService {
     }
 
     public List<ExpenseDto> getExpensesByAccountId(Long accountId) {
-        return expenseRepository.findByAccountIdAndSoftDeletedFalse(accountId)
-                .stream()
-                .map(this::mapToDto)
-                .collect(Collectors.toList());
+        return mapExpenses(expenseRepository.findByAccountIdAndSoftDeletedFalse(accountId));
     }
 
     public List<ExpenseDto> getExpensesByDateRange(Long accountId, LocalDate startDate, LocalDate endDate) {
-        return expenseRepository.findByAccountIdAndExpenseDateBetweenAndSoftDeletedFalse(accountId, startDate, endDate)
-                .stream()
-                .map(this::mapToDto)
-                .collect(Collectors.toList());
+        return mapExpenses(expenseRepository.findByAccountIdAndExpenseDateBetweenAndSoftDeletedFalse(accountId, startDate, endDate));
     }
 
     public List<ExpenseDto> getTodaysExpenses(Long accountId) {
-        return expenseRepository.findTodaysExpenses(accountId, LocalDate.now())
-                .stream()
-                .map(this::mapToDto)
-                .collect(Collectors.toList());
+        return mapExpenses(expenseRepository.findTodaysExpenses(accountId, LocalDate.now()));
     }
 
     public ExpenseDto getExpenseById(Long accountId, Long expenseId) {
@@ -303,7 +295,19 @@ public class ExpenseService {
                 .orElseThrow(() -> new ResourceNotFoundException("Festival or sports event not found"));
     }
 
+    private List<ExpenseDto> mapExpenses(List<Expense> expenses) {
+        if (expenses.isEmpty()) return List.of();
+        Map<Long, List<ExpenseItem>> itemsByExpense = itemRepository.findByExpenseIdInOrderByDisplayOrderAscIdAsc(
+                expenses.stream().map(Expense::getId).toList()).stream()
+                .collect(Collectors.groupingBy(item -> item.getExpense().getId()));
+        return expenses.stream().map(expense -> mapToDto(expense, itemsByExpense.getOrDefault(expense.getId(), List.of()))).toList();
+    }
+
     private ExpenseDto mapToDto(Expense expense) {
+        return mapToDto(expense, itemRepository.findByExpenseIdOrderByDisplayOrderAscIdAsc(expense.getId()));
+    }
+
+    private ExpenseDto mapToDto(Expense expense, List<ExpenseItem> expenseItems) {
         return ExpenseDto.builder()
                 .id(expense.getId())
                 .accountId(expense.getAccount().getId())
@@ -327,7 +331,7 @@ public class ExpenseService {
                 .remarks(expense.getRemarks())
                 .status(expense.getStatus())
                 .createdAt(expense.getCreatedAt())
-                .items(itemRepository.findByExpenseIdOrderByDisplayOrderAscIdAsc(expense.getId()).stream()
+                .items(expenseItems.stream()
                         .map(item -> ExpenseDto.ItemDto.builder().id(item.getId()).itemName(item.getItemName()).quantity(item.getQuantity()).unitPrice(item.getUnitPrice()).amount(item.getAmount()).build())
                         .toList())
                 .build();
@@ -337,11 +341,8 @@ public class ExpenseService {
     public List<ExpenseDto> getFestivalExpenses(Long accountId, Long festivalEventId) {
         // Keep report reads tenant-scoped at the database. The report previously loaded
         // every expense for the account and discarded unrelated rows in the browser.
-        return expenseRepository.findByAccountIdAndFestivalEventIdAndSoftDeletedFalse(accountId, festivalEventId)
-                .stream()
-                .filter(expense -> expense.getExpenseType() == ExpenseType.FESTIVAL)
-                .map(this::mapToDto)
-                .collect(Collectors.toList());
+        return mapExpenses(expenseRepository.findByAccountIdAndFestivalEventIdAndSoftDeletedFalse(accountId, festivalEventId)
+                .stream().filter(expense -> expense.getExpenseType() == ExpenseType.FESTIVAL).toList());
     }
 
     @Transactional(readOnly = true)
@@ -354,7 +355,9 @@ public class ExpenseService {
                         org.springframework.data.domain.Sort.Order.desc("id")));
         var expenses = expenseRepository.searchFestivalExpenses(accountId, festivalEventId,
                 ExpenseType.FESTIVAL, search == null ? "" : search.trim(), pageable);
-        return expenses.map(this::mapToDto);
+        Map<Long, ExpenseDto> mapped = mapExpenses(expenses.getContent()).stream()
+                .collect(Collectors.toMap(ExpenseDto::getId, dto -> dto));
+        return expenses.map(expense -> mapped.get(expense.getId()));
     }
 
     private void saveItems(Expense expense, List<ExpenseCreateRequest.ItemRequest> items) {

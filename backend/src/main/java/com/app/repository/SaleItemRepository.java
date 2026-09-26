@@ -9,4 +9,6 @@ import java.util.List;
 @Repository
 public interface SaleItemRepository extends JpaRepository<SaleItem, Long> {
     List<SaleItem> findBySaleId(Long saleId);
+    @org.springframework.data.jpa.repository.EntityGraph(attributePaths = {"product"})
+    List<SaleItem> findBySaleIdIn(List<Long> saleIds);
 }

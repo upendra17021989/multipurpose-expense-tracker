@@ -257,14 +257,20 @@ public class SportsService {
                     .collect(Collectors.toList());
         }
         if (members.isEmpty()) throw new ValidationException("Select at least one active sports member before generating collection demand");
+        java.util.Map<Long, SportsCollection> existingByMember = collectionRepository
+                .findByAccountIdAndSportsEventId(accountId, event.getId()).stream()
+                .collect(java.util.stream.Collectors.toMap(row -> row.getSportsMember().getId(), row -> row));
+        java.util.Map<Long, List<SportsCollection>> priorByMember = collectionRepository
+                .findPriorCollectionsForMembers(accountId, members.stream().map(SportsMember::getId).toList(),
+                        event.getStartDate(), event.getId()).stream()
+                .collect(java.util.stream.Collectors.groupingBy(row -> row.getSportsMember().getId()));
         for (SportsMember member : members) {
-            Optional<SportsCollection> existing = collectionRepository.findByAccountIdAndSportsEventIdAndSportsMemberId(accountId, event.getId(), member.getId());
-            SportsCollection collection = existing.orElseGet(() -> SportsCollection.builder().account(account).sportsEvent(event).sportsMember(member)
+            SportsCollection collection = java.util.Optional.ofNullable(existingByMember.get(member.getId())).orElseGet(() -> SportsCollection.builder().account(account).sportsEvent(event).sportsMember(member)
                     .collectedAmount(BigDecimal.ZERO).openingBalance(BigDecimal.ZERO).openingDue(BigDecimal.ZERO).excessAmount(BigDecimal.ZERO)
                     .carriedForwardAmount(BigDecimal.ZERO).carriedForwardPendingAmount(BigDecimal.ZERO).refundedAmount(BigDecimal.ZERO).build());
             if (nonNull(collection.getOpeningBalance()).compareTo(BigDecimal.ZERO) == 0
                     && nonNull(collection.getOpeningDue()).compareTo(BigDecimal.ZERO) == 0) {
-                applyOpeningBalance(accountId, event, member, collection);
+                applyOpeningBalance(priorByMember.getOrDefault(member.getId(), List.of()), collection);
             }
             collection.setExpectedAmount(request.getExpectedAmount());
             collection.setRemarks(trimToNull(request.getRemarks()));
@@ -542,7 +548,11 @@ public class SportsService {
     }
 
     private void applyOpeningBalance(Long accountId, SportsEvent event, SportsMember member, SportsCollection destination) {
-        for (SportsCollection source : collectionRepository.findPriorCollections(accountId, member.getId(), event.getStartDate(), event.getId())) {
+        applyOpeningBalance(collectionRepository.findPriorCollections(accountId, member.getId(), event.getStartDate(), event.getId()), destination);
+    }
+
+    private void applyOpeningBalance(List<SportsCollection> priorCollections, SportsCollection destination) {
+        for (SportsCollection source : priorCollections) {
             BigDecimal credit = nonNull(source.getExcessAmount()).subtract(nonNull(source.getCarriedForwardAmount())).max(BigDecimal.ZERO);
             BigDecimal due = nonNull(source.getPendingAmount()).subtract(nonNull(source.getCarriedForwardPendingAmount())).max(BigDecimal.ZERO);
             if (credit.compareTo(BigDecimal.ZERO) <= 0 && due.compareTo(BigDecimal.ZERO) <= 0) continue;
