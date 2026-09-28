@@ -316,7 +316,7 @@ export const FestivalCollectionList = () => {
         {totalPages > 1 && <nav className="table-pagination" aria-label="Collection pages"><button type="button" disabled={page === 0 || loading} onClick={() => setPage(0)}>«</button><button type="button" disabled={page === 0 || loading} onClick={() => setPage((value) => Math.max(0, value - 1))}>‹</button><span>Page {page + 1} of {totalPages}</span><button type="button" disabled={page + 1 >= totalPages || loading} onClick={() => setPage((value) => Math.min(totalPages - 1, value + 1))}>›</button><button type="button" disabled={page + 1 >= totalPages || loading} onClick={() => setPage(totalPages - 1)}>»</button></nav>}
       </div>
       </section>
-      {canAddPayment && paymentModal && <FestivalPaymentModal collection={paymentModal.collection} payment={paymentModal.payment} onClose={() => setPaymentModal(null)} onSaved={(receipt) => { setReceiptCollection({ id: paymentModal.collection.id, receiptId: receipt.id }); setPaymentModal(null); loadData() }} />}
+      {canAddPayment && paymentModal && <FestivalPaymentModal collection={paymentModal.collection} payment={paymentModal.payment} onClose={() => setPaymentModal(null)} onSaved={() => { setPaymentModal(null); loadData() }} />}
       {receiptCollection && <FestivalCollectionReceipt collectionId={receiptCollection.id} initialReceiptId={receiptCollection.receiptId} onClose={() => setReceiptCollection(null)} onEdit={(payment, collection) => { setReceiptCollection(null); setPaymentModal({ collection, payment }) }} />}
       </div>
     </Shell>

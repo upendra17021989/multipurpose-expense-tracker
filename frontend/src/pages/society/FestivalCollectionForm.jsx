@@ -64,7 +64,7 @@ export const FestivalCollectionForm = ({ collectionId: selectedCollectionId, pay
         : await festivalCollectionAPI.addPayment(collectionId, payload)
       toast.success(payment ? 'Payment updated' : 'Payment added')
       if (onSaved) onSaved(response.data)
-      else navigate(`/society/festival-collections/${festivalEventId}/${collectionId}/receipts`)
+      else navigate(`/society/festival-collections/${festivalEventId}`)
     } catch (error) {
       toast.error(error.response?.data?.message || `Unable to ${payment ? 'update' : 'add'} payment`)
     } finally {
