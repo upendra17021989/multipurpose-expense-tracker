@@ -175,9 +175,6 @@ public class FestivalCollectionService {
                 .filter(item -> item.getFestivalCollection().getId().equals(collectionId))
                 .orElseThrow(() -> new ResourceNotFoundException("Festival payment not found"));
 
-        collection.setCollectedAmount(nonNull(collection.getCollectedAmount())
-                .subtract(nonNull(receipt.getAmountPaid())).add(request.getAmountPaid()));
-        recalculateCollection(collection);
         receipt.setPaymentDate(request.getPaymentDate());
         receipt.setAmountPaid(request.getAmountPaid());
         receipt.setPaymentMode(request.getPaymentMode());
@@ -186,8 +183,13 @@ public class FestivalCollectionService {
         receipt.setChequeNumber(trimToNull(request.getChequeNumber()));
         receipt.setCollectedBy(request.getCollectedBy().trim());
         receipt.setRemarks(trimToNull(request.getRemarks()));
-        collectionRepository.save(collection);
         FestivalCollectionReceipt savedReceipt = receiptRepository.save(receipt);
+        collection.setCollectedAmount(receiptRepository.findByFestivalCollectionId(collectionId).stream()
+                .map(FestivalCollectionReceipt::getAmountPaid)
+                .map(this::nonNull)
+                .reduce(BigDecimal.ZERO, BigDecimal::add));
+        recalculateCollection(collection);
+        collectionRepository.save(collection);
         refreshFestivalCollectedAmount(collection.getFestivalEvent());
         return mapReceiptToDto(savedReceipt);
     }
@@ -256,7 +258,13 @@ public class FestivalCollectionService {
         });
     }
 
-    private void validatePaymentUpdateAccess(Long accountId, Long userId) {
+    void validatePaymentUpdateAccess(Long accountId, Long userId) {
+        Account account = accountRepository.findById(accountId)
+                .orElseThrow(() -> new ResourceNotFoundException("Account not found"));
+        if (account.getUser().getId().equals(userId)
+                && account.getRole() == com.app.entity.UserRole.ADMIN) {
+            return;
+        }
         var membership = membershipRepository.findByAccountIdAndUserIdAndActiveTrue(accountId, userId)
                 .orElseThrow(() -> new ValidationException("An active society membership is required"));
         if (membership.getRole() != com.app.entity.UserRole.ADMIN) {

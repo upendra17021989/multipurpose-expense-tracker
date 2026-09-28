@@ -5,6 +5,7 @@ import { festivalCollectionAPI, festivalEventAPI } from '../../api/endpoints'
 import { useAuthStore } from '../../store/authStore'
 import { formatCurrency, formatDate } from '../../utils/format'
 import { Shell } from '../DashboardRouter'
+import { FestivalPaymentModal } from './FestivalPaymentModal'
 import './FestivalReceiptView.css'
 
 export const FestivalCollectionReceipt = ({ collectionId: selectedId, initialReceiptId, onClose, onEdit }) => {
@@ -16,6 +17,7 @@ export const FestivalCollectionReceipt = ({ collectionId: selectedId, initialRec
   const [selected, setSelected] = useState(initialReceiptId || '')
   const [downloading, setDownloading] = useState(false)
   const [retry, setRetry] = useState(0)
+  const [editingPayment, setEditingPayment] = useState(null)
   const dialog = useRef(null)
   const modal = Boolean(onClose)
   useEffect(() => {
@@ -58,7 +60,7 @@ export const FestivalCollectionReceipt = ({ collectionId: selectedId, initialRec
   const content = <>
     <header className="festival-receipt-heading"><div><h2 id="festival-receipt-title">Festival receipts</h2><p>Select a payment to view or download its receipt.</p></div>{onClose && <button aria-label="Close receipts" onClick={onClose}>×</button>}</header>
     {error ? <p role="alert">{error} <button onClick={() => setRetry((value) => value + 1)}>Retry</button></p> : !data ? <p role="status">Loading receipts…</p> : !receipt ? <p className="empty-state">No payments recorded yet. A receipt will be available after a payment is saved.</p> : <>
-      <div className="festival-receipt-toolbar"><label>Payment receipt<select value={selected} onChange={(event) => setSelected(event.target.value)}>{data.receipts.map((item) => <option key={item.id} value={item.id}>{item.receiptNumber} · {formatDate(item.paymentDate)} · {formatCurrency(item.amountPaid)}</option>)}</select></label><div className="festival-receipt-actions">{onEdit && currentAccount?.role === 'ADMIN' && <button onClick={() => onEdit(receipt, data.collection)}>Edit payment</button>}<button className="primary" disabled={downloading} onClick={download}>{downloading ? 'Downloading…' : 'Download PDF'}</button></div></div>
+      <div className="festival-receipt-toolbar"><label>Payment receipt<select value={selected} onChange={(event) => setSelected(event.target.value)}>{data.receipts.map((item) => <option key={item.id} value={item.id}>{item.receiptNumber} · {formatDate(item.paymentDate)} · {formatCurrency(item.amountPaid)}</option>)}</select></label><div className="festival-receipt-actions">{currentAccount?.role === 'ADMIN' && <button onClick={() => onEdit ? onEdit(receipt, data.collection) : setEditingPayment(receipt)}>Edit payment</button>}<button className="primary" disabled={downloading} onClick={download}>{downloading ? 'Downloading…' : 'Download PDF'}</button></div></div>
       <article className="festival-receipt-paper" aria-label="Payment receipt">
         <header><h2>{currentAccount?.societyName || currentAccount?.accountName}</h2>{currentAccount?.address && <p>{currentAccount.address}</p>}<span>FESTIVAL CONTRIBUTION RECEIPT</span><h3>{data.festival.festivalName} · {data.festival.year}</h3></header>
         <div className="festival-receipt-meta"><div><small>Receipt number</small><strong>{receipt.receiptNumber}</strong></div><div><small>Payment date</small><strong>{formatDate(receipt.paymentDate)}</strong></div></div>
@@ -70,5 +72,5 @@ export const FestivalCollectionReceipt = ({ collectionId: selectedId, initialRec
     </>}
   </>
   if (onClose) return <dialog ref={dialog} className="festival-receipt-modal" aria-labelledby="festival-receipt-title" onCancel={(event) => { event.preventDefault(); onClose() }}>{content}</dialog>
-  return <Shell title="Collection Receipts" eyebrow="Society module"><Link to={`/society/festival-collections/${params.festivalEventId}`}>Back to collections</Link>{content}</Shell>
+  return <Shell title="Collection Receipts" eyebrow="Society module"><Link to={`/society/festival-collections/${params.festivalEventId}`}>Back to collections</Link>{content}{editingPayment && <FestivalPaymentModal collection={data.collection} payment={editingPayment} onClose={() => setEditingPayment(null)} onSaved={() => { setEditingPayment(null); setRetry((value) => value + 1) }} />}</Shell>
 }
