@@ -195,6 +195,7 @@ export const FestivalCollectionList = () => {
         </select>
         <select value={filters.status} onChange={(event) => { setPage(0); setFilters({ ...filters, status: event.target.value }) }}>
           <option value="">All statuses</option>
+          <option value="PAID_PARTIAL_EXCESS">Paid / Partial / Excess</option>
           <option value="PENDING">Pending</option>
           <option value="PARTIAL">Partial</option>
           <option value="PAID">Paid</option>

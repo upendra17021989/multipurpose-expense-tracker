@@ -76,9 +76,11 @@ public class FestivalCollectionService {
     @Transactional(readOnly = true)
     public Page<FestivalCollectionDto> getCollectionsPage(Long accountId, Long festivalEventId, String blockName,
             String status, String search, int page, int size) {
-        PaymentStatus paymentStatus = valueOrEmpty(status).isEmpty() ? null : PaymentStatus.valueOf(valueOrEmpty(status).toUpperCase());
+        String normalizedStatus = valueOrEmpty(status).toUpperCase();
+        boolean paidPartialExcess = "PAID_PARTIAL_EXCESS".equals(normalizedStatus);
+        PaymentStatus paymentStatus = normalizedStatus.isEmpty() || paidPartialExcess ? null : PaymentStatus.valueOf(normalizedStatus);
         return collectionRepository.searchPage(accountId, festivalEventId, valueOrEmpty(blockName),
-                paymentStatus, valueOrEmpty(search),
+                paymentStatus, paidPartialExcess, valueOrEmpty(search),
                 PageRequest.of(Math.max(0, page), Math.min(Math.max(1, size), 1000)));
     }
 

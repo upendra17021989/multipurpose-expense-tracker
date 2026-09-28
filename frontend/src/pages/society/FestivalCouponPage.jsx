@@ -32,7 +32,7 @@ export const FestivalCouponPage = () => {
             {festivals.map((festival) => <option key={festival.id} value={festival.id}>{festival.festivalName} ({festival.year})</option>)}
           </select>
         </label>
-        {selected && <strong>{selected.festivalName} � {selected.startDate} to {selected.endDate}</strong>}
+        {selected && <strong>{selected.festivalName}  {selected.startDate} to {selected.endDate}</strong>}
       </section>
       {loading ? <p role={'status'}>Loading festivals...</p>
         : selected ? <FestivalCoupons festivalId={selected.id} festival={selected} />

@@ -86,4 +86,20 @@ class FestivalCollectionPageTest {
         assertEquals(0, service.getCollectionsPage(1L, 4L, "B", "", "", 0, 20).getTotalElements());
         assertEquals(0, service.getCollectionsPage(1L, 4L, "", "PAID", "", 0, 20).getTotalElements());
     }
+
+    @Test
+    void combinedPaymentStatusIncludesPaidPartialAndExcessAcrossPages() {
+        jdbc.update("UPDATE festival_collections SET payment_status = 'PAID' WHERE id = 1");
+        jdbc.update("UPDATE festival_collections SET payment_status = 'EXCESS' WHERE id = 2");
+        jdbc.update("UPDATE festival_collections SET payment_status = 'PENDING' WHERE id = 3");
+        jdbc.update("UPDATE festival_collections SET payment_status = 'REFUNDED' WHERE id = 4");
+
+        var firstPage = service.getCollectionsPage(1L, 4L, "", "PAID_PARTIAL_EXCESS", "", 0, 2);
+        assertEquals(98, firstPage.getTotalElements());
+        assertEquals(PaymentStatus.PAID, firstPage.getContent().get(0).getPaymentStatus());
+        assertEquals(PaymentStatus.EXCESS, firstPage.getContent().get(1).getPaymentStatus());
+        assertEquals(PaymentStatus.PARTIAL,
+                service.getCollectionsPage(1L, 4L, "", "PAID_PARTIAL_EXCESS", "", 1, 2)
+                        .getContent().get(0).getPaymentStatus());
+    }
 }

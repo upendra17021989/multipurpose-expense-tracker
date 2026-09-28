@@ -84,10 +84,12 @@ public interface FestivalCollectionRepository extends JpaRepository<FestivalColl
             "FROM FestivalCollection c JOIN c.flat f JOIN c.festivalEvent e WHERE c.account.id = :accountId " +
             "AND c.festivalEvent.id = :festivalEventId " +
             "AND (:blockName = '' OR LOWER(f.blockName) = LOWER(:blockName)) " +
-            "AND (:status IS NULL OR c.paymentStatus = :status) " +
+            "AND ((:status IS NULL AND :paidPartialExcess = false) OR c.paymentStatus = :status " +
+            "OR (:paidPartialExcess = true AND c.paymentStatus IN (com.app.entity.PaymentStatus.PAID, com.app.entity.PaymentStatus.PARTIAL, com.app.entity.PaymentStatus.EXCESS))) " +
             "AND (:search = '' OR LOWER(CONCAT(COALESCE(f.blockName, ''), ' ', COALESCE(f.flatNumber, ''), ' ', COALESCE(f.ownerName, ''))) LIKE LOWER(CONCAT('%', :search, '%'))) " +
             "ORDER BY f.blockName, f.flatNumber, c.id")
     Page<FestivalCollectionDto> searchPage(@Param("accountId") Long accountId,
             @Param("festivalEventId") Long festivalEventId, @Param("blockName") String blockName,
-            @Param("status") PaymentStatus status, @Param("search") String search, Pageable pageable);
+            @Param("status") PaymentStatus status, @Param("paidPartialExcess") boolean paidPartialExcess,
+            @Param("search") String search, Pageable pageable);
 }
