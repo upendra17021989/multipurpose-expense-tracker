@@ -413,7 +413,7 @@ export const festivalCouponAPI = {
   saveOverride: (festivalId, collectionId, couponCountOverride) => axiosInstance.put(`/society/festivals/${festivalId}/coupons/entitlements/${collectionId}`, { couponCountOverride }),
   generate: (festivalId) => axiosInstance.post(`/society/festivals/${festivalId}/coupons/generate`),
   cancel: (festivalId, couponId) => axiosInstance.post(`/society/festivals/${festivalId}/coupons/${couponId}/cancel`),
-  downloadPdf: (festivalId) => axiosInstance.get(`/society/festivals/${festivalId}/coupons/pdf`, { responseType: 'blob' })
+  downloadPdf: (festivalId, orientation) => axiosInstance.get(`/society/festivals/${festivalId}/coupons/pdf`, { params: { orientation }, responseType: 'blob' })
 }
 export const attachmentAPI = {
   getAttachments: (referenceType, referenceId) => axiosInstance.get('/attachments', { params: { referenceType, referenceId } }),

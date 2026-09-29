@@ -47,7 +47,7 @@ public class FestivalCouponService {
         requireAdmin(accountId, userId); FestivalEvent festival = festival(accountId, festivalId);
         FestivalCouponSetting item = settings.findByAccountIdAndFestivalEventId(accountId, festivalId).orElseGet(() -> FestivalCouponSetting.builder()
                 .account(account(accountId)).festivalEvent(festival).createdBy(user(userId)).build());
-        item.setCouponName(request.getCouponName().trim()); item.setDefaultCouponCount(request.getDefaultCouponCount()); item.setValidOn(request.getValidOn()); item.setCouponsPerPage(request.getCouponsPerPage());
+        item.setCouponName(request.getCouponName().trim()); item.setDefaultCouponCount(request.getDefaultCouponCount()); item.setValidOn(request.getValidOn()); item.setCouponsPerPage(16);
         return map(settings.save(item), festivalId);
     }
 

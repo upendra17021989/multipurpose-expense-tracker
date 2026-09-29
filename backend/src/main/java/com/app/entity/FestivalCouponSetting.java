@@ -14,7 +14,7 @@ public class FestivalCouponSetting {
     @Column(nullable = false, length = 120) private String couponName;
     @Column(nullable = false) private Integer defaultCouponCount;
     @Column(nullable = false) private LocalDate validOn;
-    @Column(nullable = false) @Builder.Default private Integer couponsPerPage = 6;
+    @Column(nullable = false) @Builder.Default private Integer couponsPerPage = 16;
     @Enumerated(EnumType.STRING) @Column(nullable = false) @Builder.Default private FestivalCouponGenerationStatus generationStatus = FestivalCouponGenerationStatus.DRAFT;
     @ManyToOne(fetch = FetchType.LAZY) @JoinColumn(name = "created_by", nullable = false) private User createdBy;
     @Column(nullable = false, updatable = false) @Builder.Default private LocalDateTime createdAt = LocalDateTime.now();

@@ -396,4 +396,6 @@
 .festival-coupons-table input { width: 5rem; }
 .coupon-discrepancy { background: #fff7ed; }
 .coupon-warning { display: block; color: #b45309; font-weight: 700; }
+.coupon-download-controls { display: flex; align-items: end; gap: .6rem; flex-wrap: wrap; }
+.coupon-download-controls label { display: grid; gap: .25rem; font-size: .8rem; }
 @media (max-width: 760px) { .coupon-summary-grid { grid-template-columns: repeat(2, 1fr); } .festival-coupons-section .table-wrap { overflow-x: auto; } }

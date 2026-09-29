@@ -2,124 +2,136 @@ package com.app.service;
 
 import com.app.entity.FestivalCoupon;
 import com.app.repository.FestivalCouponSettingRepository;
-import com.itextpdf.kernel.colors.DeviceRgb;
-import com.itextpdf.kernel.font.PdfFontFactory;
 import com.itextpdf.io.font.constants.StandardFonts;
+import com.itextpdf.kernel.colors.DeviceRgb;
+import com.itextpdf.kernel.font.PdfFont;
+import com.itextpdf.kernel.font.PdfFontFactory;
 import com.itextpdf.kernel.geom.PageSize;
-import com.itextpdf.kernel.pdf.*;
+import com.itextpdf.kernel.pdf.PdfDocument;
+import com.itextpdf.kernel.pdf.PdfWriter;
 import com.itextpdf.kernel.pdf.canvas.PdfCanvas;
-import com.itextpdf.kernel.pdf.extgstate.PdfExtGState;
-import com.itextpdf.layout.Document;
-import com.itextpdf.layout.element.*;
-import com.itextpdf.layout.borders.SolidBorder;
-import com.itextpdf.layout.properties.UnitValue;
-import com.itextpdf.layout.renderer.DivRenderer;
-import com.itextpdf.layout.renderer.DrawContext;
-import com.itextpdf.layout.renderer.IRenderer;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+
 import java.io.ByteArrayOutputStream;
-import java.util.List;
+import java.io.IOException;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 
 @Service @RequiredArgsConstructor
 public class FestivalCouponPdfService {
-    private final FestivalCouponService service; private final FestivalCouponSettingRepository settings;
-    public byte[] export(Long accountId, Long userId, Long festivalId) {
+    public enum Orientation { PORTRAIT, LANDSCAPE }
+    private static final int COLUMNS = 4;
+    private static final int ROWS = 4;
+    private static final int PER_PAGE = COLUMNS * ROWS;
+    private static final float MARGIN = 20;
+    private static final float GAP = 8;
+    private static final DeviceRgb RED = new DeviceRgb(147, 24, 25);
+    private static final DeviceRgb GOLD = new DeviceRgb(220, 151, 31);
+    private static final DeviceRgb CREAM = new DeviceRgb(255, 248, 232);
+    private static final DeviceRgb GREEN = new DeviceRgb(14, 49, 38);
+
+    private final FestivalCouponService service;
+    private final FestivalCouponSettingRepository settings;
+
+    public byte[] export(Long accountId, Long userId, Long festivalId, Orientation orientation) {
         List<FestivalCoupon> items = service.printable(accountId, userId, festivalId);
         var setting = settings.findByAccountIdAndFestivalEventId(accountId, festivalId).orElse(null);
         String label = setting == null ? "Festival Coupon" : setting.getCouponName();
-        String validOn = setting == null || setting.getValidOn() == null ? "-" : setting.getValidOn().format(DateTimeFormatter.ofPattern("dd MMM yyyy"));
-        int perPage = setting == null || setting.getCouponsPerPage() == null ? 6 : setting.getCouponsPerPage();
-        ByteArrayOutputStream output = new ByteArrayOutputStream();
-        DeviceRgb teal = new DeviceRgb(15, 118, 110);
-        DeviceRgb dark = new DeviceRgb(18, 42, 52);
-        DeviceRgb pale = new DeviceRgb(232, 247, 244);
-        DeviceRgb muted = new DeviceRgb(83, 104, 112);
-        try (Document document = new Document(new PdfDocument(new PdfWriter(output)), PageSize.A4)) {
-            document.setMargins(28, 28, 28, 28);
-            for (int pageStart = 0; pageStart < items.size(); pageStart += perPage) {
-                if (pageStart > 0) document.add(new AreaBreak());
-                int pageEnd = Math.min(items.size(), pageStart + perPage);
-                int pageCount = pageEnd - pageStart;
-                int columns = pageCount <= 2 ? 1 : pageCount <= 8 ? 2 : pageCount <= 15 ? 3 : 4;
-                boolean compact = pageCount > 12;
-                boolean extraCompact = pageCount > 20;
-                float padding = extraCompact ? 4 : compact ? 6 : pageCount > 8 ? 8 : 12;
-                float smallFont = extraCompact ? 6 : compact ? 7 : 9;
-                float titleFont = extraCompact ? 8 : compact ? 10 : 15;
-                float detailFont = extraCompact ? 6.5f : compact ? 8 : 10;
-                float[] widths = new float[columns];
-                java.util.Arrays.fill(widths, 1);
-                Table grid = new Table(UnitValue.createPercentArray(widths)).useAllAvailableWidth();
-                for (FestivalCoupon coupon : items.subList(pageStart, pageEnd)) {
-                var festival = coupon.getFestivalEvent(); var flat = coupon.getFlat(); var account = coupon.getAccount();
-                Div card = new Div().setKeepTogether(true).setMargin(extraCompact ? 1 : 3).setBorder(new SolidBorder(teal, 0.8f));
-                Div header = new Div().setBackgroundColor(teal).setPaddingLeft(padding).setPaddingRight(padding)
-                        .setPaddingTop(extraCompact ? 3 : 6).setPaddingBottom(extraCompact ? 3 : 6);
-                header.add(new Paragraph(value(account.getSocietyName(), account.getAccountName()).toUpperCase())
-                        .setFontSize(smallFont).setBold().setFontColor(pale).setMargin(0));
-                header.add(new Paragraph(festival.getFestivalName() + " " + festival.getYear())
-                        .setFontSize(titleFont).setBold().setFontColor(com.itextpdf.kernel.colors.ColorConstants.WHITE).setMargin(0));
-                card.add(header);
-
-                Div body = new Div().setPaddingLeft(padding).setPaddingRight(padding)
-                        .setPaddingTop(extraCompact ? 3 : 7).setPaddingBottom(extraCompact ? 2 : 5);
-                body.setNextRenderer(new CouponBodyRenderer(body, festival.getFestivalName()));
-                body.add(new Paragraph(label.toUpperCase()).setFontSize(smallFont).setBold().setFontColor(teal).setMargin(0));
-                body.add(new Paragraph(flat.getBlockName() + "-" + flat.getFlatNumber())
-                        .setFontSize(titleFont).setBold().setFontColor(dark).setMargin(0));
-                body.add(new Paragraph(value(flat.getOwnerName(), "Resident"))
-                        .setFontSize(detailFont).setFontColor(muted).setMargin(0));
-                card.add(body);
-
-                Div footer = new Div().setBackgroundColor(pale).setPaddingLeft(padding).setPaddingRight(padding)
-                        .setPaddingTop(extraCompact ? 3 : 5).setPaddingBottom(extraCompact ? 3 : 5);
-                footer.add(new Paragraph("VALID  " + validOn.toUpperCase())
-                        .setFontSize(detailFont).setBold().setFontColor(teal).setMargin(0));
-                footer.add(new Paragraph("#" + coupon.getSequenceNumber() + "  |  " + coupon.getCouponNumber())
-                        .setFontSize(smallFont).setBold().setFontColor(dark).setMargin(0));
-                card.add(footer);
-                grid.addCell(new Cell().setKeepTogether(true).setBorder(null).add(card));
+        String validOn = setting == null || setting.getValidOn() == null ? "EVENT DAY"
+                : setting.getValidOn().format(DateTimeFormatter.ofPattern("dd MMM yyyy"));
+        try {
+            ByteArrayOutputStream output = new ByteArrayOutputStream();
+            try (PdfDocument pdf = new PdfDocument(new PdfWriter(output))) {
+                PdfFont regular = PdfFontFactory.createFont(StandardFonts.HELVETICA);
+                PdfFont bold = PdfFontFactory.createFont(StandardFonts.HELVETICA_BOLD);
+                PageSize page = orientation == Orientation.LANDSCAPE ? PageSize.A4.rotate() : PageSize.A4;
+                float width = (page.getWidth() - 2 * MARGIN - (COLUMNS - 1) * GAP) / COLUMNS;
+                float height = (page.getHeight() - 2 * MARGIN - (ROWS - 1) * GAP) / ROWS;
+                for (int start = 0; start < items.size(); start += PER_PAGE) {
+                    PdfCanvas canvas = new PdfCanvas(pdf.addNewPage(page));
+                    for (int index = start; index < Math.min(start + PER_PAGE, items.size()); index++) {
+                        int slot = index - start;
+                        float x = MARGIN + (slot % COLUMNS) * (width + GAP);
+                        float y = page.getHeight() - MARGIN - (slot / COLUMNS + 1) * height - (slot / COLUMNS) * GAP;
+                        drawCoupon(canvas, items.get(index), label, validOn, x, y, width, height, regular, bold, orientation);
+                    }
+                    // A dashed guide runs through each row gutter for a straight knife cut.
+                    canvas.saveState().setStrokeColor(GOLD).setLineWidth(0.65f).setLineDash(3, 3);
+                    for (int row = 1; row < ROWS; row++) {
+                        float y = page.getHeight() - MARGIN - row * height - (row - 0.5f) * GAP;
+                        canvas.moveTo(MARGIN, y).lineTo(page.getWidth() - MARGIN, y).stroke();
+                    }
+                    canvas.restoreState();
                 }
-                document.add(grid);
+                if (items.isEmpty()) {
+                    PdfCanvas canvas = new PdfCanvas(pdf.addNewPage(page));
+                    write(canvas, regular, "No active festival coupons are available.", 12, MARGIN, page.getHeight() - MARGIN - 12, GREEN);
+                }
             }
-            if (items.isEmpty()) document.add(new Paragraph("No active festival coupons are available."));
+            return output.toByteArray();
+        } catch (IOException exception) {
+            throw new IllegalStateException("Unable to render festival coupons", exception);
         }
-        return output.toByteArray();
     }
-    private String value(String preferred, String fallback) { return preferred == null || preferred.isBlank() ? fallback : preferred; }
 
-    private static class CouponBodyRenderer extends DivRenderer {
-        private final String watermark;
+    private void drawCoupon(PdfCanvas canvas, FestivalCoupon coupon, String label, String validOn,
+                            float x, float y, float width, float height, PdfFont regular, PdfFont bold, Orientation orientation) {
+        canvas.saveState();
+        canvas.setFillColor(CREAM).rectangle(x, y, width, height).fill();
+        canvas.setStrokeColor(RED).setLineWidth(2.5f).rectangle(x + 1.25f, y + 1.25f, width - 2.5f, height - 2.5f).stroke();
+        canvas.setStrokeColor(GOLD).setLineWidth(0.8f).rectangle(x + 4, y + 4, width - 8, height - 8).stroke();
+        canvas.setFillColor(RED).rectangle(x + 4, y + 4, width - 8, 27).fill();
+        canvas.restoreState();
 
-        CouponBodyRenderer(Div body, String watermark) {
-            super(body);
-            this.watermark = watermark == null ? "" : watermark.trim().toUpperCase();
-        }
-
-        @Override
-        public IRenderer getNextRenderer() {
-            return new CouponBodyRenderer((Div) modelElement, watermark);
-        }
-
-        @Override
-        public void drawBackground(DrawContext context) {
-            super.drawBackground(context);
-            if (watermark.isEmpty()) return;
-            try {
-                var box = getOccupiedAreaBBox();
-                var font = PdfFontFactory.createFont(StandardFonts.HELVETICA_BOLD);
-                float size = Math.min(25, (box.getWidth() - 12) * 1000 / font.getWidth(watermark, 1000));
-                PdfCanvas canvas = new PdfCanvas(context.getDocument().getPage(getOccupiedArea().getPageNumber()));
-                canvas.saveState().setExtGState(new PdfExtGState().setFillOpacity(0.09f))
-                        .setFillColor(new DeviceRgb(15, 118, 110)).beginText().setFontAndSize(font, size)
-                        .moveText(box.getLeft() + (box.getWidth() - font.getWidth(watermark, size)) / 2,
-                                box.getBottom() + (box.getHeight() - size) / 2)
-                        .showText(watermark).endText().restoreState();
-            } catch (java.io.IOException exception) {
-                throw new IllegalStateException("Unable to render coupon watermark", exception);
+        String society = value(coupon.getAccount().getSocietyName(), coupon.getAccount().getAccountName());
+        String festival = value(coupon.getFestivalEvent().getFestivalName(), "FESTIVAL");
+        String flat = value(coupon.getFlat().getBlockName(), "") + "-" + value(coupon.getFlat().getFlatNumber(), "");
+        if (orientation == Orientation.LANDSCAPE) {
+            writeFitted(canvas, bold, society.toUpperCase(), 7, x + 11, y + height - 17, width - 22, GREEN);
+            writeFitted(canvas, bold, festival.toUpperCase() + "  " + coupon.getFestivalEvent().getYear(), 10,
+                    x + 11, y + height - 32, width - 22, RED);
+            writeFitted(canvas, bold, value(label, "Festival Coupon").toUpperCase(), 14,
+                    x + 11, y + height - 54, width - 22, GREEN);
+            writeFitted(canvas, bold, flat, 9, x + 11, y + height - 70, width - 22, RED);
+            writeFitted(canvas, regular, value(coupon.getFlat().getOwnerName(), "Resident"), 7,
+                    x + 11, y + height - 81, width - 22, GREEN);
+        } else {
+            writeFitted(canvas, bold, society.toUpperCase(), 7, x + 11, y + height - 19, width - 22, GREEN);
+            writeFitted(canvas, bold, festival.toUpperCase() + "  " + coupon.getFestivalEvent().getYear(), 9,
+                    x + 11, y + height - 37, width - 22, RED);
+            String title = value(label, "Festival Coupon").toUpperCase();
+            int split = title.lastIndexOf(' ');
+            if (split > 0) {
+                writeFitted(canvas, bold, title.substring(0, split), 18, x + 11, y + height - 70, width - 22, RED);
+                writeFitted(canvas, bold, title.substring(split + 1), 17, x + 11, y + height - 90, width - 22, GREEN);
+            } else {
+                writeFitted(canvas, bold, title, 17, x + 11, y + height - 80, width - 22, GREEN);
             }
+            canvas.saveState().setStrokeColor(GOLD).setLineWidth(1).moveTo(x + 11, y + height - 103)
+                    .lineTo(x + width - 11, y + height - 103).stroke().restoreState();
+            writeFitted(canvas, bold, flat, 10, x + 11, y + 57, width - 22, RED);
+            writeFitted(canvas, regular, value(coupon.getFlat().getOwnerName(), "Resident"), 7,
+                    x + 11, y + 44, width - 22, GREEN);
         }
+        writeFitted(canvas, bold, "VALID " + validOn.toUpperCase(), 7, x + 11, y + 20, width - 22, CREAM);
+        writeFitted(canvas, bold, coupon.getCouponNumber(), 7, x + 11, y + 10, width - 22, CREAM);
+    }
+
+    private void writeFitted(PdfCanvas canvas, PdfFont font, String text, float size, float x, float y, float maxWidth, DeviceRgb color) {
+        String printable = text == null ? "" : text.replaceAll("[^\\x20-\\x7E]", " ");
+        while (!printable.isEmpty() && font.getWidth(printable, size) > maxWidth) {
+            printable = printable.substring(0, printable.length() - 1);
+        }
+        write(canvas, font, printable, size, x, y, color);
+    }
+
+    private void write(PdfCanvas canvas, PdfFont font, String text, float size, float x, float y, DeviceRgb color) {
+        canvas.saveState().beginText().setFontAndSize(font, size).setFillColor(color)
+                .moveText(x, y).showText(text).endText().restoreState();
+    }
+
+    private String value(String preferred, String fallback) {
+        return preferred == null || preferred.isBlank() ? fallback : preferred;
     }
 }
