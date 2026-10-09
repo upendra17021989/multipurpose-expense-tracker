@@ -3119,27 +3119,6 @@ textarea:disabled {
 .personal-todo-toolbar > div { display: flex; gap: 0.4rem; }
 .personal-todo-toolbar button.active { border-color: #0f766e; color: #0f766e; background: #f0fdfa; font-weight: 800; }
 .personal-todo-list { display: grid; gap: 0.7rem; }
-.office-hours-upload { margin-bottom: 1.25rem; }
-.office-hours-file { margin: 0.8rem 0 0; overflow-wrap: anywhere; }
-.office-hours-note { margin: 0.75rem 0 0; }
-.office-hours-text-import { display: grid; gap: 0.65rem; }
-.office-hours-text-import textarea { width: 100%; min-height: 14rem; resize: vertical; font: inherit; line-height: 1.45; }
-.office-hours-text-import .primary { justify-self: start; }
-.office-hours-import-divider { display: flex; align-items: center; gap: 0.75rem; margin: 1.25rem 0; color: var(--muted); }
-.office-hours-import-divider::before, .office-hours-import-divider::after { content: ''; height: 1px; flex: 1; background: var(--border); }
-.office-hours-table-wrap td small { display: block; margin-top: 0.2rem; color: var(--muted); }
-.office-hours-table-wrap th { white-space: nowrap; }
-.office-hours-samples { margin-bottom: 1.25rem; }
-.office-hours-sample-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
-.office-hours-sample-grid figure { min-width: 0; margin: 0; overflow: hidden; border: 1px solid #d9e2ec; border-radius: 9px; background: #f8fafc; }
-.office-hours-sample-image { position: relative; padding: 0.65rem; overflow: hidden; background: #fff; border-bottom: 1px solid #d9e2ec; }
-.office-hours-sample-grid img { display: block; width: 100%; height: auto; }
-.office-hours-sample-grid figcaption { display: grid; gap: 0.2rem; padding: 0.75rem; }
-.office-hours-sample-grid figcaption span { color: var(--muted); font-size: 0.85rem; }
-@media (max-width: 700px) {
-  .office-hours-sample-grid { grid-template-columns: 1fr; }
-  .office-hours-sample-grid img { height: auto; max-height: 320px; }
-}
 
 /* Single-line mobile attendance editor */
 .attendance-person-shift { display: block; margin-top: 3px; color: #64748b; font-weight: 400; line-height: 1.25; }

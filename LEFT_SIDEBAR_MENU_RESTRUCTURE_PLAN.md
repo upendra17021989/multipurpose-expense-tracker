@@ -58,7 +58,6 @@ Desktop layout:
   - Friends
   - Documents
   - Tasks
-  - Office Hours
 
 ### Society account
 

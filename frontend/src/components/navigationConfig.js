@@ -15,8 +15,7 @@ export const ACCOUNT_NAVIGATION = {
         { label: 'Shared Expenses', to: '/personal/shared-expenses' },
         { label: 'Friends', to: '/personal/friends' },
         { label: 'Documents', to: '/personal/documents' },
-        { label: 'Tasks', to: '/personal/todos' },
-        { label: 'Office Hours', to: '/personal/office-hours' }
+        { label: 'Tasks', to: '/personal/todos' }
       ]
     }
   ],

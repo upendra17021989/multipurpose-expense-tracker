@@ -17,7 +17,6 @@ const glyphs = {
   Friends: 'F',
   Documents: 'D',
   Tasks: 'T',
-  'Office Hours': 'O',
   'Annual Finance': 'A',
   'Financial Ledger': 'L',
   'Journal Book': 'J',
