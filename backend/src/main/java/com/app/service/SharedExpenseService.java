@@ -274,8 +274,8 @@ public class SharedExpenseService {
     if (participants.isEmpty()) throw new ValidationException("Select at least one participant");
     Map<Long, BigDecimal> owed =
         r.getSplitType() == SharedSplitType.EQUAL
-            ? SharedSplitCalculator.equal(
-                total, participants.stream().map(SharedGroupMember::getId).toList())
+            ? SharedSplitCalculator.weighted(
+                total, participants.stream().map(SharedGroupMember::getId).toList(), r.getShareCounts())
             : new LinkedHashMap<>();
     if (r.getSplitType() == SharedSplitType.EXACT) {
       if (r.getShares() == null) throw new ValidationException("Exact shares are required");

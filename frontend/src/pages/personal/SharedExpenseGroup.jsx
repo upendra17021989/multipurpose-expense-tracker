@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'react-toastify'
 import { sharedExpenseAPI } from '../../api/endpoints'
 import { formatCurrency, formatDate } from '../../utils/format'
+import { calculateEqualShares } from '../../utils/sharedSplit'
 import { useI18n } from '../../i18n'
 import { Shell } from '../DashboardRouter'
 const today = new Date().toISOString().slice(0, 10)
@@ -60,6 +61,7 @@ export const SharedExpenseGroup = () => {
     participantIds: [],
     payers: {},
     shares: {},
+    shareCounts: {},
     items: []
   })
   const [itemizedExpense, setItemizedExpense] = useState(false)
@@ -163,10 +165,11 @@ export const SharedExpenseGroup = () => {
   const toggleAllParticipants = () =>
     setExpense((x) => ({
       ...x,
-      participantIds: allParticipantsSelected
-        ? []
-        : active.map((member) => member.id)
+      participantIds: allParticipantsSelected ? [] : active.map((member) => member.id)
     }))
+  const calculatedShares = expense.splitType === 'EXACT'
+    ? expense.shares
+    : calculateEqualShares(expenseTotal, expense.participantIds, expense.shareCounts)
   const addExpense = (e) => {
     e.preventDefault()
     const items = itemizedExpense ? expense.items.filter((item) => item.itemName.trim() && Number(item.amount) > 0) : []
@@ -175,6 +178,13 @@ export const SharedExpenseGroup = () => {
       return
     }
     const totalAmount = itemizedExpense ? items.reduce((sum, item) => sum + Number(item.amount), 0) : Number(expense.totalAmount)
+    const shareCounts = expense.splitType === 'EQUAL'
+      ? Object.fromEntries(expense.participantIds.map((id) => [id, Number(expense.shareCounts[id] ?? 1)]))
+      : null
+    if (shareCounts && Object.values(shareCounts).some((count) => !Number.isInteger(count) || count < 1 || count > 2147483647)) {
+      toast.error('Enter a positive whole number of shares for each participant')
+      return
+    }
     const shares =
       expense.splitType === 'EXACT'
         ? expense.participantIds.map((memberId) => ({
@@ -191,13 +201,13 @@ export const SharedExpenseGroup = () => {
     submit(
       'expense',
       sharedExpenseAPI.addExpense,
-      { ...expense, totalAmount, items: items.map((item) => ({ itemName: item.itemName.trim(), quantity: Number(item.quantity || 1), unitPrice: item.unitPrice === '' ? null : Number(item.unitPrice), amount: Number(item.amount) })), payers, shares },
+      { ...expense, totalAmount, items: items.map((item) => ({ itemName: item.itemName.trim(), quantity: Number(item.quantity || 1), unitPrice: item.unitPrice === '' ? null : Number(item.unitPrice), amount: Number(item.amount) })), payers, shares, shareCounts },
       'Expense added'
     ).then((saved) => {
       if (!saved) return
       setExpense({
         description: '', category: '', expenseDate: today, totalAmount: '',
-        splitType: 'EQUAL', participantIds: [], payers: {}, shares: {}, items: []
+        splitType: 'EQUAL', participantIds: [], payers: {}, shares: {}, shareCounts: {}, items: []
       })
       setItemizedExpense(false)
     })
@@ -752,6 +762,8 @@ export const SharedExpenseGroup = () => {
             {active.filter((x) => expense.participantIds.includes(x.id)).map((x) => (
               <span key={x.id} className="summary-chip">
                 {x.memberName}
+                {' · '}{formatCurrency(calculatedShares[x.id] || 0)}
+                {expense.splitType === 'EQUAL' && ` (${expense.shareCounts[x.id] ?? 1} ${tx('shares')})`}
               </span>
             ))}
             {!active.some((x) => expense.participantIds.includes(x.id)) && <span className="summary-chip muted">{tx('No participants selected')}</span>}
@@ -818,13 +830,23 @@ export const SharedExpenseGroup = () => {
                     </button>
                   </div>
                   {active.map((x) => (
-                    <label key={x.id} className="summary-modal-field summary-modal-checkbox">
+                    <div key={x.id} className="summary-modal-field summary-modal-checkbox">
                       <input
                         type="checkbox"
+                        aria-label={`${tx('Include')} ${x.memberName}`}
                         checked={expense.participantIds.includes(x.id)}
                         onChange={() => toggle(x.id)}
                       />
-                      <span>{x.memberName}</span>
+                      <span>{x.memberName}{expense.participantIds.includes(x.id) && <small className="participant-share-amount">{formatCurrency(calculatedShares[x.id] || 0)}</small>}</span>
+                      {expense.splitType === 'EQUAL' && expense.participantIds.includes(x.id) && (
+                        <label className="participant-share-count">
+                          <span>{tx('Number of shares')}</span>
+                          <input type="number" min="1" max="2147483647" step="1"
+                            aria-label={`${tx('Number of shares')} ${x.memberName}`}
+                            value={expense.shareCounts[x.id] ?? 1}
+                            onChange={(e) => setExpense({ ...expense, shareCounts: { ...expense.shareCounts, [x.id]: e.target.value } })} />
+                        </label>
+                      )}
                       {expense.splitType === 'EXACT' &&
                         expense.participantIds.includes(x.id) && (
                           <input
@@ -832,6 +854,7 @@ export const SharedExpenseGroup = () => {
                             min="0.01"
                             step="0.01"
                             placeholder={tx('Share')}
+                            aria-label={`${tx('Share')} ${x.memberName}`}
                             value={expense.shares[x.id] || ''}
                             onChange={(e) =>
                               setExpense({
@@ -841,7 +864,7 @@ export const SharedExpenseGroup = () => {
                             }
                           />
                         )}
-                    </label>
+                    </div>
                   ))}
                 </div>
                 <div className="expense-modal-actions">

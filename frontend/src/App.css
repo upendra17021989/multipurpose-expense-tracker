@@ -1404,6 +1404,9 @@ label {
   gap: 0.75rem;
 }
 
+.participant-share-amount { display: block; margin-top: 0.25rem; font-weight: 700; }
+.participant-share-count { display: grid; gap: 0.25rem; width: 8rem; font-size: 0.8rem; }
+
 .summary-modal-field input[type="number"] {
   width: 100%;
 }
