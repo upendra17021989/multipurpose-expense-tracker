@@ -27,7 +27,8 @@ export const Login = () => {
   const [mobileLoginOpen, setMobileLoginOpen] = useState(false)
   const returnTo = typeof location.state?.returnTo === 'string' && location.state.returnTo.startsWith('/')
     && !location.state.returnTo.startsWith('//') ? location.state.returnTo : '/home'
-  const requiredAccountType = returnTo.startsWith('/society/') ? 'SOCIETY'
+  const requiredAccountType = returnTo.startsWith('/personal/') ? 'INDIVIDUAL'
+    : returnTo.startsWith('/society/') ? 'SOCIETY'
     : returnTo.startsWith('/kirana/') ? 'KIRANA_STORE'
       : returnTo.startsWith('/sports/') ? 'SPORTS' : null
 
@@ -112,6 +113,14 @@ export const Login = () => {
             Keep daily expenses organized, split bills with groups, manage collections,
             and understand where money is moving without jumping between tools.
           </p>
+          <nav className="login-hero-links" aria-label="Featured expense tools">
+            <Link to="/login" state={{ returnTo: '/personal/shared-expenses' }} onClick={() => setMobileLoginOpen(true)}>
+              Shared Group Expenses
+            </Link>
+            <Link to="/login" state={{ returnTo: '/society/festivals' }} onClick={() => setMobileLoginOpen(true)}>
+              Festivals
+            </Link>
+          </nav>
         </div>
 
         <div className="login-workflow-grid">

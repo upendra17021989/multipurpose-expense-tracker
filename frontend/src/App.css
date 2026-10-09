@@ -303,6 +303,37 @@ button.danger {
   font-size: 1.05rem;
 }
 
+.login-hero-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 1.25rem;
+}
+
+.login-hero-links a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0.75rem 1rem;
+  border: 1px solid #0f766e;
+  border-radius: 12px;
+  background: #0f766e;
+  color: #fff;
+  font-weight: 750;
+  text-decoration: none;
+}
+
+.login-hero-links a:hover {
+  background: #115e59;
+  border-color: #115e59;
+}
+
+.login-hero-links a:focus-visible {
+  outline: 3px solid #0f766e;
+  outline-offset: 3px;
+}
+
 .login-workflow-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
