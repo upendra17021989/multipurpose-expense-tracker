@@ -94,7 +94,15 @@ export const FestivalReport = () => {
         const name = `${data.festival.festivalName}-${data.festival.year}-paid-income-expense`.replace(/[\\/:*?"<>|]/g, '-')
         await exportWorkbook(sections, name)
       } else {
-        setPaidPrintReport(sections)
+        const summarySection = sections.find(section => section.name === 'Income expense summary')
+        const specialMentionsSection = sections.find(section => section.name === 'Special mentions')
+        const otherMonetarySection = sections.find(section => section.name === 'Income - other collections')
+        setPaidPrintReport([
+          summarySection,
+          specialMentionsSection,
+          otherMonetarySection,
+          ...sections.filter(section => section !== summarySection && section !== specialMentionsSection && section !== otherMonetarySection)
+        ].filter(Boolean))
       }
     } catch (error) {
       toast.error(error?.message || 'Unable to export paid income and expenses. Please retry.')

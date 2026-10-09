@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useLayoutEffect, useRef, useState } from 'react'
 import { FestivalCollectionForm } from './FestivalCollectionForm'
 import './FestivalPaymentModal.css'
 
@@ -6,16 +6,16 @@ export const FestivalPaymentModal = ({ collection, payment, onClose, onSaved }) 
   const dialog = useRef(null)
   const [saving, setSaving] = useState(false)
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const element = dialog.current
     const previousFocus = document.activeElement
     const previousOverflow = document.body.style.overflow
-    element.showModal()
+    if (!element.open) element.showModal()
     document.body.style.overflow = 'hidden'
     return () => {
       element.close()
       document.body.style.overflow = previousOverflow
-      previousFocus?.focus()
+      previousFocus?.focus({ preventScroll: true })
     }
   }, [])
 
@@ -24,6 +24,6 @@ export const FestivalPaymentModal = ({ collection, payment, onClose, onSaved }) 
       <div><h2 id="festival-payment-title">{payment ? 'Edit Collection Payment' : 'Add Collection Payment'}</h2><p>{collection.blockName}-{collection.flatNumber} · {collection.ownerName}</p></div>
       <button type="button" aria-label="Close payment" disabled={saving} onClick={onClose}>×</button>
     </header>
-    <FestivalCollectionForm key={`${collection.id}-${payment?.id || 'new'}`} collectionId={collection.id} payment={payment} onClose={onClose} onSaved={onSaved} onSavingChange={setSaving} />
+    <FestivalCollectionForm key={`${collection.id}-${payment?.id || 'new'}`} collectionId={collection.id} initialCollection={collection} payment={payment} onClose={onClose} onSaved={onSaved} onSavingChange={setSaving} />
   </dialog>
 }

@@ -22,10 +22,10 @@ export const FestivalOtherCollectionTables = ({ rows, canManage, onEdit, onDelet
   </th>
   const monetary = visible.filter(row => (row.contributionKind || 'MONETARY') === 'MONETARY')
   const nonMonetary = visible.filter(row => (row.contributionKind || 'MONETARY') !== 'MONETARY')
-  const actions = row => canManage && <td className="table-actions no-print">
+  const actions = row => canManage && <td className="festival-contribution-actions no-print"><div className="festival-contribution-action-buttons">
     <button type="button" onClick={() => onEdit(row)}>Edit</button>
     <button type="button" className="danger" onClick={() => onDelete(row.id)}>Delete</button>
-  </td>
+  </div></td>
   const contributor = row => <>
     {row.anonymous ? 'Anonymous' : row.contributorName || '—'}
     {row.specialMention && <small className="status-pill approved">Special mention</small>}
@@ -40,7 +40,7 @@ export const FestivalOtherCollectionTables = ({ rows, canManage, onEdit, onDelet
       <button type="button" onClick={() => { setSearch(''); setKind(''); setSort({ key: 'paymentDate', direction: -1 }) }}>Reset</button>
     </div>
     <h4>Monetary collections</h4>
-    <div className="table-wrap"><table>
+    <div className="table-wrap"><table className="festival-monetary-table">
       <thead><tr>{sortHeader('paymentDate', 'Date')}<th>Kind</th><th>Source</th><th>Contributor</th><th>Description</th><th>Mode</th><th>Reference</th><th>Collected by</th>{sortHeader('amount', 'Amount')}{canManage && <th className="no-print">Actions</th>}</tr></thead>
       <tbody>{monetary.map(row => <tr key={row.id}>
         <td>{formatDate(row.paymentDate)}</td><td>{contributionKindLabel(row.contributionKind)}</td><td>{collectionTypeLabel(row.sourceType)}</td><td>{contributor(row)}</td><td>{row.description || '—'}</td><td>{row.paymentMode || '—'}</td><td>{row.transactionReference || '—'}</td><td>{row.collectedBy || '—'}</td><td className="numeric">{formatCurrency(row.amount)}</td>{actions(row)}
@@ -48,7 +48,7 @@ export const FestivalOtherCollectionTables = ({ rows, canManage, onEdit, onDelet
       <tfoot><tr><th colSpan={8} scope="row">{search || kind ? 'Total matching monetary collections' : 'Total monetary collections'}</th><td className="numeric">{formatCurrency(monetary.reduce((total, row) => total + Number(row.amount || 0), 0))}</td>{canManage && <td className="no-print" />}</tr></tfoot>
     </table></div>
     <h4>Items and services</h4>
-    <div className="table-wrap"><table>
+    <div className="table-wrap"><table className="festival-items-table">
       <thead><tr>{sortHeader('paymentDate', 'Date')}<th>Source</th><th>Contributor</th><th>Kind</th><th>Item / service</th><th>Quantity / period</th><th>Description</th><th>Estimated value</th>{canManage && <th className="no-print">Actions</th>}</tr></thead>
       <tbody>{nonMonetary.map(row => <tr key={row.id}>
         <td>{formatDate(row.paymentDate)}</td><td>{collectionTypeLabel(row.sourceType)}</td><td>{contributor(row)}</td><td>{contributionKindLabel(row.contributionKind)}</td><td>{row.itemName || '—'}</td><td>{row.quantity || '—'}</td><td>{row.description || '—'}</td><td className="numeric">{row.amount == null ? '—' : formatCurrency(row.amount)}</td>{actions(row)}

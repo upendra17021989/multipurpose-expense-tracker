@@ -737,3 +737,36 @@
   .festival-paid-print tr { break-inside: avoid; }
   .festival-paid-print tbody tr:last-child { font-weight: bold; }
 }
+
+@media screen {
+  .festival-other-tables .table-wrap { overflow-x: auto; }
+  .festival-other-tables table { table-layout: fixed; min-width: 1320px; font-size: 0.9rem; }
+  .festival-other-tables table th,
+  .festival-other-tables table td {
+    display: table-cell;
+    padding: 12px;
+    overflow-wrap: normal;
+    word-break: normal;
+    vertical-align: top;
+  }
+  .festival-other-tables table th { white-space: nowrap; }
+  .festival-other-tables .festival-monetary-table tr > :nth-child(1) { width: 112px; white-space: nowrap; }
+  .festival-other-tables .festival-monetary-table tr > :nth-child(2) { width: 82px; white-space: nowrap; }
+  .festival-other-tables .festival-monetary-table tr > :nth-child(3) { width: 112px; }
+  .festival-other-tables .festival-monetary-table tr > :nth-child(4) { width: 190px; }
+  .festival-other-tables .festival-monetary-table tr > :nth-child(5) { overflow-wrap: anywhere; }
+  .festival-other-tables .festival-monetary-table tr > :nth-child(6) { width: 82px; white-space: nowrap; }
+  .festival-other-tables .festival-monetary-table tr > :nth-child(7) { width: 112px; overflow-wrap: anywhere; }
+  .festival-other-tables .festival-monetary-table tr > :nth-child(8) { width: 145px; }
+  .festival-other-tables .festival-monetary-table tr > :nth-child(9) { width: 135px; }
+  .festival-other-tables .festival-monetary-table tr > :nth-child(10) { width: 145px; }
+  .festival-other-tables table .numeric { white-space: nowrap; text-align: right; font-variant-numeric: tabular-nums; }
+  .festival-other-tables table tfoot th { width: auto; }
+  .festival-other-tables table tfoot td { vertical-align: middle; }
+  .festival-other-tables tfoot { background: #f5f8fb; }
+  .festival-other-tables .festival-items-table { min-width: 1180px; table-layout: auto; }
+  .festival-other-tables .festival-items-table td:first-child { white-space: nowrap; }
+  .festival-other-tables .festival-contribution-actions { width: 145px; }
+  .festival-contribution-action-buttons { display: flex; gap: 6px; }
+  .festival-contribution-action-buttons button { min-height: 36px; padding: 6px 10px; white-space: nowrap; font-size: 0.85rem; }
+}

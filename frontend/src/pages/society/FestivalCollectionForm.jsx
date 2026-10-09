@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'react-toastify'
 import { festivalCollectionAPI } from '../../api/endpoints'
@@ -6,17 +6,19 @@ import { useAuthStore } from '../../store/authStore'
 import { formatCurrency } from '../../utils/format'
 import { Shell, SummaryGrid } from '../DashboardRouter'
 
-export const FestivalCollectionForm = ({ collectionId: selectedCollectionId, payment, onClose, onSaved, onSavingChange }) => {
+export const FestivalCollectionForm = ({ collectionId: selectedCollectionId, initialCollection, payment, onClose, onSaved, onSavingChange }) => {
   const { festivalEventId, collectionId: routeCollectionId } = useParams()
   const collectionId = selectedCollectionId || routeCollectionId
   const navigate = useNavigate()
   const { currentAccount, user } = useAuthStore()
-  const [collection, setCollection] = useState(null)
+  const [collection, setCollection] = useState(initialCollection || null)
   const [saving, setSaving] = useState(false)
+  const [collectionLoaded, setCollectionLoaded] = useState(false)
+  const amountEdited = useRef(false)
   const [loadError, setLoadError] = useState('')
   const [form, setForm] = useState({
     paymentDate: payment?.paymentDate || new Date().toISOString().slice(0, 10),
-    amountPaid: payment?.amountPaid || '',
+    amountPaid: payment?.amountPaid ?? initialCollection?.pendingAmount ?? '',
     paymentMode: payment?.paymentMode || 'CASH',
     transactionId: payment?.transactionId || '',
     utr: payment?.utr || '',
@@ -31,17 +33,21 @@ export const FestivalCollectionForm = ({ collectionId: selectedCollectionId, pay
       .then((response) => {
         if (!active) return
         setCollection(response.data)
-        if (!payment) setForm((current) => ({ ...current, amountPaid: response.data.pendingAmount || '' }))
+        setCollectionLoaded(true)
+        if (!payment && !amountEdited.current) setForm((current) => ({ ...current, amountPaid: response.data.pendingAmount || '' }))
       })
       .catch((error) => { if (active) setLoadError(error.response?.data?.message || 'Unable to load collection. Close and try again.') })
     return () => { active = false }
   }, [collectionId])
 
-  const update = (field, value) => setForm((current) => ({ ...current, [field]: value }))
+  const update = (field, value) => {
+    if (field === 'amountPaid') amountEdited.current = true
+    setForm((current) => ({ ...current, [field]: value }))
+  }
 
   const handleSubmit = async (event) => {
     event.preventDefault()
-    if (saving || !collection || currentAccount?.role === 'MEMBER') return
+    if (saving || !collectionLoaded || currentAccount?.role === 'MEMBER') return
     if (form.paymentMode === 'CHEQUE' && !form.chequeNumber.trim()) {
       toast.error('Cheque number is required for cheque payments')
       return
@@ -142,7 +148,7 @@ export const FestivalCollectionForm = ({ collectionId: selectedCollectionId, pay
         </div>
         <div className="form-actions">
           <button type="button" disabled={saving} onClick={() => onClose ? onClose() : navigate(`/society/festival-collections/${festivalEventId}`)}>Cancel</button>
-          <button type="submit" className="primary" disabled={saving || !collection || currentAccount?.role === 'MEMBER'}>{saving ? 'Saving...' : payment ? 'Update Payment' : 'Save Payment'}</button>
+          <button type="submit" className="primary" disabled={saving || !collectionLoaded || currentAccount?.role === 'MEMBER'}>{saving ? 'Saving...' : payment ? 'Update Payment' : 'Save Payment'}</button>
         </div>
       </form>
     </>

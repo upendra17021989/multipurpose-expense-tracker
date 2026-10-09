@@ -27,7 +27,7 @@ export const FestivalCollectionList = () => {
   const [demandForm, setDemandForm] = useState({ expectedAmount: '', remarks: '' })
   const [loading, setLoading] = useState(true)
   const [page, setPage] = useState(0)
-  const [pageSize, setPageSize] = useState(10)
+  const [pageSize, setPageSize] = useState(26)
   const [totalPages, setTotalPages] = useState(0)
   const [totalElements, setTotalElements] = useState(0)
   const [generating, setGenerating] = useState(false)
@@ -312,7 +312,7 @@ export const FestivalCollectionList = () => {
         {!loading && visibleCollections.length === 0 && <p className="festival-collection-mobile-empty">Generate demand to create flat-wise collection rows.</p>}
       </div>
       <div className="collection-pagination-bar">
-        <label>Rows per page <select aria-label="Rows per page" value={pageSize} onChange={(event) => { setPageSize(Number(event.target.value)); setPage(0) }}>{[10, 20, 50, 100].map((size) => <option key={size} value={size}>{size}</option>)}</select></label>
+        <label>Rows per page <select aria-label="Rows per page" value={pageSize} onChange={(event) => { setPageSize(Number(event.target.value)); setPage(0) }}>{[10, 20, 26, 50, 100].map((size) => <option key={size} value={size}>{size}</option>)}</select></label>
         {totalPages > 1 && <nav className="table-pagination" aria-label="Collection pages"><button type="button" disabled={page === 0 || loading} onClick={() => setPage(0)}>«</button><button type="button" disabled={page === 0 || loading} onClick={() => setPage((value) => Math.max(0, value - 1))}>‹</button><span>Page {page + 1} of {totalPages}</span><button type="button" disabled={page + 1 >= totalPages || loading} onClick={() => setPage((value) => Math.min(totalPages - 1, value + 1))}>›</button><button type="button" disabled={page + 1 >= totalPages || loading} onClick={() => setPage(totalPages - 1)}>»</button></nav>}
       </div>
       </section>
