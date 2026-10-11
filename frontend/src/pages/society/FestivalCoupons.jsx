@@ -4,6 +4,7 @@ import { festivalCouponAPI } from '../../api/endpoints'
 import { useAuthStore } from '../../store/authStore'
 import { formatCurrency } from '../../utils/format'
 import './FestivalCollectionList.css'
+import { FestivalCouponLoader } from './FestivalCouponLoader'
 
 export const FestivalCoupons = ({ festivalId, festival }) => {
   const admin = useAuthStore((s) => s.currentAccount?.role === 'ADMIN')
@@ -13,18 +14,39 @@ export const FestivalCoupons = ({ festivalId, festival }) => {
   const [filter, setFilter] = useState('ALL')
   const [tab, setTab] = useState('coupons')
   const [busy, setBusy] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [registerLoading, setRegisterLoading] = useState(true)
+  const [registerError, setRegisterError] = useState(false)
+  const [registerRevision, setRegisterRevision] = useState(0)
   const [orientation, setOrientation] = useState('PORTRAIT')
   const load = async () => {
+    setLoading(true)
     try {
-      const [dashboard, issued] = await Promise.all([festivalCouponAPI.dashboard(festivalId), festivalCouponAPI.list(festivalId)])
+      const dashboard = await festivalCouponAPI.dashboard(festivalId)
       const result = dashboard.data
       setData(result)
-      setCoupons(issued.data || [])
+      setRegisterRevision((value) => value + 1)
       if (result.settings) setForm({ couponName: result.settings.couponName, defaultCouponCount: result.settings.defaultCouponCount, validOn: result.settings.validOn, couponsPerPage: 16 })
       else if (festival?.startDate) setForm((current) => ({ ...current, validOn: current.validOn || festival.startDate }))
     } catch (error) { toast.error(error.response?.data?.message || 'Unable to load coupons') }
+    finally { setLoading(false) }
   }
   useEffect(() => { load() }, [festivalId, festival?.startDate])
+  useEffect(() => {
+    if (tab !== 'register') return
+    let active = true
+    setRegisterLoading(true)
+    setRegisterError(false)
+    festivalCouponAPI.list(festivalId)
+      .then(({ data }) => { if (active) setCoupons(data || []) })
+      .catch((error) => {
+        if (!active) return
+        setRegisterError(true)
+        toast.error(error.response?.data?.message || 'Unable to load coupon register')
+      })
+      .finally(() => { if (active) setRegisterLoading(false) })
+    return () => { active = false }
+  }, [tab, festivalId, registerRevision])
   const save = async (event) => {
     event.preventDefault(); setBusy(true)
     try {
@@ -56,6 +78,16 @@ export const FestivalCoupons = ({ festivalId, festival }) => {
     try { await festivalCouponAPI.cancel(festivalId, coupon.id); toast.success('Coupon cancelled'); await load() }
     catch (error) { toast.error(error.response?.data?.message || 'Unable to cancel coupon') }
   }
+  const removeReviewCoupons = async (row) => {
+    if (!window.confirm(`Remove ${row.activeCount} active coupon(s) for ${row.blockName}-${row.flatNumber}? They will be cancelled and excluded from the PDF. Used coupons and register history will remain.`)) return
+    setBusy(true)
+    try {
+      await festivalCouponAPI.removeReviewCoupons(festivalId, row.collectionId)
+      toast.success('Active coupons removed')
+      await load()
+    } catch (error) { toast.error(error.response?.data?.message || 'Unable to remove coupons') }
+    finally { setBusy(false) }
+  }
   const rows = data.flats.filter((row) => filter === 'ALL' ||
     filter === 'ELIGIBLE' && row.eligible || filter === 'INELIGIBLE' && !row.eligible ||
     filter === 'GENERATED' && row.generatedCount || filter === 'DISCREPANCY' && row.discrepancy)
@@ -65,11 +97,13 @@ export const FestivalCoupons = ({ festivalId, festival }) => {
     </select></label>
     <button type={'button'} className={'primary'} onClick={download}>Download coupons PDF</button>
   </div>
+  if (loading) return <FestivalCouponLoader />
+
   return <section className={'festival-coupons-section'}>
     <div className={'collection-records-heading'}><div><h2>Festival coupons</h2><p>Paid and excess flats qualify; issued coupons remain auditable.</p></div>{tab === 'coupons' && data.generatedCoupons > 0 && downloadControls}</div>
     <nav className={'coupon-tabs'} aria-label={'Festival coupon views'}>
       <button type={'button'} aria-pressed={tab === 'coupons'} onClick={() => setTab('coupons')}>Coupons</button>
-      <button type={'button'} aria-pressed={tab === 'register'} onClick={() => setTab('register')}>Register <span>{coupons.length}</span></button>
+      <button type={'button'} aria-pressed={tab === 'register'} onClick={() => setTab('register')}>Register <span>{data.generatedCoupons || 0}</span></button>
     </nav>
     {tab === 'coupons' && <>
     {admin && <form className={'inline-form collection-demand-form'} onSubmit={save}>
@@ -87,17 +121,19 @@ export const FestivalCoupons = ({ festivalId, festival }) => {
         <td>{formatCurrency(row.expectedAmount)}</td><td>{formatCurrency(row.collectedAmount)}</td>
         <td>{row.eligible ? 'Yes' : 'No'}</td>
         <td>{admin ? <input type={'number'} min={0} max={100} defaultValue={row.couponCountOverride ?? ''} placeholder={String(data.settings?.defaultCouponCount || 0)} onBlur={(event) => override(row, event.target.value)} /> : row.effectiveCouponCount}</td>
-        <td>{row.generatedCount}{row.discrepancy && <small className={'coupon-warning'}> Review</small>}</td>
+        <td>{row.generatedCount}{row.discrepancy && <><small className={'coupon-warning'}> Review</small>{admin && row.activeCount > 0 && <button type="button" className="danger" disabled={busy} onClick={() => removeReviewCoupons(row)}>Remove coupons</button>}{row.usedCount > 0 && <small className="coupon-warning"> {row.usedCount} used coupon(s) remain recorded.</small>}</>}</td>
       </tr>)}
       {!rows.length && <tr><td colSpan={7} className={'empty-state'}>No flats match this filter.</td></tr>}
     </tbody></table></div>
     </>}
-    {tab === 'register' && <section className={'issued-coupons'}>
+    {tab === 'register' && (registerLoading ? <FestivalCouponLoader label="Loading coupon register..." />
+      : registerError ? <p role="alert">Unable to load coupon register. <button type="button" onClick={() => setRegisterRevision((value) => value + 1)}>Retry</button></p>
+      : <section className={'issued-coupons'}>
       <div className={'collection-records-heading'}><div><h3>Issued coupon register</h3><p>Review active, used, and cancelled coupon numbers.</p></div>{coupons.length > 0 && downloadControls}</div>
       <div className={'table-wrap'}><table><thead><tr><th>Coupon</th><th>Flat</th><th>Status</th><th>Action</th></tr></thead><tbody>
         {coupons.map((coupon) => <tr key={coupon.id}><td>{coupon.couponNumber}</td><td>{coupon.blockName}-{coupon.flatNumber}</td><td>{coupon.status}</td><td>{admin && coupon.status === 'ACTIVE' ? <button className={'danger'} onClick={() => cancel(coupon)}>Cancel</button> : '-'}</td></tr>)}
         {!coupons.length && <tr><td colSpan={4} className={'empty-state'}>No coupons have been generated yet. Open the Coupons tab to configure and generate them.</td></tr>}
       </tbody></table></div>
-    </section>}
+    </section>)}
   </section>
 }

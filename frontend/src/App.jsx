@@ -381,6 +381,7 @@ function App() {
               </ProtectedRoute>
             }
           />
+          <Route path="/society/festivals/:festivalEventId/coupons" element={<ProtectedRoute><FestivalCouponPage /></ProtectedRoute>} />
           <Route path="/society/festivals/:festivalEventId/expenses" element={<ProtectedRoute><FestivalExpenses /></ProtectedRoute>} />
           <Route path="/society/festivals/:festivalEventId/report" element={<ProtectedRoute><Suspense fallback={<p role="status">Loading report…</p>}><FestivalReport /></Suspense></ProtectedRoute>} />
           <Route path="/society/annual-finance" element={<ProtectedRoute><AnnualFinance /></ProtectedRoute>} />

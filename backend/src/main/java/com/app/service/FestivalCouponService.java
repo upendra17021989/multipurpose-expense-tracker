@@ -103,6 +103,25 @@ public class FestivalCouponService {
         coupon.setStatus(FestivalCouponStatus.CANCELLED); coupon.setCancelledAt(LocalDateTime.now()); return map(coupons.save(coupon));
     }
 
+    @Transactional
+    public Eligibility removeReviewCoupons(Long accountId, Long userId, Long festivalId, Long collectionId) {
+        requireAdmin(accountId, userId);
+        festival(accountId, festivalId);
+        FestivalCollection collection = collections.findByAccountIdAndIdAndFestivalEventId(accountId, collectionId, festivalId)
+                .orElseThrow(() -> new ResourceNotFoundException("Festival collection not found"));
+        FestivalCouponSetting setting = settings.findByAccountIdAndFestivalEventId(accountId, festivalId).orElse(null);
+        FestivalCouponEntitlement override = entitlements.findByAccountIdAndFestivalCollectionId(accountId, collectionId).orElse(null);
+        List<FestivalCoupon> issued = coupons.findByAccountIdAndFestivalCollectionIdOrderBySequenceNumberAsc(accountId, collectionId);
+        if (!eligibility(collection, setting, override, issued).isDiscrepancy()) {
+            throw new ValidationException("This flat has no coupons needing review");
+        }
+        LocalDateTime cancelledAt = LocalDateTime.now();
+        List<FestivalCoupon> active = issued.stream().filter(x -> x.getStatus() == FestivalCouponStatus.ACTIVE).toList();
+        active.forEach(coupon -> { coupon.setStatus(FestivalCouponStatus.CANCELLED); coupon.setCancelledAt(cancelledAt); });
+        coupons.saveAll(active);
+        return eligibility(collection, setting, override, issued);
+    }
+
     @Transactional(readOnly = true)
     public List<FestivalCoupon> printable(Long accountId, Long userId, Long festivalId) {
         festival(accountId, festivalId); Access access = access(accountId, userId);
@@ -124,7 +143,7 @@ public class FestivalCouponService {
         return Eligibility.builder().collectionId(c.getId()).flatId(c.getFlat().getId()).blockName(c.getFlat().getBlockName()).flatNumber(c.getFlat().getFlatNumber())
                 .ownerName(c.getFlat().getOwnerName()).expectedAmount(c.getExpectedAmount()).collectedAmount(c.getCollectedAmount()).paymentStatus(c.getPaymentStatus())
                 .eligible(qualifies).couponCountOverride(e == null ? null : e.getCouponCountOverride()).effectiveCouponCount(effective).generatedCount((long) issued.size())
-                .activeCount(active).usedCount(used).discrepancy(!issued.isEmpty() && (!qualifies || active + used != effective)).build();
+                .activeCount(active).usedCount(used).discrepancy(active + used > 0 && (!qualifies || active + used != effective)).build();
     }
     private boolean eligible(FestivalCollection c) { return c.getCollectedAmount() != null && c.getExpectedAmount() != null && c.getCollectedAmount().compareTo(c.getExpectedAmount()) >= 0; }
     private String number(Long accountId, Long festivalId, Long flatId, int sequence) { return "FC-" + accountId + "-" + festivalId + "-" + flatId + "-" + String.format("%03d", sequence); }

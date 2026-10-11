@@ -1,5 +1,13 @@
 import axiosInstance from './client'
 import { useAuthStore } from '../store/authStore'
+import { createInFlightRequests } from './inFlightRequests'
+
+const festivalReads = createInFlightRequests()
+const readFestival = (path, config) => {
+  const { token, currentAccount } = useAuthStore.getState()
+  const key = JSON.stringify([token, currentAccount?.id, path, config?.params])
+  return festivalReads(key, () => axiosInstance.get(path, config))
+}
 
 const annualLedgerCache = new Map()
 
@@ -291,9 +299,9 @@ export const festivalEventAPI = {
   createEstimate: (id, data) => axiosInstance.post(`/society/festivals/${id}/estimates`, data),
   updateEstimate: (id, estimateId, data) => axiosInstance.put(`/society/festivals/${id}/estimates/${estimateId}`, data),
   deleteEstimate: (id, estimateId) => axiosInstance.delete(`/society/festivals/${id}/estimates/${estimateId}`),
-  getFestivals: (year) => axiosInstance.get('/society/festivals', { params: year ? { year } : {} }),
+  getFestivals: (year) => readFestival('/society/festivals', { params: year ? { year } : {} }),
   getDeletedFestivals: () => axiosInstance.get('/society/festivals/trash'),
-  getFestival: (festivalEventId) => axiosInstance.get(`/society/festivals/${festivalEventId}`),
+  getFestival: (festivalEventId) => readFestival(`/society/festivals/${festivalEventId}`),
   createFestival: (data) => axiosInstance.post('/society/festivals', data),
   updateFestival: (festivalEventId, data) => axiosInstance.put(`/society/festivals/${festivalEventId}`, data),
   updateFestivalStatus: (festivalEventId, status) => axiosInstance.put(`/society/festivals/${festivalEventId}/status`, { status }),
@@ -407,11 +415,12 @@ export const festivalCollectionAPI = {
   deleteOtherCollection: (festivalEventId, id) => axiosInstance.delete(`/society/festivals/${festivalEventId}/other-collections/${id}`)
 }
 export const festivalCouponAPI = {
-  dashboard: (festivalId) => axiosInstance.get(`/society/festivals/${festivalId}/coupons/dashboard`),
-  list: (festivalId) => axiosInstance.get(`/society/festivals/${festivalId}/coupons`),
+  dashboard: (festivalId) => readFestival(`/society/festivals/${festivalId}/coupons/dashboard`),
+  list: (festivalId) => readFestival(`/society/festivals/${festivalId}/coupons`),
   saveSettings: (festivalId, data) => axiosInstance.put(`/society/festivals/${festivalId}/coupons/settings`, data),
   saveOverride: (festivalId, collectionId, couponCountOverride) => axiosInstance.put(`/society/festivals/${festivalId}/coupons/entitlements/${collectionId}`, { couponCountOverride }),
   generate: (festivalId) => axiosInstance.post(`/society/festivals/${festivalId}/coupons/generate`),
+  removeReviewCoupons: (festivalId, collectionId) => axiosInstance.post(`/society/festivals/${festivalId}/coupons/entitlements/${collectionId}/remove-review-coupons`),
   cancel: (festivalId, couponId) => axiosInstance.post(`/society/festivals/${festivalId}/coupons/${couponId}/cancel`),
   downloadPdf: (festivalId, orientation) => axiosInstance.get(`/society/festivals/${festivalId}/coupons/pdf`, { params: { orientation }, responseType: 'blob' })
 }

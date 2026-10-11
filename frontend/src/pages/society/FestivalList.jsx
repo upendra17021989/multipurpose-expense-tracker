@@ -12,6 +12,7 @@ const eventStatusTabs = [['ALL', 'All events'], ['PLANNED', 'Planned'], ['ACTIVE
 const icons = {
   add: <><path d="M12 5v14M5 12h14" /></>,
   expenses: <><path d="M7 3h10a2 2 0 0 1 2 2v16l-7-3-7 3V5a2 2 0 0 1 2-2Z" /><path d="M9 8h6M9 12h4" /></>,
+  coupons: <><path d="M3 7h18v3a2 2 0 0 0 0 4v3H3v-3a2 2 0 0 0 0-4V7Z" /><path d="M15 7v2m0 2v2m0 2v2" /></>,
   report: <><path d="M4 19V9M10 19V5M16 19v-7M22 19H2" /></>,
   contribution: <><path d="M4 10h16v10H4zM12 10v10M3 7h18v3H3z" /><path d="M12 7H8.5a2.5 2.5 0 1 1 2.5-2.5V7Zm0 0h3.5A2.5 2.5 0 1 0 13 4.5V7Z" /></>,
   edit: <><path d="m14 5 5 5M4 20l3.5-.8L19 7.7a2.1 2.1 0 0 0-3-3L4.8 16.2 4 20Z" /></>,
@@ -199,6 +200,7 @@ export const FestivalList = () => {
                     <IconButton icon="delete" label="Delete permanently" tone="danger" onClick={() => permanentlyDelete(festival.id)} />
                   </> : <>
                   <IconLink icon="expenses" label="Expenses & estimates" to={`/society/festivals/${festival.id}/expenses`} />
+                  <IconLink icon="coupons" label="Festival Coupons" to={`/society/festivals/${festival.id}/coupons`} />
                   <IconLink icon="report" label="View report" to={`/society/festivals/${festival.id}/report`} />
                   {canManage && <IconLink icon="contribution" label="Add contribution or mention" to={`/society/festivals/${festival.id}/report?view=other`} />}
                   <IconButton icon="collections" label="Collections" onClick={() => navigate(`/society/festival-collections/${festival.id}`)} />
@@ -236,7 +238,8 @@ export const FestivalList = () => {
                 <IconButton icon="delete" label="Delete permanently" tone="danger" onClick={() => permanentlyDelete(festival.id)} />
               </> : <>
               <IconLink icon="expenses" label="Expenses & estimates" to={`/society/festivals/${festival.id}/expenses`} />
-              <IconLink icon="report" label="View report" to={`/society/festivals/${festival.id}/report`} />
+              <IconLink icon="coupons" label="Festival Coupons" to={`/society/festivals/${festival.id}/coupons`} />
+                  <IconLink icon="report" label="View report" to={`/society/festivals/${festival.id}/report`} />
               {canManage && <IconLink icon="contribution" label="Add contribution or mention" to={`/society/festivals/${festival.id}/report?view=other`} />}
               <IconButton icon="collections" label="Collections" onClick={() => navigate(`/society/festival-collections/${festival.id}`)} />
               {canManage && <IconButton icon="edit" label="Edit event" onClick={() => navigate(`/society/festivals/${festival.id}/edit`)} />}

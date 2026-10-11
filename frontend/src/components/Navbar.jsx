@@ -63,7 +63,7 @@ export const Navbar = () => {
     currentAccount?.role
   )
   const festivalRoute = location.pathname.match(/^\/society\/festival-collections\/([^/]+)/)
-    || location.pathname.match(/^\/society\/festivals\/([^/]+)\/(?:expenses|report)/)
+    || location.pathname.match(/^\/society\/festivals\/([^/]+)\/(?:expenses|report|coupons)/)
   const festivalEventId = festivalRoute?.[1]
   const groups = festivalEventId
     ? baseGroups.map((group) => ({
@@ -72,6 +72,7 @@ export const Navbar = () => {
           ? [
               { ...item, exact: true },
               { label: 'Festival collections', to: `/society/festival-collections/${festivalEventId}`, nested: true },
+              { label: 'Festival Coupons', to: `/society/festivals/${festivalEventId}/coupons`, exact: true, nested: true },
               { label: 'Expense details & estimates', to: `/society/festivals/${festivalEventId}/expenses`, exact: true, nested: true },
               { label: 'Collection & expense report', to: `/society/festivals/${festivalEventId}/report`, exact: true, nested: true }
             ]

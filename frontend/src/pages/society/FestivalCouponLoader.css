@@ -1,0 +1,23 @@
+.festival-coupon-loader {
+  display: flex;
+  min-height: 180px;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 14px;
+  color: #173c36;
+}
+.festival-coupon-loader-spinner {
+  width: 48px;
+  height: 48px;
+  border: 5px solid #cce4df;
+  border-top-color: #0f766e;
+  border-radius: 50%;
+  animation: festival-coupon-loader-spin 0.75s linear infinite;
+}
+@keyframes festival-coupon-loader-spin {
+  to { transform: rotate(360deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .festival-coupon-loader-spinner { animation: none; }
+}
