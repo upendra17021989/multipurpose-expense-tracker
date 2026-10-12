@@ -1,0 +1,38 @@
+[
+  {
+    "id": "expense-create", "title": "Add and manage expenses", "url": "/expenses",
+    "text": "To add an expense, open Expenses and choose Add Expense. Enter the date, category, amount and payment mode, then save. Categories can be managed from Categories. Open an expense to edit it; approved expenses cannot be edited. Deleted expenses are removed from active expense lists."
+  },
+  {
+    "id": "expense-import", "title": "Import expenses", "url": "/expenses",
+    "text": "Excel expense import is available only in society workspaces and requires permission to write expenses. Switch to an authorized society workspace, open Expenses and choose Import Excel. Choose an .xlsx or .xls bank statement, inspect the preview, resolve category assignments and validation errors, then confirm the import. Review the created and skipped counts after confirmation. Previewing alone does not save expenses. Individual workspaces do not currently offer this import."
+  },
+  {
+    "id": "categories", "title": "Expense categories", "url": "/categories",
+    "text": "Use Categories to manage expense categories in the current workspace. Select a category when adding or importing expenses. Categorizing expenses helps organize spending and category breakdowns in reports. Categories belong to their workspace."
+  },
+  {
+    "id": "personal-reports", "title": "Personal spending and reports", "url": "/personal/reports",
+    "text": "Individual workspaces provide Personal Reports for this month's spending, daily averages, category totals and budget usage. Use Export Excel to download the report. To ask this assistant for an exact total, choose Expense summary and select a month. The assistant summarizes recorded non-deleted expenses except rejected entries; it does not read bank balances or infer unrecorded purchases."
+  },
+  {
+    "id": "budget", "title": "Monthly budget", "url": "/budget",
+    "text": "Use Budget in an individual workspace to set your monthly budget and savings target. Personal Reports shows monthly budget usage alongside spending. A budget is a planning target, not your bank account balance."
+  },
+  {
+    "id": "shared-expenses", "title": "Shared expenses and settlements", "url": "/personal/shared-expenses",
+    "text": "Open Shared Expenses in an individual workspace to manage groups, members, shared spending and settlements. Open a group to review its expenses and balances. Shared group balances are separate from the assistant's personal expense summary. The assistant cannot add expenses or settle balances."
+  },
+  {
+    "id": "personal-documents", "title": "Personal documents", "url": "/personal/documents",
+    "text": "Use Personal Documents in an individual workspace to upload and manage documents and their metadata. Document sharing uses the application's access controls. This assistant currently searches site help only; it cannot search, read or summarize uploaded private document contents."
+  },
+  {
+    "id": "workspaces", "title": "Switch workspaces", "url": "/workspaces",
+    "text": "Open Workspaces to choose an account. Individual, society, kirana store and sports workspaces have different modules. Selecting a workspace establishes the active account for requests. Data and permissions depend on the current account. The assistant clears its displayed conversation when the account or login session changes."
+  },
+  {
+    "id": "assistant", "title": "Assistant capabilities", "url": "/assistant",
+    "text": "The assistant answers website help questions with source links and can provide a selected month's personal expense summary for the owner of an active individual workspace. It cannot write records, search private documents, access other accounts, retrieve bank balances, or provide live society, festival or kirana totals. Without AI configuration, it displays matching help sections. Ask each help question with enough detail; displayed chat history is not sent to the model."
+  }
+]

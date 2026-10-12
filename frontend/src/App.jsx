@@ -86,6 +86,8 @@ import { ProtectedRoute } from './components/ProtectedRoute'
 import { AppErrorBoundary } from './components/AppErrorBoundary'
 import { SessionActivityMonitor } from './components/SessionActivityMonitor'
 import { AppLockOverlay } from './components/AppLockOverlay'
+import { AssistantLauncher } from './components/AssistantLauncher'
+import { Assistant } from './pages/Assistant'
 import 'react-toastify/dist/ReactToastify.css'
 import './App.css'
 
@@ -95,7 +97,9 @@ function App() {
       <Router>
         <SessionActivityMonitor />
         <AppLockOverlay />
+        <AssistantLauncher />
         <Routes>
+          <Route path="/assistant" element={<ProtectedRoute><Assistant /></ProtectedRoute>} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/reset-password" element={<ResetPassword />} />

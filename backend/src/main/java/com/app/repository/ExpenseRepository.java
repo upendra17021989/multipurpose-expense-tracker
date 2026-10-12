@@ -16,6 +16,21 @@ import java.util.Optional;
 
 @Repository
 public interface ExpenseRepository extends JpaRepository<Expense, Long> {
+    interface ChatCategoryTotal {
+        String getCategory();
+        java.math.BigDecimal getAmount();
+        Long getEntryCount();
+    }
+
+    @Query("SELECT e.category.categoryName AS category, SUM(e.amount) AS amount, COUNT(e) AS entryCount " +
+            "FROM Expense e WHERE e.account.id = :accountId AND e.softDeleted = false " +
+            "AND e.accountType = com.app.entity.AccountType.INDIVIDUAL " +
+            "AND e.status <> com.app.entity.ExpenseStatus.REJECTED " +
+            "AND e.expenseDate BETWEEN :startDate AND :endDate " +
+            "GROUP BY e.category.categoryName ORDER BY SUM(e.amount) DESC")
+    List<ChatCategoryTotal> summarizeForChat(@Param("accountId") Long accountId,
+            @Param("startDate") LocalDate startDate, @Param("endDate") LocalDate endDate);
+
     @org.springframework.data.jpa.repository.EntityGraph(attributePaths = {"category"})
     List<Expense> findByAccountIdAndSoftDeletedFalse(Long accountId);
     @org.springframework.data.jpa.repository.EntityGraph(attributePaths = {"category"})

@@ -39,6 +39,10 @@ multipurpose-expense-tracker/
     └── .gitignore
 ```
 
+## Site assistant
+
+Signed-in users can open `/assistant` using **Ask assistant** for site help with source links and monthly personal expense summaries. Help search works without AI credentials; semantic retrieval and generated answers are opt-in through server configuration. See [setup instructions](docs/RAG_SETUP.md) and the [phased implementation plan](docs/RAG_IMPLEMENTATION_PLAN.md). Private document retrieval and other-module live summaries are planned for later phases.
+
 ## Tech Stack
 
 ### Backend
