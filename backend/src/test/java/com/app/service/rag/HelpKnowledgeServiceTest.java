@@ -39,8 +39,8 @@ class HelpKnowledgeServiceTest {
     }
 
     @Test void changedContentAndModelAreReembeddedAndThenCached() throws Exception {
-        var corpus = new ObjectMapper().readValue(getClass().getResourceAsStream("/chat/help.json"), HelpKnowledgeService.Section[].class);
-        var cached = java.util.Arrays.stream(corpus).map(section -> {
+        var corpus = MarkdownHelpLoader.load(new ObjectMapper());
+        var cached = corpus.stream().map(section -> {
             var embedding = new ChatEmbedding();
             embedding.setId(section.id());
             embedding.setContentHash(HelpKnowledgeService.hash(section.content()));

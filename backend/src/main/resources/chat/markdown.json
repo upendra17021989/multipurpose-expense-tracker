@@ -1,0 +1,56 @@
+[
+  {
+    "id": "expense-create",
+    "title": "Add and manage expenses",
+    "url": "/expenses",
+    "file": "expense-create.md"
+  },
+  {
+    "id": "expense-import",
+    "title": "Import expenses",
+    "url": "/expenses",
+    "file": "expense-import.md"
+  },
+  {
+    "id": "categories",
+    "title": "Expense categories",
+    "url": "/categories",
+    "file": "categories.md"
+  },
+  {
+    "id": "personal-reports",
+    "title": "Personal spending and reports",
+    "url": "/personal/reports",
+    "file": "personal-reports.md"
+  },
+  {
+    "id": "budget",
+    "title": "Monthly budget",
+    "url": "/budget",
+    "file": "budget.md"
+  },
+  {
+    "id": "shared-expenses",
+    "title": "Shared expenses and settlements",
+    "url": "/personal/shared-expenses",
+    "file": "shared-expenses.md"
+  },
+  {
+    "id": "personal-documents",
+    "title": "Personal documents",
+    "url": "/personal/documents",
+    "file": "personal-documents.md"
+  },
+  {
+    "id": "workspaces",
+    "title": "Switch workspaces",
+    "url": "/workspaces",
+    "file": "workspaces.md"
+  },
+  {
+    "id": "assistant",
+    "title": "Assistant capabilities",
+    "url": "/assistant",
+    "file": "assistant.md"
+  }
+]

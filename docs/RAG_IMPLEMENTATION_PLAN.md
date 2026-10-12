@@ -15,6 +15,8 @@ Phase 1 implementation is complete. On 2026-10-12, 25 targeted backend tests, 8 
 
 ## Phase 2 — private documents
 
+Markdown help ingestion is implemented separately from private document ingestion: reviewed classpath files are explicitly allowlisted, split by ATX headings into bounded chunks and retrieved through the existing embedding cache and lexical fallback. Existing help content has been migrated to Markdown. This does not enable uploaded private document retrieval.
+
 Extract approved personal documents (PDF/text first), split sections with page metadata, and add document-level authorization to both indexing and retrieval. Recheck sharing permissions immediately before model access. Include replacement/deletion handling, content hashes, background ingestion, retry status, and extraction size limits. Scanned PDF OCR is a separate enhancement. Do not upload existing private documents automatically.
 
 ## Phase 3 — scale and other modules
@@ -23,7 +25,7 @@ Move vector search into pgvector after confirming hosting support. Add SQL-level
 
 ## Phase 1 design decisions
 
-- Corpus is small, public app-help content only. Each JSON entry is one reviewed section/chunk. No private financial records are embedded or sent to OpenAI.
+- Corpus is small, public app-help content only. Reviewed Markdown files are allowlisted in a JSON manifest and split by headings into bounded chunks. No private financial records are embedded or sent to OpenAI.
 - PostgreSQL stores vectors as JSON text; Java performs exact cosine comparison over this bounded collection. No database extension or framework upgrade is required for this milestone.
 - Help requests are stateless. Conversation history is display-only in the browser, cleared on workspace/session changes; follow-up questions should be self-contained.
 - Expense summary is an explicit chat mode with a selected month; amounts come from account-scoped SQL aggregates using decimal arithmetic, not an LLM.

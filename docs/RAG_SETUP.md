@@ -37,7 +37,11 @@ Identity/account IDs come from the authenticated principal, not from request fie
 
 ## Update the knowledge collection
 
-Edit `backend/src/main/resources/chat/help.json`. Each entry is one short help section with a stable unique ID, title, reviewed text and an internal route. Validate text against actual application behavior and never include credentials or private records. Redeploy to load the new collection. Changed text triggers re-embedding; removed sections are immediately excluded from retrieval even if residual cache rows remain. Only the current curated collection can be retrieved from this cache.
+Edit reviewed Markdown files in `backend/src/main/resources/chat/markdown/`. The allowlist `backend/src/main/resources/chat/markdown.json` maps each file to a stable document ID, display title and internal application route. Only listed, packaged files are loaded; repository documentation, arbitrary URLs and uploaded private documents are not scanned.
+
+Use ATX headings (`# Title`, `## Section`) to divide topics. Each non-empty heading body becomes a chunk; long bodies split at newline/space boundaries where possible, with a 4,000-character maximum. Fenced code headings remain content. Single-chunk documents retain their document ID; multi-chunk IDs derive from document ID, heading and part number. Use distinct heading text within each file: duplicate chunk IDs fail startup. Source titles include the document title and section heading, and source links use the reviewed application route.
+
+Files must have a lowercase filename using letters, digits and hyphens with a `.md` extension, with no directories. Each file is limited to 128 KiB and the complete corpus to 100 chunks. Empty files, invalid manifest entries and duplicate IDs fail startup. Validate text against actual application behavior and never include credentials or private records. Redeploy to load changes. Changed chunk content triggers re-embedding; removed chunks are immediately excluded from retrieval even if residual cache rows remain. Existing help content has been migrated from JSON to Markdown.
 
 ## Verification
 
@@ -45,7 +49,7 @@ Backend tests use mocked provider HTTP calls plus an isolated in-memory database
 
 ```powershell
 cd backend
-mvn.cmd '-Dtest=HelpKnowledgeServiceTest,ChatServiceTest,PersonalExpenseSummaryServiceTest,OpenAiRagClientTest,ChatControllerTest,ChatExpenseQueryTest' test
+mvn.cmd '-Dtest=MarkdownHelpLoaderTest,HelpKnowledgeServiceTest,ChatServiceTest,PersonalExpenseSummaryServiceTest,OpenAiRagClientTest,ChatControllerTest,ChatExpenseQueryTest' test
 ```
 
 Frontend component tests and desktop/mobile browser tests:

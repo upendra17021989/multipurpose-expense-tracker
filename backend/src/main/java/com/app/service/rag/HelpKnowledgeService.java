@@ -4,7 +4,6 @@ import com.app.config.RagProperties;
 import com.app.entity.ChatEmbedding;
 import com.app.repository.ChatEmbeddingRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -34,9 +33,7 @@ public class HelpKnowledgeService {
         this.provider = provider;
         this.properties = properties;
         this.mapper = mapper;
-        try (var input = new ClassPathResource("chat/help.json").getInputStream()) {
-            sections = List.of(mapper.readValue(input, Section[].class));
-        }
+        sections = MarkdownHelpLoader.load(mapper);
         if (sections.isEmpty() || sections.size() > 100
                 || sections.stream().map(Section::id).distinct().count() != sections.size())
             throw new IllegalStateException("Help collection must contain 1–100 unique sections");
