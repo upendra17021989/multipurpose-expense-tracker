@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { chatAPI } from '../api/chat'
 import { useAuthStore } from '../store/authStore'
 import { Shell } from './DashboardRouter'
@@ -33,6 +33,8 @@ export const Assistant = () => {
 }
 
 const AssistantSession = ({ account }) => {
+  const navigate = useNavigate()
+  const location = useLocation()
   const [status, setStatus] = useState(null)
   const [statusError, setStatusError] = useState('')
   const [messages, setMessages] = useState([])
@@ -77,10 +79,20 @@ const AssistantSession = ({ account }) => {
     }
   }
 
-  if (mode === 'DOCUMENTS') return <DocumentAssistant onBack={() => setMode('HELP')} aiConfigured={status?.aiConfigured} />
+  const closeAssistant = () => {
+    request.current?.abort()
+    const from = location.state?.from
+    if (typeof from === 'string' && from.startsWith('/') && !from.startsWith('//') && !from.startsWith('/assistant')) {
+      navigate(from, { replace: true })
+    } else if (location.key !== 'default') navigate(-1)
+    else navigate('/dashboard', { replace: true })
+  }
+
+  if (mode === 'DOCUMENTS') return <DocumentAssistant onBack={() => setMode('HELP')} onClose={closeAssistant} aiConfigured={status?.aiConfigured} />
 
   return (
     <Shell title="Site assistant" eyebrow="Help and personal spending">
+      <div className="assistant-navigation"><button type="button" onClick={closeAssistant} aria-label="Back to previous page">← Back</button></div>
       <div className="assistant-layout">
         <aside className="assistant-guide">
           <h2>A little help, right here</h2>

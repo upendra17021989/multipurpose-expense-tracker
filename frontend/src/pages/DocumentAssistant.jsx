@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { chatAPI } from '../api/chat'
 import { Shell } from './DashboardRouter'
 
-export const DocumentAssistant = ({ onBack, aiConfigured }) => {
+export const DocumentAssistant = ({ onBack, onClose, aiConfigured }) => {
   const [query, setQuery] = useState('')
   const [page, setPage] = useState(0)
   const [result, setResult] = useState(null)
@@ -18,7 +18,10 @@ export const DocumentAssistant = ({ onBack, aiConfigured }) => {
     return () => controller.abort()
   }, [query, page])
   return <Shell title="Document assistant" eyebrow="Private documents">
-    <button type="button" onClick={onBack}>Back to site assistant</button>
+    <div className="assistant-navigation">
+      <button type="button" onClick={onBack}>← Site assistant</button>
+      {onClose && <button type="button" onClick={onClose}>Close assistant</button>}
+    </div>
     <p>Choose a document you own or that has been shared with you. Its owner must enable indexing first.</p>
     <Link to="/personal/documents">Upload and manage documents</Link>
     <label>Find documents<input value={query} onChange={(event) => { setQuery(event.target.value); setPage(0); setSelected(null) }} /></label>
