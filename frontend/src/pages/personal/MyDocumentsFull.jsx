@@ -52,6 +52,7 @@ export const MyDocumentsFull = () => {
     setSaving(true)
     try {
       editing ? await personalDocumentAPI.update(editing.id, metadata) : await personalDocumentAPI.create(metadata, file)
+      if (editing && file) await personalDocumentAPI.replaceFile(editing.id, file)
       toast.success(editing ? 'Document updated' : 'Document uploaded'); setEditing(null); setFormOpen(false); await load()
     } catch (error) { toast.error(error.response?.data?.message || 'Unable to save document') }
     finally { setSaving(false) }

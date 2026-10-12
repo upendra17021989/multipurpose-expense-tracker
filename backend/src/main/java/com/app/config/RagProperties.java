@@ -10,6 +10,7 @@ import org.springframework.stereotype.Component;
 public class RagProperties {
     private boolean enabled = true;
     private boolean aiEnabled = false;
+    private boolean documentsEnabled = false;
     @lombok.ToString.Exclude
     private String apiKey = "";
     private String model = "";

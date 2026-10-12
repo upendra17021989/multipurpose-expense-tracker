@@ -17,7 +17,7 @@ Phase 1 implementation is complete. On 2026-10-12, 25 targeted backend tests, 8 
 
 Markdown help ingestion is implemented separately from private document ingestion: reviewed classpath files are explicitly allowlisted, split by ATX headings into bounded chunks and retrieved through the existing embedding cache and lexical fallback. Existing help content has been migrated to Markdown. This does not enable uploaded private document retrieval.
 
-Extract approved personal documents (PDF/text first), split sections with page metadata, and add document-level authorization to both indexing and retrieval. Recheck sharing permissions immediately before model access. Include replacement/deletion handling, content hashes, background ingestion, retry status, and extraction size limits. Scanned PDF OCR is a separate enhancement. Do not upload existing private documents automatically.
+Implemented: explicit uploader consent for PDF/TXT/Markdown indexing, durable background ingestion, bounded extraction and page/part metadata, content hashes, document-level authorization with fresh permission/consent checks before model access and response delivery, replacement/deletion invalidation, retry status and authorized excerpt fallback. Shared readers can query existing ready indexes. Existing uploads are never indexed automatically. Scanned PDF OCR remains a separate enhancement. See [private document setup](PRIVATE_DOCUMENT_RAG.md). Live provider and staging PostgreSQL verification remain pending.
 
 ## Phase 3 — scale and other modules
 
@@ -31,7 +31,7 @@ Move vector search into pgvector after confirming hosting support. Add SQL-level
 - Expense summary is an explicit chat mode with a selected month; amounts come from account-scoped SQL aggregates using decimal arithmetic, not an LLM.
 - AI is opt-in via environment variables. Missing configuration and provider failures produce labeled search results, not simulated AI answers.
 - Per-user limits and concurrency limits are per process for the MVP. Use a shared limiter for multi-instance production deployments.
-- Private document retrieval, OCR, persistent conversation history, streaming, and write actions are deferred to later phases.
+- Private document retrieval is implemented behind `CHAT_DOCUMENTS_ENABLED`. OCR, persistent conversation history, streaming, and assistant write actions remain deferred.
 
 ## Acceptance and rollout
 

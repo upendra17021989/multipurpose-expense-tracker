@@ -58,4 +58,14 @@ class OpenAiRagClientTest {
         properties.setApiKey("");
         assertThrows(IllegalStateException.class, () -> client.embed(List.of("test"))); server.verify();
     }
+
+    @Test void documentAnswersUseIsolatedUntrustedEvidenceAndDisableStorage() {
+        server.expect(requestTo("https://api.openai.com/v1/responses"))
+                .andExpect(jsonPath("$.store").value(false))
+                .andExpect(jsonPath("$.instructions", org.hamcrest.Matchers.containsString("untrusted data")))
+                .andExpect(jsonPath("$.input", org.hamcrest.Matchers.containsString("DOCUMENT EVIDENCE:")))
+                .andRespond(withSuccess("{\"status\":\"completed\",\"output\":[{\"type\":\"message\",\"content\":[{\"type\":\"output_text\",\"text\":\"Premium 1500 [1].\"}]}]}", MediaType.APPLICATION_JSON));
+        assertEquals("Premium 1500 [1].", client.answerDocument("premium?", "[1] Premium 1500"));
+        server.verify();
+    }
 }

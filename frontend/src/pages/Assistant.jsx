@@ -5,6 +5,7 @@ import { useAuthStore } from '../store/authStore'
 import { Shell } from './DashboardRouter'
 import { formatCurrency } from '../utils/format'
 import './Assistant.css'
+import { DocumentAssistant } from './DocumentAssistant'
 
 const modeLabels = {
   AI: 'AI answer · site help',
@@ -76,6 +77,8 @@ const AssistantSession = ({ account }) => {
     }
   }
 
+  if (mode === 'DOCUMENTS') return <DocumentAssistant onBack={() => setMode('HELP')} aiConfigured={status?.aiConfigured} />
+
   return (
     <Shell title="Site assistant" eyebrow="Help and personal spending">
       <div className="assistant-layout">
@@ -91,7 +94,7 @@ const AssistantSession = ({ account }) => {
             <button type="button" className="assistant-suggestion" key={text} disabled={busy || !status?.enabled}
               onClick={() => { setMode('HELP'); setQuestion(text) }}>{text}</button>
           ))}
-          <p className="muted">Private document search and live society, festival and store totals will be added in later phases.</p>
+          <p className="muted">Document questions require the owner's indexing consent. Live society, festival and store totals will be added later.</p>
         </aside>
         <section className="assistant-chat" aria-label="Assistant conversation">
           <div className="assistant-conversation" ref={conversation} role="log" aria-live="polite" aria-relevant="additions" aria-busy={busy}>
@@ -124,6 +127,7 @@ const AssistantSession = ({ account }) => {
               <label>Ask about<select value={mode} onChange={(event) => setMode(event.target.value)} disabled={busy}>
                 <option value="HELP">Website help</option>
                 {account?.accountType === 'INDIVIDUAL' && <option value="EXPENSE_SUMMARY">Expense summary</option>}
+                {account?.accountType === 'INDIVIDUAL' && status?.documentsEnabled && <option value="DOCUMENTS">Private document</option>}
               </select></label>
               {mode === 'EXPENSE_SUMMARY' && <label>Month<input aria-label="Summary month" type="month" min="2000-01" max="2100-12" value={month} onChange={(event) => setMonth(event.target.value)} required disabled={busy} /></label>}
             </div>

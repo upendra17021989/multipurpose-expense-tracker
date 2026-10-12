@@ -65,6 +65,12 @@ public class PersonalDocumentController {
         return ResponseEntity.ok().contentType(type).header(HttpHeaders.CONTENT_DISPOSITION, disposition.toString()).body(resource);
     }
 
+    @PutMapping(value = "/{id}/file", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public PersonalDocumentDto replaceFile(@AuthenticationPrincipal UserPrincipal principal, @PathVariable Long id,
+            @RequestPart("file") MultipartFile file) {
+        return service.replaceFile(principal.getAccountId(), principal.getUserId(), id, file);
+    }
+
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void delete(@AuthenticationPrincipal UserPrincipal principal, @PathVariable Long id) {

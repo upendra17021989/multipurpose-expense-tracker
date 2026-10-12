@@ -1,3 +1,3 @@
 # Personal documents
 
-Use Personal Documents in an individual workspace to upload and manage documents and their metadata. Document sharing uses the application's access controls. This assistant currently searches site help only; it cannot search, read or summarize uploaded private document contents.
+Use Personal Documents in an individual workspace to upload and manage documents and their metadata. Document sharing uses the application's access controls. When Private document mode is enabled, select a PDF, TXT or Markdown document in the assistant. Its uploader must explicitly consent to AI indexing. Wait until indexing is ready, then ask a question about that document. Shared readers can query ready indexes while they retain access. Disabling indexing deletes its index; replacing the file requires new consent. Images and scanned PDFs need OCR, which is not available yet.

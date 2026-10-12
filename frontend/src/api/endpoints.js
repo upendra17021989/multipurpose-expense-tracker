@@ -130,6 +130,14 @@ export const personalTodoAPI = {
   delete: (id) => axiosInstance.delete(`/personal/todos/${id}`)
 }
 
+const normalizeDocumentFile = (file) => {
+  const extension = file.name.split('.').pop().toLowerCase()
+  if (extension === 'txt' || extension === 'md') return new File([file], file.name, {
+    type: extension === 'md' ? 'text/markdown' : 'text/plain', lastModified: file.lastModified
+  })
+  return file
+}
+
 export const personalDocumentAPI = {
   list: (params = {}) => axiosInstance.get('/personal/documents', { params }),
   get: (documentId) => axiosInstance.get(`/personal/documents/${documentId}`),
@@ -137,10 +145,15 @@ export const personalDocumentAPI = {
   create: (metadata, file) => {
     const formData = new FormData()
     formData.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }))
-    formData.append('file', file)
+    formData.append('file', normalizeDocumentFile(file))
     return axiosInstance.post('/personal/documents', formData, { headers: { 'Content-Type': 'multipart/form-data' } })
   },
   update: (documentId, metadata) => axiosInstance.put(`/personal/documents/${documentId}`, metadata),
+  replaceFile: (documentId, file) => {
+    const formData = new FormData()
+    formData.append('file', normalizeDocumentFile(file))
+    return axiosInstance.put(`/personal/documents/${documentId}/file`, formData, { headers: { 'Content-Type': 'multipart/form-data' } })
+  },
   share: (documentId, recipient) => axiosInstance.post(`/personal/documents/${documentId}/share`, { recipient }),
   download: (documentId) => axiosInstance.get(`/personal/documents/${documentId}/download`, { responseType: 'blob' }),
   delete: (documentId) => axiosInstance.delete(`/personal/documents/${documentId}`)

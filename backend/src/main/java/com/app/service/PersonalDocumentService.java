@@ -29,7 +29,7 @@ import java.util.*;
 
 @Service
 public class PersonalDocumentService {
-    private static final Set<String> EXTENSIONS = Set.of("jpg", "jpeg", "jfif", "png", "pdf");
+    private static final Set<String> EXTENSIONS = Set.of("jpg", "jpeg", "jfif", "png", "pdf", "txt", "md");
     private static final Set<String> IMAGE_TYPES = Set.of("image/jpeg", "image/jfif", "image/png");
     private static final Set<String> PDF_TYPES = Set.of("application/pdf");
 
@@ -42,6 +42,10 @@ public class PersonalDocumentService {
     private final S3Client s3Client;
     private final String s3Bucket;
     private final boolean s3Enabled;
+    private DocumentRagIndexRepository ragIndexes;
+
+    @Autowired
+    void configureRagIndexes(DocumentRagIndexRepository ragIndexes) { this.ragIndexes = ragIndexes; }
 
     @Autowired
     public PersonalDocumentService(PersonalDocumentRepository repository, AccountRepository accountRepository,
@@ -164,6 +168,38 @@ public class PersonalDocumentService {
     }
 
     @Transactional
+    public PersonalDocumentDto replaceFile(Long accountId, Long userId, Long id, MultipartFile file) {
+        requireIndividualAccount(accountId);
+        validateFile(file);
+        PersonalDocument entity = repository.lockById(id).filter(document -> userId.equals(document.getUploadedBy()))
+                .orElseThrow(() -> new ResourceNotFoundException("Document not found"));
+        String original = StringUtils.cleanPath(Objects.requireNonNullElse(file.getOriginalFilename(), "document"));
+        String stored = UUID.randomUUID() + "." + extension(original);
+        String key = "documents/" + entity.getAccount().getId() + "/" + stored;
+        String oldKey = entity.getStoredFileName();
+        try {
+            storeFile(entity.getAccount().getId(), stored, key, file);
+            entity.setOriginalFileName(original); entity.setStoredFileName(key);
+            entity.setContentType(file.getContentType()); entity.setFileSize(file.getSize());
+            // File replacement revokes old indexing consent; the owner must explicitly opt in again.
+            ragIndexes.deleteById(id);
+            repository.saveAndFlush(entity);
+            org.springframework.transaction.support.TransactionSynchronizationManager.registerSynchronization(
+                    new org.springframework.transaction.support.TransactionSynchronization() {
+                        @Override public void afterCompletion(int status) {
+                            deleteStoredFile(status == STATUS_COMMITTED ? oldKey : key);
+                        }
+                    });
+            return toDto(entity);
+        } catch (IOException | S3Exception error) {
+            deleteStoredFile(key);
+            throw new ValidationException("Unable to replace uploaded file", error);
+        } catch (RuntimeException error) {
+            deleteStoredFile(key); throw error;
+        }
+    }
+
+    @Transactional
     public void delete(Long accountId, Long userId, Long id) {
         requireIndividualAccount(accountId);
         PersonalDocument entity = findOwned(userId, id);
@@ -227,11 +263,12 @@ public class PersonalDocumentService {
         if (file == null || file.isEmpty()) throw new ValidationException("Upload file is required");
         if (file.getSize() > maxFileSize) throw new ValidationException("Upload file is too large");
         String ext = extension(file.getOriginalFilename());
-        if (!EXTENSIONS.contains(ext)) throw new ValidationException("Only JPG, JPEG, JFIF, PNG, and PDF uploads are allowed");
+        if (!EXTENSIONS.contains(ext)) throw new ValidationException("Only images, PDF, TXT, and MD uploads are allowed");
         String contentType = Objects.requireNonNullElse(file.getContentType(), "").toLowerCase();
         boolean validPdf = ext.equals("pdf") && PDF_TYPES.contains(contentType);
-        boolean validImage = !ext.equals("pdf") && IMAGE_TYPES.contains(contentType);
-        if (!validPdf && !validImage) throw new ValidationException("File content type does not match its extension");
+        boolean validImage = Set.of("jpg", "jpeg", "jfif", "png").contains(ext) && IMAGE_TYPES.contains(contentType);
+        boolean validText = (ext.equals("txt") || ext.equals("md")) && Set.of("text/plain", "text/markdown").contains(contentType);
+        if (!validPdf && !validImage && !validText) throw new ValidationException("File content type does not match its extension");
     }
     private void storeFile(Long accountId, String stored, String storedFileName, MultipartFile file) throws IOException {
         if (s3Enabled) {

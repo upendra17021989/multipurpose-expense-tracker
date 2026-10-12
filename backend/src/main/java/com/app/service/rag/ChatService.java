@@ -94,4 +94,15 @@ public class ChatService {
                 "You can send 10 requests per minute. Please wait before trying again.");
         requests.put(userId, new Window(minute, window.count() + 1));
     }
+
+    public ChatResponse documentChat(UserPrincipal principal, Long id, String question, PrivateDocumentRagService documents) {
+        if (!properties.isEnabled()) throw new ChatException(HttpStatus.SERVICE_UNAVAILABLE, "The assistant is currently disabled.");
+        if (principal == null || principal.getUserId() == null) throw new ChatException(HttpStatus.UNAUTHORIZED, "Sign in to use the assistant.");
+        if (question == null || question.isBlank() || question.length() > 2000)
+            throw new ChatException(HttpStatus.BAD_REQUEST, "Enter a document question of 1-2000 characters.");
+        limit(principal.getUserId());
+        if (!active.tryAcquire()) throw new ChatException(HttpStatus.TOO_MANY_REQUESTS, "The assistant is busy. Try again shortly.");
+        try { return documents.answer(principal, id, question.strip()); }
+        finally { active.release(); }
+    }
 }

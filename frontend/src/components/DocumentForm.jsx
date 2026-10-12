@@ -40,7 +40,7 @@ export const DocumentForm = ({ document, onSubmit, onCancel, saving }) => {
   }
   const submit = (event) => {
     event.preventDefault()
-    if (!document && !file) return setError('Choose a PDF or image to upload.')
+    if (!document && !file) return setError('Choose a PDF, text, Markdown or image file to upload.')
     if (file && file.size > MAX_FILE_SIZE) return setError(FILE_SIZE_ERROR)
     if (form.issueDate && form.expiryDate && form.expiryDate < form.issueDate) return setError('Expiry date cannot be before issue date.')
     setError(''); onSubmit(form, file)
@@ -53,7 +53,8 @@ export const DocumentForm = ({ document, onSubmit, onCancel, saving }) => {
       <div className="form-grid two">
         <label>Title<input name="title" maxLength="150" value={form.title} onChange={change} required /></label>
         <label>Category<select name="category" value={form.category} onChange={change}>{DOCUMENT_CATEGORIES.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
-        {!document && <label className="document-file-field">File (maximum 1 MB)<input type="file" accept=".pdf,.jpg,.jpeg,.jfif,.png" onChange={changeFile} required /></label>}
+        <label className="document-file-field">{document ? 'Replace file (optional, maximum 1 MB)' : 'File (maximum 1 MB)'}<input type="file" accept=".pdf,.txt,.md,.jpg,.jpeg,.jfif,.png" onChange={changeFile} required={!document} /></label>
+        {document && <p>Replacing the file deletes its AI index and requires new indexing consent.</p>}
         <label>Issuer / provider<input name="issuer" maxLength="150" value={form.issuer} onChange={change} /></label>
         <label>Policy / account / reference number<input name="documentNumber" maxLength="150" value={form.documentNumber} onChange={change} /></label>
         <label>Issue date<input type="date" name="issueDate" value={form.issueDate} onChange={change} /></label>

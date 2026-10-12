@@ -24,7 +24,7 @@ public class ChatController {
 
     @GetMapping("/status")
     public Map<String, Boolean> status() {
-        return Map.of("enabled", properties.isEnabled(), "aiConfigured", properties.isAiConfigured());
+        return Map.of("enabled", properties.isEnabled(), "aiConfigured", properties.isAiConfigured(), "documentsEnabled", properties.isDocumentsEnabled());
     }
 
     @PostMapping

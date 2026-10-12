@@ -81,4 +81,24 @@ class PersonalDocumentServiceTest {
         request.setTitle("Health policy"); request.setCategory(PersonalDocumentCategory.INSURANCE_POLICY);
         return request;
     }
+
+    @Test void replacementDeletesIndexAndRetiresOldFileOnlyAfterCommit() throws Exception {
+        var account = allowIndividual();
+        var indexes = mock(DocumentRagIndexRepository.class); service.configureRagIndexes(indexes);
+        var directory = java.nio.file.Files.createDirectories(tempDir.resolve("documents/1"));
+        var old = directory.resolve("old.txt"); java.nio.file.Files.writeString(old, "old text");
+        var document = PersonalDocument.builder().id(5L).account(account).uploadedBy(2L).title("Policy")
+                .category(PersonalDocumentCategory.OTHER).storedFileName("documents/1/old.txt").build();
+        when(repository.lockById(5L)).thenReturn(Optional.of(document));
+        org.springframework.transaction.support.TransactionSynchronizationManager.initSynchronization();
+        try {
+            service.replaceFile(1L, 2L, 5L, new MockMultipartFile("file", "new.txt", "text/plain", "replacement".getBytes()));
+            verify(indexes).deleteById(5L);
+            assertTrue(java.nio.file.Files.exists(old));
+            assertEquals("replacement", java.nio.file.Files.readString(tempDir.resolve(document.getStoredFileName())));
+            for (var sync : org.springframework.transaction.support.TransactionSynchronizationManager.getSynchronizations())
+                sync.afterCompletion(org.springframework.transaction.support.TransactionSynchronization.STATUS_COMMITTED);
+            assertFalse(java.nio.file.Files.exists(old));
+        } finally { org.springframework.transaction.support.TransactionSynchronizationManager.clearSynchronization(); }
+    }
 }
