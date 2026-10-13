@@ -36,4 +36,7 @@ a.assistant-launcher:focus-visible { outline: 3px solid #5eead4; outline-offset:
 .assistant-composer-footer { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-top: 12px; }
 .assistant-composer-footer small { color: #61746f; }
 .assistant-error { color: #b42318; }
+@media print {
+  a.assistant-launcher { display: none !important; }
+}
 @media (max-width: 800px) { .assistant-layout { grid-template-columns: 1fr; } .assistant-guide { padding: 18px; } .assistant-guide h3, .assistant-suggestion { display: none; } .assistant-conversation { padding: 18px; max-height: 55vh; } .assistant-composer { padding: 18px; } a.assistant-launcher { display: grid; place-items: center; width: 44px; height: 44px; box-sizing: border-box; padding: 0; bottom: calc(14px + env(safe-area-inset-bottom)); right: 12px; box-shadow: 0 3px 12px #0002; } .assistant-launcher-icon { display: block; } .assistant-launcher-label { display: none; } }
