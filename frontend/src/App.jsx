@@ -53,6 +53,7 @@ import { FestivalCollectionList } from './pages/society/FestivalCollectionList'
 import { FestivalCollectionForm } from './pages/society/FestivalCollectionForm'
 import { FestivalCollectionReceipt } from './pages/society/FestivalCollectionReceipt'
 import { FestivalCouponPage } from './pages/society/FestivalCouponPage'
+import { FestivalTokens } from './pages/society/FestivalTokens'
 import { AnnualFinance } from './pages/society/annual-finance/AnnualFinance'
 import { JoinSociety } from './pages/society/JoinSociety'
 import { JournalBook } from './pages/society/JournalBook'
@@ -385,6 +386,8 @@ function App() {
               </ProtectedRoute>
             }
           />
+          <Route path="/society/festival-tokens" element={<ProtectedRoute><FestivalTokens /></ProtectedRoute>} />
+          <Route path="/society/festivals/:festivalEventId/tokens" element={<ProtectedRoute><FestivalTokens /></ProtectedRoute>} />
           <Route path="/society/festivals/:festivalEventId/coupons" element={<ProtectedRoute><FestivalCouponPage /></ProtectedRoute>} />
           <Route path="/society/festivals/:festivalEventId/expenses" element={<ProtectedRoute><FestivalExpenses /></ProtectedRoute>} />
           <Route path="/society/festivals/:festivalEventId/report" element={<ProtectedRoute><Suspense fallback={<p role="status">Loading report…</p>}><FestivalReport /></Suspense></ProtectedRoute>} />

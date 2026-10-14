@@ -63,7 +63,7 @@ export const Navbar = () => {
     currentAccount?.role
   )
   const festivalRoute = location.pathname.match(/^\/society\/festival-collections\/([^/]+)/)
-    || location.pathname.match(/^\/society\/festivals\/([^/]+)\/(?:expenses|report|coupons)/)
+    || location.pathname.match(/^\/society\/festivals\/([^/]+)\/(?:expenses|report|coupons|tokens)/)
   const festivalEventId = festivalRoute?.[1]
   const groups = festivalEventId
     ? baseGroups.map((group) => ({

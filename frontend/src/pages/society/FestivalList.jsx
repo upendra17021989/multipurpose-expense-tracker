@@ -200,6 +200,7 @@ export const FestivalList = () => {
                     <IconButton icon="delete" label="Delete permanently" tone="danger" onClick={() => permanentlyDelete(festival.id)} />
                   </> : <>
                   <IconLink icon="expenses" label="Expenses & estimates" to={`/society/festivals/${festival.id}/expenses`} />
+                  <IconLink icon="coupons" label="Generate tokens" to={`/society/festivals/${festival.id}/tokens`} />
                   <IconLink icon="coupons" label="Festival Coupons" to={`/society/festivals/${festival.id}/coupons`} />
                   <IconLink icon="report" label="View report" to={`/society/festivals/${festival.id}/report`} />
                   {canManage && <IconLink icon="contribution" label="Add contribution or mention" to={`/society/festivals/${festival.id}/report?view=other`} />}
@@ -238,7 +239,8 @@ export const FestivalList = () => {
                 <IconButton icon="delete" label="Delete permanently" tone="danger" onClick={() => permanentlyDelete(festival.id)} />
               </> : <>
               <IconLink icon="expenses" label="Expenses & estimates" to={`/society/festivals/${festival.id}/expenses`} />
-              <IconLink icon="coupons" label="Festival Coupons" to={`/society/festivals/${festival.id}/coupons`} />
+              <IconLink icon="coupons" label="Generate tokens" to={`/society/festivals/${festival.id}/tokens`} />
+                  <IconLink icon="coupons" label="Festival Coupons" to={`/society/festivals/${festival.id}/coupons`} />
                   <IconLink icon="report" label="View report" to={`/society/festivals/${festival.id}/report`} />
               {canManage && <IconLink icon="contribution" label="Add contribution or mention" to={`/society/festivals/${festival.id}/report?view=other`} />}
               <IconButton icon="collections" label="Collections" onClick={() => navigate(`/society/festival-collections/${festival.id}`)} />

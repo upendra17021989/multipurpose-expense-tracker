@@ -33,6 +33,7 @@ export const ACCOUNT_NAVIGATION = {
       label: 'Community',
       items: [
         { label: 'Festivals', to: '/society/festivals', activePaths: ['/society/festival-collections'] },
+        { label: 'Festival Tokens', to: '/society/festival-tokens' },
         { label: 'Flats', to: '/society/flats' },
         { label: 'Member Directory', to: '/society/member-directory' },
         { label: 'Vendors', to: '/society/vendors' },
