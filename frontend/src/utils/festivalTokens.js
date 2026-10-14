@@ -35,9 +35,13 @@ function drawCelebrationToken(canvas, token, society, event, label) {
     c.beginPath(); c.arc(x, y, r, 0, Math.PI * 2); c.fillStyle = fill; c.fill()
     if (stroke) { c.strokeStyle = stroke; c.lineWidth = width; c.stroke() }
   }
-  const text = (value, y, size, fill, maxWidth, outline) => {
+  const text = (value, y, size, fill, maxWidth, outline, centerVertically = false) => {
     c.font = `900 ${size}px Arial, sans-serif`
     while (c.measureText(value).width > maxWidth && size > 10) c.font = `900 ${--size}px Arial, sans-serif`
+    if (centerVertically) {
+      const metrics = c.measureText(value)
+      y += (metrics.actualBoundingBoxAscent - metrics.actualBoundingBoxDescent) / 2
+    }
     c.textAlign = 'center'; c.lineJoin = 'round'
     if (outline) { c.strokeStyle = outline; c.lineWidth = 5; c.strokeText(value, 240, y) }
     c.fillStyle = fill; c.fillText(value, 240, y)
@@ -107,7 +111,7 @@ function drawCelebrationToken(canvas, token, society, event, label) {
   }
   c.restore()
   c.save(); c.shadowColor = token.kids ? '#310058' : '#04122c'; c.shadowBlur = 5; c.shadowOffsetY = 3
-  text(String(token.number), 359, 183, '#ffffff', 184, token.kids ? '#450080' : '#061b40')
+  text(String(token.number), 294, 183, '#ffffff', 184, token.kids ? '#450080' : '#061b40', true)
   c.restore()
   const ribbon = gradient(0, 365, 0, 442, token.kids
     ? [[0, '#ff64b9'], [.15, '#f90685'], [.65, '#e60069'], [1, '#a40049']]
