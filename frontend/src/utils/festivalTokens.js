@@ -1,9 +1,18 @@
-export function tokenPages(start, kidsEnd, end) {
+export const TOKEN_LAYOUTS = {
+  4: { columns: 2, rows: 2 },
+  8: { columns: 2, rows: 4 },
+  12: { columns: 3, rows: 4 },
+  16: { columns: 4, rows: 4 },
+  20: { columns: 4, rows: 5 }
+}
+
+export function tokenPages(start, kidsEnd, end, perPage = 16) {
+  if (!TOKEN_LAYOUTS[perPage]) throw new Error('Select a supported number of tokens per page.')
   if (![start, kidsEnd, end].every(Number.isSafeInteger) || start < 1 || end < start || end > 10000 || kidsEnd < start - 1 || kidsEnd > end || end - start >= 1000) {
     throw new Error('Use whole numbers: start at 1 or higher, kids end between start - 1 and last number, and at most 1,000 tokens (last number up to 10,000).')
   }
   const tokens = Array.from({ length: end - start + 1 }, (_, i) => ({ number: start + i, kids: start + i <= kidsEnd }))
-  return Array.from({ length: Math.ceil(tokens.length / 16) }, (_, i) => tokens.slice(i * 16, i * 16 + 16))
+  return Array.from({ length: Math.ceil(tokens.length / perPage) }, (_, i) => tokens.slice(i * perPage, (i + 1) * perPage))
 }
 
 // The preview and PDF use the same artwork, including browser fonts for society names.
@@ -116,6 +125,9 @@ function drawCelebrationToken(canvas, token, society, event, label) {
 }
 
 export async function generateTokenPdf(pages, settings) {
+  const perPage = settings.perPage ?? 16
+  const layout = TOKEN_LAYOUTS[perPage]
+  if (!layout) throw new Error('Select a supported number of tokens per page.')
   const { default: PDFDocument } = await import('pdfkit/js/pdfkit.standalone.js')
   const doc = new PDFDocument({ autoFirstPage: false, compress: true, info: { Title: `${settings.society} - Festival tokens` } })
   const chunks = []
@@ -129,15 +141,16 @@ export async function generateTokenPdf(pages, settings) {
     for (let p = 0; p < pages.length; p++) {
       doc.addPage({ size: 'A4', margin: 0 })
       const width = doc.page.width; const height = doc.page.height
-      const cellWidth = (width - 40) / 4; const cellHeight = (height - 58) / 4
+      const cellWidth = (width - 40) / layout.columns; const cellHeight = (height - 58) / layout.rows
       pages[p].forEach((token, i) => {
-        const x = 20 + (i % 4) * cellWidth; const y = 20 + Math.floor(i / 4) * cellHeight
+        const x = 20 + (i % layout.columns) * cellWidth; const y = 20 + Math.floor(i / layout.columns) * cellHeight
         doc.save().lineWidth(.3).strokeColor('#d1d5db').dash(2, { space: 3 }).rect(x, y, cellWidth, cellHeight).stroke().restore()
-        const imageWidth = cellWidth - 8; const imageHeight = imageWidth * 520 / 480
+        const imageWidth = Math.min(cellWidth - 8, (cellHeight - 8) * 480 / 520)
+        const imageHeight = imageWidth * 520 / 480
         drawToken(canvas, token, settings.society, settings.event, settings.label)
-        doc.image(canvas.toDataURL('image/png'), x + 4, y + (cellHeight - imageHeight) / 2, { width: imageWidth, height: imageHeight })
+        doc.image(canvas.toDataURL('image/png'), x + (cellWidth - imageWidth) / 2, y + (cellHeight - imageHeight) / 2, { width: imageWidth, height: imageHeight })
       })
-      doc.fontSize(8).fillColor('#64748b').text(`Page ${p + 1} of ${pages.length} | Tokens ${pages[p][0].number}-${pages[p].at(-1).number} | A4 - 16 tokens per page`, 20, height - 25, { width: width - 40, align: 'center', lineBreak: false })
+      doc.fontSize(8).fillColor('#64748b').text(`Page ${p + 1} of ${pages.length} | Tokens ${pages[p][0].number}-${pages[p].at(-1).number} | A4 - ${perPage} tokens per page`, 20, height - 25, { width: width - 40, align: 'center', lineBreak: false })
       await new Promise(resolve => setTimeout(resolve, 0))
     }
     doc.end()

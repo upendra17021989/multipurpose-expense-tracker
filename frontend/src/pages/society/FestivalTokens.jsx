@@ -4,7 +4,7 @@ import { toast } from 'react-toastify'
 import { festivalEventAPI } from '../../api/endpoints'
 import { useAuthStore } from '../../store/authStore'
 import { Shell } from '../DashboardRouter'
-import { drawToken, generateTokenPdf, tokenPages } from '../../utils/festivalTokens'
+import { drawToken, generateTokenPdf, tokenPages, TOKEN_LAYOUTS } from '../../utils/festivalTokens'
 import './FestivalTokens.css'
 
 const TokenPreview = ({ token, society, event, label }) => {
@@ -23,6 +23,8 @@ export const FestivalTokens = () => {
   const [kidsEnd, setKidsEnd] = useState('50')
   const [end, setEnd] = useState('200')
   const [page, setPage] = useState(0)
+  const [perPage, setPerPage] = useState(16)
+  const layout = TOKEN_LAYOUTS[perPage]
   const [busy, setBusy] = useState(false)
   const [loading, setLoading] = useState(Boolean(festivalEventId))
   const [loadError, setLoadError] = useState('')
@@ -35,11 +37,11 @@ export const FestivalTokens = () => {
     return () => { active = false }
   }, [festivalEventId])
   let pages = []; let error = ''
-  try { pages = tokenPages(Number(start), Number(kidsEnd), Number(end)) } catch (e) { error = e.message }
+  try { pages = tokenPages(Number(start), Number(kidsEnd), Number(end), perPage) } catch (e) { error = e.message }
   if ([start, kidsEnd, end].some(value => !value.trim())) error = 'Enter all three token numbers.'
   if (!society.trim() || !label.trim()) error = 'Enter a society name and token label.'
   const currentPage = Math.min(page, Math.max(0, pages.length - 1))
-  const settings = { society, event, label }
+  const settings = { society, event, label, perPage }
   const download = async () => {
     setBusy(true)
     try {
@@ -64,6 +66,9 @@ export const FestivalTokens = () => {
         <label>Society name<input maxLength={80} value={society} onChange={e => setSociety(e.target.value)} /></label>
         <label>Festival / event<input maxLength={60} value={event} onChange={e => setEvent(e.target.value)} /></label>
         <label>Ribbon label<input maxLength={24} value={label} onChange={e => setLabel(e.target.value)} /></label>
+        <label>Tokens per A4 page<select value={perPage} disabled={busy} onChange={e => { setPerPage(Number(e.target.value)); setPage(0) }}>
+          {Object.entries(TOKEN_LAYOUTS).map(([count, grid]) => <option key={count} value={count}>{count} tokens ({grid.columns} columns × {grid.rows} rows)</option>)}
+        </select></label>
         <label>First token<input type="number" min="1" max="10000" step="1" value={start} onChange={e => { setStart(e.target.value); setPage(0) }} /></label>
         <label>Last kids token<input type="number" min={Number(start) - 1} max={end} step="1" value={kidsEnd} onChange={e => setKidsEnd(e.target.value)} /></label>
         <label>Last token<input type="number" min={start} max="10000" step="1" value={end} onChange={e => { setEnd(e.target.value); setPage(0) }} /></label>
@@ -75,7 +80,7 @@ export const FestivalTokens = () => {
         </div>}
         {loadError && <p role="alert">{loadError}</p>}
         <button type="button" disabled={Boolean(error) || busy || loading || Boolean(loadError)} onClick={download}>{busy ? 'Generating PDF...' : loading ? 'Loading festival...' : 'Download A4 PDF'}</button>
-        <small>4 columns × 4 rows · 16 tokens per full page. The final page contains the remaining tokens.</small>
+        <small>{layout.columns} columns × {layout.rows} rows · {perPage} tokens per full page. The final page contains the remaining tokens.</small>
       </section>
       <section className="festival-token-preview">
         <div className="festival-token-pager">
@@ -83,7 +88,7 @@ export const FestivalTokens = () => {
           <span aria-live="polite">Page {pages.length ? currentPage + 1 : 0} / {pages.length}</span>
           <button type="button" disabled={currentPage >= pages.length - 1 || busy} onClick={() => setPage(currentPage + 1)}>Next</button>
         </div>
-        <div className="festival-token-sheet" aria-label="A4 token preview">
+        <div className="festival-token-sheet" aria-label="A4 token preview" style={{ '--token-columns': layout.columns, '--token-rows': layout.rows }}>
           {!error && pages[currentPage]?.map(token => <div className="festival-token-cell" key={token.number}><TokenPreview token={token} {...settings} /></div>)}
         </div>
       </section>
