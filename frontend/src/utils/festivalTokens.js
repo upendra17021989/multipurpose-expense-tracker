@@ -46,8 +46,6 @@ function drawOrnateToken(canvas, template, token, society, event, label, showCat
   c.beginPath(); c.arc(500, 490, 450, 0, Math.PI * 2)
   c.fillStyle = '#000000'; c.fill()
   c.drawImage(template, 0, 0, 1000, 1000)
-  const gold = c.createLinearGradient(0, 170, 0, 310)
-  gold.addColorStop(0, '#fff9da'); gold.addColorStop(.45, '#ffe69a'); gold.addColorStop(1, '#ffc746')
   const text = (value, y, size, maxWidth, fill, outline, serif = true) => {
     const family = serif ? 'Georgia, serif' : 'Arial, sans-serif'
     c.font = `900 ${size}px ${family}`
@@ -55,22 +53,29 @@ function drawOrnateToken(canvas, template, token, society, event, label, showCat
     const metrics = c.measureText(value)
     const baseline = y + (metrics.actualBoundingBoxAscent - metrics.actualBoundingBoxDescent) / 2
     c.textAlign = 'center'; c.lineJoin = 'round'
-    if (outline) { c.strokeStyle = outline; c.lineWidth = 5; c.strokeText(value, 500, baseline) }
+    if (outline) { c.strokeStyle = outline; c.lineWidth = 7; c.strokeText(value, 500, baseline) }
     c.fillStyle = fill; c.fillText(value, 500, baseline)
   }
   c.save(); c.shadowColor = '#380315'; c.shadowBlur = 3; c.shadowOffsetY = 3
-  text(society.trim(), event.trim() ? 221 : 250, 84, 590, gold, '#7c2b00')
+  text(society.trim(), event.trim() ? 221 : 250, 84, 590, '#fffef2', '#30091b')
   c.restore()
   if (event.trim()) {
-    c.beginPath(); c.roundRect(245, 260, 510, 40, 20)
-    c.fillStyle = '#30091b'; c.fill()
+    c.beginPath(); c.roundRect(230, 255, 540, 50, 25)
+    c.fillStyle = '#200612'; c.fill()
     c.strokeStyle = '#e5b64e'; c.lineWidth = 1.5; c.stroke()
-    text(event.trim(), 280, 34, 470, '#fffbe9', undefined, false)
+    text(event.trim(), 280, 42, 495, '#fffef2', undefined, false)
   }
-  c.save(); c.shadowColor = '#001d1c'; c.shadowBlur = 4; c.shadowOffsetY = 5
-  text(String(token.number), 526, 365, 350, '#fff7d7', '#db9205')
+  // Darken the busy mandala locally, fading out before the decorative rim.
+  const numberBacking = c.createRadialGradient(500, 526, 70, 500, 526, 180)
+  numberBacking.addColorStop(0, '#001816d9')
+  numberBacking.addColorStop(.65, '#001816b3')
+  numberBacking.addColorStop(1, '#00181600')
+  c.beginPath(); c.arc(500, 526, 180, 0, Math.PI * 2)
+  c.fillStyle = numberBacking; c.fill()
+  c.save(); c.shadowColor = '#001d1c'; c.shadowBlur = 2; c.shadowOffsetY = 2
+  text(String(token.number), 526, 365, 350, '#fffef2', '#001816')
   c.restore()
-  text(label.toUpperCase(), 759, 101, 470, gold, '#783000')
+  text(label.toUpperCase(), 759, 101, 470, '#fffef2', '#30091b')
   if (showCategories) {
     c.beginPath(); c.roundRect(380, 863, 240, 48, 24)
     c.fillStyle = '#fff5d5'; c.fill(); c.strokeStyle = '#dfa424'; c.lineWidth = 3; c.stroke()
