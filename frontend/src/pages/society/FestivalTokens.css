@@ -4,6 +4,8 @@
 .festival-token-controls label { display: grid; gap: 6px; font-weight: 600; font-size: 14px; }
 .festival-token-controls input, .festival-token-controls select { width: 100%; box-sizing: border-box; border: 1px solid #cbd5e1; border-radius: 8px; padding: 10px 12px; color: #10275c; background: #fff; }
 .festival-token-controls small { color: #64748b; line-height: 1.5; }
+.festival-token-controls .festival-token-toggle { display: flex; align-items: center; gap: 10px; }
+.festival-token-controls .festival-token-toggle input { width: 18px; height: 18px; }
 .festival-token-controls > button { padding: 13px; border: 0; border-radius: 10px; background: #10275c; color: #fff; font-weight: 700; cursor: pointer; }
 .festival-token-summary { display: grid; gap: 8px; background: #f5f3ff; border-radius: 10px; padding: 16px; font-size: 14px; }
 .festival-token-error { color: #b91c1c; font-size: 14px; }
